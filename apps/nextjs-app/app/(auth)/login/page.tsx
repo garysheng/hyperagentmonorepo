@@ -1,14 +1,18 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { useAuth } from '@/components/providers'
+import { login, signup } from './actions'
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user, loading } = useAuth()
+  const message = searchParams.get('message')
 
   useEffect(() => {
     if (!loading && user) {
@@ -31,17 +35,40 @@ export default function LoginPage() {
             Sign in to your account to continue
           </p>
         </div>
-        <Button className="w-full" size="lg">
-          Sign in with Twitter
-        </Button>
-        <p className="px-8 text-center text-sm text-muted-foreground">
-          <Link 
-            href="/register" 
-            className="hover:text-primary underline underline-offset-4"
-          >
-            Don&apos;t have an account? Sign up
-          </Link>
-        </p>
+        <form className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              name="email"
+              placeholder="name@example.com"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              name="password"
+              required
+            />
+          </div>
+          {message && (
+            <p className="text-sm text-muted-foreground">
+              {message}
+            </p>
+          )}
+          <div className="space-y-2">
+            <Button className="w-full" type="submit" formAction={login}>
+              Sign in
+            </Button>
+            <Button className="w-full" type="submit" formAction={signup} variant="outline">
+              Sign up
+            </Button>
+          </div>
+        </form>
       </div>
     </div>
   )
