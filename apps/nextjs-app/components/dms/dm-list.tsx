@@ -1,74 +1,67 @@
 'use client'
 
-import { Card } from '@/components/ui/card'
+import Image from 'next/image'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Card } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
-interface DM {
-  id: string
-  sender: {
-    username: string
-    name: string
-    avatar: string
-  }
-  message: string
-  timestamp: string
-  relevanceScore: number
-  status: 'unread' | 'read' | 'archived'
+interface DMListProps {
+  dms: Array<{
+    id: string
+    sender: {
+      username: string
+      avatar_url: string
+    }
+    message: string
+    timestamp: Date
+    relevance_score: number
+    status: 'pending' | 'approved' | 'rejected'
+  }>
+  selectedDM?: string
+  onSelectDM: (id: string) => void
 }
 
-const mockDMs: DM[] = [
-  {
-    id: '1',
-    sender: {
-      username: 'johndoe',
-      name: 'John Doe',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=John',
-    },
-    message: 'Hey, I would love to collaborate on a project!',
-    timestamp: '2024-01-20T10:00:00Z',
-    relevanceScore: 4,
-    status: 'unread',
-  },
-  // Add more mock DMs here
-]
-
-export function DMList() {
+export function DMList({ dms, selectedDM, onSelectDM }: DMListProps) {
   return (
-    <Card className="col-span-3 h-[calc(100vh-12rem)]">
+    <Card className="h-[calc(100vh-2rem)] w-80">
       <ScrollArea className="h-full">
-        <div className="space-y-4 p-4">
-          {mockDMs.map((dm) => (
-            <Card key={dm.id} className="p-4 hover:bg-accent cursor-pointer">
-              <div className="flex items-start gap-4">
-                <img
-                  src={dm.sender.avatar}
-                  alt={dm.sender.name}
-                  className="h-10 w-10 rounded-full"
-                />
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold">{dm.sender.name}</p>
-                      <span className="text-sm text-muted-foreground">
-                        @{dm.sender.username}
-                      </span>
-                    </div>
-                    <span className="text-sm text-muted-foreground">
-                      {new Date(dm.timestamp).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{dm.message}</p>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">
-                      Relevance: {dm.relevanceScore}/5
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      Status: {dm.status}
-                    </span>
-                  </div>
+        <div className="p-4">
+          <h2 className="mb-2 text-lg font-semibold">Direct Messages</h2>
+          {dms.map((dm, index) => (
+            <div key={dm.id}>
+              {index > 0 && <Separator className="my-2" />}
+              <Button
+                variant="ghost"
+                className={cn(
+                  'w-full justify-start gap-2 p-2',
+                  selectedDM === dm.id && 'bg-muted'
+                )}
+                onClick={() => onSelectDM(dm.id)}
+              >
+                <div className="relative h-10 w-10 shrink-0">
+                  <Image
+                    src={dm.sender.avatar_url}
+                    alt={`${dm.sender.username}'s avatar`}
+                    className="rounded-full object-cover"
+                    fill
+                    sizes="40px"
+                  />
                 </div>
-              </div>
-            </Card>
+                <div className="flex flex-col items-start gap-1 overflow-hidden">
+                  <div className="flex w-full items-center justify-between gap-2">
+                    <span className="font-medium">{dm.sender.username}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {dm.timestamp.toLocaleDateString()}
+                    </span>
+                  </div>
+                  <p className="w-full truncate text-sm text-muted-foreground">
+                    {dm.message}
+                  </p>
+                </div>
+              </Button>
+            </div>
           ))}
         </div>
       </ScrollArea>
