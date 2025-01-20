@@ -1,6 +1,6 @@
 Below is an **example monorepo file structure** for **HyperAgent.so** using **pnpm** workspaces, **Next.js (TypeScript)** for the front end, and **Supabase** for the database and serverless functions. This layout also shows how you might include a shared library (optional) and localized test folders.
 
-Feel free to **customize naming** or **remove folders** you don’t need. The main idea is to keep each “app” or “package” in its own folder under a common workspace.
+Feel free to **customize naming** or **remove folders** you don't need. The main idea is to keep each "app" or "package" in its own folder under a common workspace.
 
 ---
 
@@ -11,41 +11,39 @@ hyperagent
 ├─ pnpm-workspace.yaml        // Defines pnpm workspaces
 ├─ package.json               // Root-level package with shared dev dependencies/scripts
 ├─ tsconfig.base.json         // Base TS config shared across packages
-├─ .eslintrc.js               // Root ESLint config
-├─ .prettierrc                // Root Prettier config
-├─ README.md                  // Project-level README
+├─ .eslintrc.js              // Root ESLint config
+├─ .prettierrc               // Root Prettier config
+├─ README.md                 // Project-level README
 ├─ .gitignore
+├─ cursorlog.txt             // Progress tracking
 |
 ├─ apps
 │  ├─ nextjs-app
 │  │  ├─ package.json
-│  │  ├─ pnpm-lock.yaml       // (optional, if you want a separate lock — often you rely on root)
+│  │  ├─ pnpm-lock.yaml      // (optional, if you want a separate lock — often you rely on root)
 │  │  ├─ tsconfig.json
 │  │  ├─ next.config.js
 │  │  ├─ postcss.config.js
 │  │  ├─ tailwind.config.js
-│  │  ├─ public/              // Static assets, if any
-│  │  └─ src
-│  │     ├─ app               // Next.js App Router
-│  │     │  ├─ layout.tsx
-│  │     │  ├─ page.tsx
-│  │     │  ├─ wizard
-│  │     │  │  └─ page.tsx
-│  │     │  ├─ login
-│  │     │  │  └─ page.tsx
-│  │     │  ├─ register
-│  │     │  │  └─ page.tsx
-│  │     │  ├─ dashboard
-│  │     │  │  ├─ page.tsx
-│  │     │  │  ├─ inbox
-│  │     │  │  │  └─ page.tsx
-│  │     │  │  └─ settings
-│  │     │  │     └─ page.tsx
-│  │     │  └─ ...
-│  │     ├─ components        // Reusable UI components
-│  │     ├─ hooks             // Custom React hooks
-│  │     └─ lib               // Local utility functions
-│  │
+│  │  ├─ public/             // Static assets, if any
+│  │  ├─ app                 // Next.js App Router
+│  │  │  ├─ layout.tsx
+│  │  │  ├─ page.tsx
+│  │  │  ├─ wizard
+│  │  │  │  └─ page.tsx
+│  │  │  ├─ login
+│  │  │  │  └─ page.tsx
+│  │  │  ├─ register
+│  │  │  │  └─ page.tsx
+│  │  │  ├─ dashboard
+│  │  │  │  ├─ page.tsx
+│  │  │  │  ├─ inbox
+│  │  │  │  │  └─ page.tsx
+│  │  │  │  └─ settings
+│  │  │  │     └─ page.tsx
+│  │  ├─ components          // Reusable UI components
+│  │  ├─ hooks              // Custom React hooks
+│  │  ├─ lib                // Local utility functions
 │  │  └─ tests
 │  │     ├─ unit
 │  │     │  └─ example.test.ts
@@ -54,35 +52,32 @@ hyperagent
 │  │
 │  └─ supabase
 │     ├─ package.json
-│     ├─ pnpm-lock.yaml       // (optional, same note as above)
+│     ├─ pnpm-lock.yaml      // (optional, same note as above)
 │     ├─ tsconfig.json
 │     └─ supabase
-│        ├─ migrations        // SQL migrations or any db migrations
-│        ├─ seeds             // Optional seed scripts
-│        ├─ functions         // Edge/Serverless Functions
+│        ├─ migrations       // SQL migrations or any db migrations
+│        ├─ seeds           // Optional seed scripts
+│        ├─ functions       // Edge/Serverless Functions
 │        │  ├─ classifyOpportunity
-│        │  │  ├─ index.ts            // main function logic
-│        │  │  ├─ grokApi.ts          // Grok API helper
-│        │  │  ├─ perplexityApi.ts    // Perplexity API helper
+│        │  │  ├─ index.ts           // main function logic
+│        │  │  ├─ perplexityApi.ts   // Perplexity API helper
 │        │  │  └─ __tests__
-│        │  │     └─ index.test.ts    // Unit tests for classifyOpportunity
-│        │  └─ ...                    // Additional functions
+│        │  │     └─ index.test.ts   // Unit tests for classifyOpportunity
+│        │  └─ ...                   // Additional functions
 │        └─ .env.example
 │
-├─ libs                       // (Optional) Shared libraries
-│  ├─ shared
-│  │  ├─ package.json
-│  │  ├─ tsconfig.json
-│  │  └─ src
-│  │     ├─ utils
-│  │     │  └─ index.ts       // Shared utility code
-│  │     └─ ...
-│  │
-│  │  └─ tests
-│  │     └─ unit
-│  │        └─ sharedUtils.test.ts
+├─ libs                      // (Optional) Shared libraries
+│  └─ shared
+│     ├─ package.json
+│     ├─ tsconfig.json
+│     └─ src
+│        ├─ utils
+│        │  └─ index.ts      // Shared utility code
+│        └─ tests
+│           └─ unit
+│              └─ sharedUtils.test.ts
 |
-└─ scripts                    // (Optional) Shell or JS scripts for building/deploying
+└─ scripts                   // (Optional) Shell or JS scripts for building/deploying
    └─ deploy-all.sh
 ```
 
@@ -146,7 +141,7 @@ hyperagent
 6. **(Optional) `libs/shared/`**  
    - A place for shared TypeScript utilities, models, or logic used by both Next.js and Supabase functions.
    - Each library has its own `package.json` and `tsconfig.json`.
-   - You’d reference it via pnpm workspace dependency in the other packages (e.g. `"@hyperagent/shared": "workspace:*"`).
+   - You'd reference it via pnpm workspace dependency in the other packages (e.g. `"@hyperagent/shared": "workspace:*"`).
 
 7. **Scripts**  
    - The `scripts/` folder can contain utility scripts for building, testing, deploying each workspace package in the correct order (e.g., run DB migrations, then build Next.js, etc.).
@@ -216,4 +211,4 @@ This **monorepo structure** using **pnpm** provides:
 - **Local Tests** in each package, which you can run individually or collectively via pnpm.
 - An **optional shared library** (`libs/shared`) for cross-cutting code (e.g., TypeScript types, utility functions).
 
-Adjust folder names, scripts, and dependencies as needed to fit your team’s workflow and **HyperAgent.so** requirements. This setup should give you a solid foundation for managing your entire project under one roof, with minimal friction in collaboration and deployment.
+Adjust folder names, scripts, and dependencies as needed to fit your team's workflow and **HyperAgent.so** requirements. This setup should give you a solid foundation for managing your entire project under one roof, with minimal friction in collaboration and deployment.
