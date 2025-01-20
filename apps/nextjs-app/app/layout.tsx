@@ -1,41 +1,26 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
-import { AuthProvider } from "@/components/providers";
-import { cn } from "@/lib/utils";
+import { Providers } from './providers'
 
 const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-sans",
 });
 
 export const metadata: Metadata = {
-  title: "HyperAgent",
-  description: "AI-powered DM management for celebrities",
+  title: "DM Manager",
+  description: "Manage your direct messages efficiently",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <html lang="en" suppressHydrationWarning className={cn('dark', inter.variable)}>
-      <body className={cn(
-        "min-h-screen bg-background font-sans antialiased",
-      )}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem={false}
-          forcedTheme="dark"
-          disableTransitionOnChange
-        >
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        </ThemeProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.className}>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

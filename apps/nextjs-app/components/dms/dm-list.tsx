@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface DMListProps {
   dms: Array<{
@@ -21,9 +22,30 @@ interface DMListProps {
   }>
   selectedDM?: string
   onSelectDM: (id: string) => void
+  isLoading?: boolean
 }
 
-export function DMList({ dms, selectedDM, onSelectDM }: DMListProps) {
+export function DMList({ dms, selectedDM, onSelectDM, isLoading }: DMListProps) {
+  if (isLoading) {
+    return (
+      <Card>
+        <ScrollArea className="h-[calc(100vh-13rem)]">
+          <div className="p-4 space-y-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-start gap-4">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+      </Card>
+    )
+  }
+
   return (
     <Card className="h-[calc(100vh-2rem)] w-80">
       <ScrollArea className="h-full">
