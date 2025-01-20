@@ -75,4 +75,15 @@ export interface Database {
       [_ in never]: never
     }
   }
+}
+
+export interface OpportunityRow {
+  id: string
+  sender_id: string
+  initial_content: string
+  created_at: string
+  relevance_score: number
+  status: 'pending' | 'approved' | 'rejected'
+  tags: Record<string, unknown>
+  sender_handle: string
 } 
