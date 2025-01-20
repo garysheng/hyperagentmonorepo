@@ -35,4 +35,3 @@ pnpm-debug.log*
 # OS
 .DS_Store
 Thumbs.db
-apps/nextjs-app
