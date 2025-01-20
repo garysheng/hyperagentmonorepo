@@ -9,8 +9,18 @@ CREATE TABLE celebrities (
   celebrity_name VARCHAR NOT NULL,
   twitter_username VARCHAR NOT NULL UNIQUE,
   twitter_password VARCHAR NOT NULL,
-  goals JSONB DEFAULT '[]',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Goals table
+CREATE TABLE goals (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  celebrity_id UUID NOT NULL REFERENCES celebrities(id),
+  name VARCHAR NOT NULL,
+  description TEXT,
+  priority INT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(celebrity_id, name)
 );
 
 -- Users table
@@ -27,9 +37,10 @@ CREATE TABLE users (
 CREATE TABLE opportunities (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   celebrity_id UUID NOT NULL REFERENCES celebrities(id),
+  goal_id UUID REFERENCES goals(id),
   sender_handle VARCHAR NOT NULL,
   initial_content TEXT NOT NULL,
-  relevance_score FLOAT,
+  relevance_score FLOAT CHECK (relevance_score >= 1 AND relevance_score <= 5),
   tags JSONB DEFAULT '[]',
   status VARCHAR NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'in_progress', 'snoozed', 'archived')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -60,6 +71,8 @@ CREATE TABLE opportunity_actions (
 
 -- Indexes
 CREATE INDEX idx_users_celebrity_id ON users(celebrity_id);
+CREATE INDEX idx_goals_celebrity_id ON goals(celebrity_id);
 CREATE INDEX idx_opportunities_celebrity_id ON opportunities(celebrity_id);
+CREATE INDEX idx_opportunities_goal_id ON opportunities(goal_id);
 CREATE INDEX idx_opportunity_messages_opportunity_id ON opportunity_messages(opportunity_id);
 CREATE INDEX idx_opportunity_actions_opportunity_id ON opportunity_actions(opportunity_id); 

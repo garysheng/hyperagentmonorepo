@@ -1,0 +1,11 @@
+# 2025-01-20
+
+- Created initial monorepo structure with pnpm workspaces
+- Set up Next.js app with shadcn-ui
+- Created Supabase database schema with proper tables:
+  - Modified goals to be a separate table with UUIDs instead of JSONB array
+  - Added proper indexes and relationships
+- Set up environment variables for Next.js app
+- Configured LangSmith for observability
+- Decided to use Perplexity API for both user research and classification instead of OpenAI
+- Created initial classification pipeline using LangChain and Perplexity 

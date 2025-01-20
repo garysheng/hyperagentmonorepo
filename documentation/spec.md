@@ -5,7 +5,7 @@
 **HyperAgent.so** is an AI-powered platform for **public figures (celebrities)** and their **teams** to manage inbound Twitter DMs efficiently. Key goals include:
 
 - **AI-Driven Filtering & Scoring**: Rank and categorize opportunities (inbound DMs).
-- **Team Collaboration**: Multiple users can access a single celebrity’s inbound messages. Each user has a specific role (e.g., “admin,” “support_agent,” “celebrity”).
+- **Team Collaboration**: Multiple users can access a single celebrity's inbound messages. Each user has a specific role (e.g., "admin," "support_agent," "celebrity").
 - **Audit Trail**: Track status changes, message replies, and any scoring overrides.
 - **Scalability**: Handle thousands of inbound DMs per day, but start with a smaller volume and a simple cron-based approach.
 
@@ -25,7 +25,7 @@
     - Deployed on **Supabase** infrastructure (serverless Edge Functions, hosted Postgres DB).
 3. **Twitter Integration (Pull / Cron Approach)**
     - A scheduled job runs **every hour**.
-    - Authenticates with Twitter using the celebrity’s credentials.
+    - Authenticates with Twitter using the celebrity's credentials.
     - Fetches new DMs since the last check and inserts them into Supabase.
 
 ---
@@ -37,67 +37,78 @@ Given the requirement:
 > A user can manage one celebrity only.A celebrity can have multiple users.
 > 
 
-We’ll store `celebrity_id` **directly** in the `users` table.
+We'll store `celebrity_id` **directly** in the `users` table.
 
 ### 3.1 **Celebrities Table**
 
 | Column | Type | Description |
 | --- | --- | --- |
 | `id` (PK) | UUID | Unique identifier for the celebrity entity. |
-| `celebrity_name` | VARCHAR | e.g., “MrBeast” or “Gary Sheng.” |
-| `twitter_username` | VARCHAR | e.g., “@garysheng.” |
+| `celebrity_name` | VARCHAR | e.g., "MrBeast" or "Gary Sheng." |
+| `twitter_username` | VARCHAR | e.g., "@garysheng." |
 | `twitter_password` | VARCHAR | Credentials (encrypt at rest for MVP, ideally OAuth later). |
-| `goals` | JSONB | High-level goals/tags for inbound DMs (e.g., “Sponsorship”). |
 | `created_at` | TIMESTAMP | Defaults to `now()`. |
 
-### 3.2 **Users Table**
+### 3.2 **Goals Table**
+
+| Column | Type | Description |
+| --- | --- | --- |
+| `id` (PK) | UUID | Unique identifier for the goal. |
+| `celebrity_id` (FK) | UUID | References `celebrities.id`. |
+| `name` | VARCHAR | Name of the goal (e.g., "Sponsorships"). |
+| `description` | TEXT | Detailed description of the goal. |
+| `priority` | INT | Optional ordering/priority of goals. |
+| `created_at` | TIMESTAMP | Defaults to `now()`. |
+
+### 3.3 **Users Table**
 
 | Column | Type | Description |
 | --- | --- | --- |
 | `id` (PK) | UUID | Supabase Auth user ID or a generated UUID if storing separately. |
 | `celebrity_id` | UUID | **FK** referencing `celebrities.id`. A user belongs to exactly one celebrity. |
 | `email` | VARCHAR | Email address for sign-in (linked to Supabase Auth if desired). |
-| `role` | VARCHAR | e.g., “admin”, “support_agent”, “celebrity”. |
+| `role` | VARCHAR | e.g., "admin", "support_agent", "celebrity". |
 | `full_name` | VARCHAR | Display name of the user. |
 | `created_at` | TIMESTAMP | Defaults to `now()`. |
 
-> If the celebrity is also using the platform personally, they will appear here as a user with the same celebrity_id that references themselves.For example, if “Gary” the celebrity logs in, his users row will have celebrity_id = ID from the celebrities table for “Gary’s brand”.A user with the “admin” or “celebrity” role might have more privileges than a “support_agent.”
+> If the celebrity is also using the platform personally, they will appear here as a user with the same celebrity_id that references themselves.For example, if "Gary" the celebrity logs in, his users row will have celebrity_id = ID from the celebrities table for "Gary's brand".A user with the "admin" or "celebrity" role might have more privileges than a "support_agent."
 > 
 
-### 3.3 **Opportunities Table** (Inbound DM Threads)
+### 3.4 **Opportunities Table**
 
 | Column | Type | Description |
 | --- | --- | --- |
 | `id` (PK) | UUID | Unique identifier for the opportunity (a DM thread). |
 | `celebrity_id` (FK) | UUID | Points to which celebrity this DM belongs to. |
-| `sender_handle` | VARCHAR | e.g. “@elonmusk.” |
+| `goal_id` (FK) | UUID | References the matched goal (if any) from goals table. |
+| `sender_handle` | VARCHAR | e.g. "@elonmusk." |
 | `initial_content` | TEXT | Text from the first DM that triggered this thread. |
-| `relevance_score` | FLOAT | AI-generated or user-overridden (0–1 or 0–100). |
-| `tags` | JSONB / VARCHAR[] | AI or user-assigned tags (e.g. “sponsorship,” “media”). |
-| `status` | VARCHAR | e.g. “new”, “in_progress”, “snoozed”, “archived.” |
+| `relevance_score` | FLOAT | Score from 1-5 indicating relevance. |
+| `tags` | JSONB | AI or user-assigned tags. |
+| `status` | VARCHAR | e.g. "new", "in_progress", "snoozed", "archived." |
 | `created_at` | TIMESTAMP | Defaults to `now()`. |
 | `updated_at` | TIMESTAMP | Last time a user or process updated the record. |
 
-### 3.4 **Opportunity Messages** (Thread Content)
+### 3.5 **Opportunity Messages** (Thread Content)
 
 | Column | Type | Description |
 | --- | --- | --- |
 | `id` (PK) | UUID | Unique identifier for each message in a thread. |
 | `opportunity_id` (FK) | UUID | Links to `opportunities.id` (which DM thread this belongs to). |
 | `sender_id` (FK) | UUID | If outbound, references the user who sent it. If inbound, often `NULL` or placeholders. |
-| `sender_handle` | VARCHAR | e.g., “@elonmusk” if inbound. |
+| `sender_handle` | VARCHAR | e.g., "@elonmusk" if inbound. |
 | `message_content` | TEXT | Actual DM text. |
-| `direction` | VARCHAR | “inbound” or “outbound.” |
+| `direction` | VARCHAR | "inbound" or "outbound." |
 | `created_at` | TIMESTAMP | Defaults to `now()`. |
 
-### 3.5 **Opportunity Actions** (Audit Log)
+### 3.6 **Opportunity Actions** (Audit Log)
 
 | Column | Type | Description |
 | --- | --- | --- |
 | `id` (PK) | UUID | Unique identifier for the audit log entry. |
 | `opportunity_id` (FK) | UUID | Links to the relevant Opportunity. |
 | `user_id` (FK) | UUID | The user who performed the action (or `NULL` if automated). |
-| `action_type` | VARCHAR | e.g. “status_change”, “tag_update”, “score_override”, “feedback_flag.” |
+| `action_type` | VARCHAR | e.g. "status_change", "tag_update", "score_override", "feedback_flag." |
 | `old_value` | JSONB | Optional. Stores prior status, prior score, etc. |
 | `new_value` | JSONB | Optional. The new status, new tags, new score, etc. |
 | `created_at` | TIMESTAMP | Defaults to `now()`. |
@@ -120,15 +131,15 @@ This is enforced via `users.celebrity_id` as a foreign key referencing `celebrit
 
 1. **Cron Job (Every Hour)**:
     - A function (could be in Next.js or a separate service) that:
-        1. Authenticates with the celebrity’s Twitter account (`celebrity.twitter_username` / `twitter_password`).
+        1. Authenticates with the celebrity's Twitter account (`celebrity.twitter_username` / `twitter_password`).
         2. Checks for new DMs since the last fetched timestamp.
         3. For each new DM:
             - Create a new **Opportunity** if it starts a new thread, or find the existing opportunity if it matches the same thread logic (depending on your design).
             - Insert an **Opportunity Message** record for the inbound DM (`direction = 'inbound'`).
             - Optionally call a **Supabase Edge Function** to classify and score the new message.
 2. **Classification & Scoring**:
-    - The Edge Function (e.g., `categorizeOpportunity`) retrieves the celebrity’s `goals` from the `celebrities` table.
-    - It may call external services like xAI’s Grok API to see if the sender is influential, then produce a `relevance_score` and recommended `tags`.
+    - The Edge Function (e.g., `categorizeOpportunity`) retrieves the celebrity's `goals` from the `celebrities` table.
+    - It may call external services like xAI's Grok API to see if the sender is influential, then produce a `relevance_score` and recommended `tags`.
     - The function updates the `opportunities` record accordingly.
 3. **Dashboard UI**:
     - The Next.js frontend (using **React Query**) fetches updated data from the Supabase DB.
@@ -166,10 +177,10 @@ apps/nextjs-app
 
 ## 7. Logging & Activity
 
-Whenever a user **changes an opportunity’s status**, **overrides a score**, or **tags** feedback:
+Whenever a user **changes an opportunity's status**, **overrides a score**, or **tags** feedback:
 
 - Insert an entry in `opportunity_actions` with:
-    - `user_id` = the user’s ID
+    - `user_id` = the user's ID
     - `action_type` = e.g. `"status_change"`
     - `old_value` / `new_value` = JSON describing the change
 
@@ -202,7 +213,7 @@ For **outbound messages** (replying to a DM in the UI):
     - Configure build to run `yarn install && yarn build`.
 2. **Supabase** →
     - Store DB schema, run migrations, and deploy Edge Functions.
-    - Provide environment variables for Twitter credentials (although each celebrity’s data is in the DB, you might store the master or fallback config here).
+    - Provide environment variables for Twitter credentials (although each celebrity's data is in the DB, you might store the master or fallback config here).
 3. **Cron Job**
     - The hourly function can be hosted:
         - In a Next.js serverless route with a scheduling service.
@@ -220,7 +231,7 @@ For **outbound messages** (replying to a DM in the UI):
 3. **AI-Generated Replies**
     - Draft responses automatically, subject to team approval.
 4. **Analytics**
-    - Summaries of inbound volume, average response time, or “conversion” outcomes from these opportunities.
+    - Summaries of inbound volume, average response time, or "conversion" outcomes from these opportunities.
 5. **Security / Compliance**
     - As volume and importance grow, consider advanced encryption, secrets management, and data compliance steps.
 
@@ -233,7 +244,7 @@ With this **refined specification**, you have:
 - A clear **one-to-many** relationship between **Celebrity** and **Users** (with `users.celebrity_id`).
 - A simple, hourly **cron** approach for fetching and classifying new Twitter DMs.
 - A well-defined **data model** for opportunities, messages, and an audit trail of actions.
-- A **Next.js** + **Supabase** setup that’s straightforward to expand over time.
+- A **Next.js** + **Supabase** setup that's straightforward to expand over time.
 
 This document should guide your **HyperAgent.so** implementation in Cursor, ensuring each piece (data model, AI edge functions, Next.js dashboard) fits together seamlessly to deliver an AI-powered team-based inbox for celebrity inbound DMs.
 
@@ -245,13 +256,13 @@ Below is an **updated specification** that integrates **LangChain + LangSmith**,
 
 ## 1. Context & Goals
 
-When a new inbound DM (an “Opportunity”) arrives from Twitter, we want to:
+When a new inbound DM (an "Opportunity") arrives from Twitter, we want to:
 
 1. **Gather context** about the sender (e.g., via Grok, Perplexity).
-2. **Merge that context** with the celebrity’s stated goals (e.g., “interested in sponsorships,” “looking for PR opportunities,” etc.).
+2. **Merge that context** with the celebrity's stated goals (e.g., "interested in sponsorships," "looking for PR opportunities," etc.).
 3. **Use an LLM** (OpenAI or another model) through **LangChain** (and optionally track runs in **LangSmith**) to:
-    - **Classify** the opportunity (e.g., “high value,” “spam,” “legal notice”).
-    - **Assign tags** (e.g., “sponsorship,” “media inquiry”).
+    - **Classify** the opportunity (e.g., "high value," "spam," "legal notice").
+    - **Assign tags** (e.g., "sponsorship," "media inquiry").
     - **Compute a relevance score** (e.g., 0–1 or 0–100).
 
 We then **store** the resulting tags and relevance score in our Supabase database (specifically in the `opportunities` table).
@@ -275,7 +286,7 @@ flowchart LR
 3. **Enrich** the data:
     - Query **Grok API** to see if the handle is a known public figure or has any relevant background.
     - Query **Perplexity API** to gather quick research or summary about that handle or associated keywords (if available).
-4. **Combine** these findings with the **celebrity’s goals** (stored in the `celebrities.goals` JSONB field).
+4. **Combine** these findings with the **celebrity's goals** (stored in the `celebrities.goals` JSONB field).
 5. Pass all of this to a **LangChain pipeline** that calls:
     - The desired LLM (OpenAI GPT-4, GPT-3.5, or any other supported model).
     - Optionally, log runs and outputs in **LangSmith** for experimentation and debugging.
@@ -288,13 +299,13 @@ flowchart LR
 
 ### 3.1 Fetch Sender Info from Grok & Perplexity
 
-- **Grok API**: For retrieving a user profile from X.ai’s Grok endpoint.
+- **Grok API**: For retrieving a user profile from X.ai's Grok endpoint.
     - If the handle is recognized, Grok might return data such as:
         - Full name, short bio, follower count, location, etc.
     - Otherwise, it might return minimal or no data.
 - **Perplexity API**:
-    - We might craft a query like “Who is @elonmusk on Twitter?” or “@elonmusk Twitter user info” to get a quick summary or relevant data.
-    - The response might be a paragraph describing the user’s public presence, known roles, or references to external news.
+    - We might craft a query like "Who is @elonmusk on Twitter? or "@elonmusk Twitter user info" to get a quick summary or relevant data.
+    - The response might be a paragraph describing the user's public presence, known roles, or references to external news.
 
 > Caching: We can store the result in a short-term cache or in a table like sender_profiles if we expect repeated lookups for the same handle.
 > 
@@ -316,13 +327,13 @@ We want to pass these goals (plus any other context about the celebrity) to the 
 
 ### 3.3 LLM with LangChain & LangSmith
 
-We’ll create a **LangChain** pipeline in TypeScript, something like:
+We'll create a **LangChain** pipeline in TypeScript, something like:
 
 1. **Prompt Template**:
     - We feed in:
         - The **DM content** (initial inbound message).
         - The **sender data** (bio/followers/influence from Grok, summary from Perplexity).
-        - The **celebrity’s goals**.
+        - The **celebrity's goals**.
     - We instruct the model to **produce** a JSON output containing `tags` (array of strings) and `relevance_score` (number).
 2. **LLM Model**:
     - We can use `OpenAIChat` (from `langchain/llms/openai`) or any other LLM supported by LangChain.
@@ -532,7 +543,7 @@ To **observe** or **debug** your classification runs:
     1. Insert or update the `opportunities` table with new inbound content.
     2. Call the **`classifyOpportunity`** function, passing the new `opportunity_id`.
 2. **`classifyOpportunity`** function:
-    1. Queries Supabase for the DM, the associated celebrity’s goals, etc.
+    1. Queries Supabase for the DM, the associated celebrity's goals, etc.
     2. Calls **Grok** and **Perplexity** to gather additional context about the sender.
     3. **LangChain** uses an LLM (OpenAI or other) to produce tags + a relevance score.
     4. Updates the `opportunities` table with these results.
@@ -545,12 +556,12 @@ To **observe** or **debug** your classification runs:
 ## 7. Potential Pitfalls & Considerations
 
 - **Rate Limits**: Check Grok, Perplexity, and LLM usage limits. Caching results for repeated handle lookups is wise.
-- **Prompt Consistency**: Ensure the LLM output is always valid JSON. You might use [LangChain’s output parsers](https://js.langchain.com/docs/modules/chains/other/structured_output_parsers/) for better reliability.
+- **Prompt Consistency**: Ensure the LLM output is always valid JSON. You might use [LangChain's output parsers](https://js.langchain.com/docs/modules/chains/other/structured_output_parsers/) for better reliability.
 - **Security**:
     - Hide all API keys in environment variables.
     - Encrypt or carefully store any Twitter credentials the celebrity provides.
 - **Error Handling**:
-    - If external APIs fail, consider a fallback path (e.g., classification with partial info or a default “unknown” scoring).
+    - If external APIs fail, consider a fallback path (e.g., classification with partial info or a default "unknown" scoring).
 
 ---
 
@@ -563,3 +574,39 @@ By integrating **LangChain**, **LangSmith**, and external data sources (Grok, Pe
 - **Database updates** (storing tags & relevance in `opportunities`)
 
 This architecture paves the way for **scalable** and **intelligent** inbound management, where the system continuously learns, logs, and refines its classification with every new DM.
+
+# Updated Classification Pipeline (2025-01-20)
+
+## Classification with Perplexity
+
+We've simplified the classification pipeline to use Perplexity API for both user research and DM classification:
+
+1. **User Research**:
+   - Use Perplexity to research the sender's profile
+   - Focus on follower counts, influence, and professional background
+   - Store this context for use in classification
+
+2. **Goal Matching**:
+   - Each celebrity has explicit goals stored in the `goals` table
+   - Classification matches a DM to exactly one goal (or none)
+   - Uses UUID references instead of indices for stability
+
+3. **Scoring System**:
+   - Relevance scores are now 1-5 (instead of 0-1)
+   - 5 = Highly relevant to the matched goal
+   - 1 = Not relevant/likely spam
+   - Scores consider both content relevance and sender influence
+
+4. **Technology Stack**:
+   - Perplexity API for all AI operations (replacing OpenAI)
+   - LangChain for pipeline orchestration
+   - LangSmith for observability and debugging
+
+5. **Observability**:
+   - All classification runs are logged in LangSmith
+   - Each run includes:
+     - Input: DM content, sender profile, available goals
+     - Output: Matched goal UUID, relevance score, tags
+     - Timing and performance metrics
+
+This approach provides better stability (UUIDs vs indices), simpler integration (one API instead of multiple), and comprehensive observability through LangSmith.
