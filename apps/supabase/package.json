@@ -1,0 +1,23 @@
+{
+  "name": "@hyperagent/supabase",
+  "private": true,
+  "version": "0.0.1",
+  "scripts": {
+    "test": "jest",
+    "build": "tsc",
+    "dev": "supabase start"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.3",
+    "axios": "^1.7.9",
+    "langchain": "^0.1.12",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.11",
+    "@types/node": "^20.17.14",
+    "@types/uuid": "^9.0.8",
+    "jest": "^29.7.0",
+    "typescript": "^5.3.3"
+  }
+}
