@@ -3,7 +3,7 @@ import { AI_MODELS, AI_DEFAULTS } from './constants';
 interface ClassificationResult {
   relevanceScore: number;
   tags: string[];
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'rejected';
   needsDiscussion: boolean;
   goalId?: string;
   explanation: string;
@@ -30,14 +30,16 @@ export class PerplexityAI {
       Message: "${content}"
 
       Provide a JSON object with the following fields:
-      - relevanceScore: number from 1-5 indicating how relevant this opportunity is (1 being least relevant, 5 being most relevant)
+      - relevanceScore: number from 0-5 indicating how relevant this opportunity is (0 being completely irrelevant, 5 being highly relevant)
       - tags: array of strings describing the key topics or themes
-      - status: either "pending", "approved", or "rejected"
+      - status: either "pending" or "rejected" (use "pending" if relevanceScore >= 2, otherwise "rejected")
       - needsDiscussion: boolean indicating if this needs team discussion
       - goalId: string ID of the most relevant goal from the list above, or null if none are relevant
       - explanation: a detailed explanation (2-3 sentences) of why you assigned these ratings and classifications, specifically mentioning how the message relates to any matched goal
 
       Consider the goals when determining relevance and status. If the message aligns well with any goal, it should have a higher relevance score.
+      Remember: Only use "pending" or "rejected" for status - never use "approved".
+      Use 0 for relevanceScore if the message is completely irrelevant or spam.
       Respond only with the JSON object, no other text.
     `.trim();
 
@@ -54,7 +56,7 @@ export class PerplexityAI {
           messages: [
             {
               role: 'system',
-              content: 'You are a helpful assistant that analyzes messages in the context of business goals and provides detailed classifications in JSON format. Your explanations should be clear and specific, highlighting key factors in your decision-making process.'
+              content: 'You are a helpful assistant that analyzes messages in the context of business goals and provides detailed classifications in JSON format. Your explanations should be clear and specific, highlighting key factors in your decision-making process. Use relevance scores from 0-5, with 0 for completely irrelevant messages. Always use "pending" for potentially relevant opportunities (score >= 2) and "rejected" for irrelevant ones (score < 2).'
             },
             {
               role: 'user',
@@ -85,8 +87,10 @@ export class PerplexityAI {
       // Validate the result
       if (
         typeof result.relevanceScore !== 'number' ||
+        result.relevanceScore < 0 ||
+        result.relevanceScore > 5 ||
         !Array.isArray(result.tags) ||
-        !['pending', 'approved', 'rejected'].includes(result.status) ||
+        !['pending', 'rejected'].includes(result.status) ||
         typeof result.needsDiscussion !== 'boolean' ||
         typeof result.explanation !== 'string' ||
         result.explanation.length < 10
@@ -100,6 +104,9 @@ export class PerplexityAI {
         console.error('Invalid goalId in result:', result);
         result.goalId = undefined;
       }
+
+      // Force status based on relevance score
+      result.status = result.relevanceScore >= 2 ? 'pending' : 'rejected';
 
       return result;
     } catch (error) {

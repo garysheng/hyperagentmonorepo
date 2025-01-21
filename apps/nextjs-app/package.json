@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "build:widget": "tsx widget.config.ts",
-    "dev:widget": "tsx watch widget.config.ts"
+    "dev:widget": "tsx watch widget.config.ts",
+    "test": "NODE_ENV=test vitest"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -56,10 +57,12 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^16.4.7",
     "eslint": "^9",
     "eslint-config-next": "15.1.5",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^1.2.2"
   }
 }

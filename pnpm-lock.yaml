@@ -150,6 +150,9 @@ importers:
       '@types/react-dom':
         specifier: ^19
         version: 19.0.3(@types/react@19.0.7)
+      dotenv:
+        specifier: ^16.4.7
+        version: 16.4.7
       eslint:
         specifier: ^9
         version: 9.18.0(jiti@1.21.7)
@@ -165,6 +168,9 @@ importers:
       typescript:
         specifier: ^5
         version: 5.7.3
+      vitest:
+        specifier: ^1.2.2
+        version: 1.6.0(@types/node@20.17.14)
 
   apps/supabase:
     dependencies:
@@ -180,9 +186,6 @@ importers:
       langsmith:
         specifier: ^0.3.0
         version: 0.3.0(openai@4.79.3(ws@8.18.0)(zod@3.24.1))
-      openai:
-        specifier: ^4.79.3
-        version: 4.79.3(ws@8.18.0)(zod@3.24.1)
       uuid:
         specifier: ^9.0.1
         version: 9.0.1
