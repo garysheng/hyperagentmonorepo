@@ -43,7 +43,7 @@ CREATE TABLE opportunities (
   initial_content TEXT NOT NULL,
   relevance_score FLOAT CHECK (relevance_score >= 1 AND relevance_score <= 5),
   tags JSONB DEFAULT '[]',
-  status VARCHAR NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'in_progress', 'snoozed', 'archived')),
+  status VARCHAR NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'on_hold')),
   assigned_to UUID REFERENCES auth.users(id),
   needs_discussion BOOLEAN DEFAULT FALSE,
   relevance_override_explanation TEXT,
