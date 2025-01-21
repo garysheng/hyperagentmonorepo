@@ -34,7 +34,7 @@ export default function ContactPage() {
             We help teams manage their communications more effectively using AI.
           </p>
           <div className="space-y-2">
-            <h3 className="font-medium">What we\'re interested in:</h3>
+            <h3 className="font-medium">What we&apos;re interested in:</h3>
             <ul className="list-disc list-inside text-muted-foreground">
               <li>AI/ML Solutions</li>
               <li>Automation</li>

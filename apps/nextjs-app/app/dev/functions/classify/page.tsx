@@ -44,30 +44,6 @@ export default function ClassifyPage() {
     }
   }
 
-  const handleClassifySingle = async (dmId: string) => {
-    try {
-      setIsClassifying(true)
-      const response = await fetch('/api/classify', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${DEV_SECRET}`
-        }
-      })
-
-      if (!response.ok) {
-        throw new Error('Classification failed')
-      }
-
-      const result = await response.json()
-      console.log('Classification result:', result)
-      await refetch()
-    } catch (error) {
-      console.error('Error classifying DM:', error)
-    } finally {
-      setIsClassifying(false)
-    }
-  }
-
   return (
     <div className="container py-8">
       <div className="flex items-center justify-between mb-8">
@@ -105,7 +81,7 @@ export default function ClassifyPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleClassifySingle(dm.id)}
+                onClick={handleClassifyAll}
                 disabled={isClassifying}
               >
                 {isClassifying ? (

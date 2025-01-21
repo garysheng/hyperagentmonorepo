@@ -15,7 +15,7 @@ interface Message {
   content: string
 }
 
-export function ChatWidget({ celebrityId, theme }: ChatWidgetProps) {
+export function ChatWidget({ celebrityId }: ChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -60,7 +60,7 @@ export function ChatWidget({ celebrityId, theme }: ChatWidgetProps) {
         ...prev,
         {
           type: 'system',
-          content: 'Sorry, there was an error sending your message. Please try again.'
+          content: 'Sorry, there was an error sending your message. Please try again: ' + error
         }
       ])
     } finally {

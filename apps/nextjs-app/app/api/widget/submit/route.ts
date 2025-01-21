@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
-import { cookies } from 'next/headers'
 import { v5 as uuidv5 } from 'uuid'
 
 // Generate a deterministic UUID based on email
@@ -21,7 +20,6 @@ export async function POST(request: Request) {
       )
     }
 
-    const cookieStore = cookies()
     const supabase = await createServerClient()
 
     // Create opportunity

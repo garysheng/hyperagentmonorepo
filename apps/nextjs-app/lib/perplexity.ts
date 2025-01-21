@@ -77,8 +77,8 @@ export class PerplexityAI {
       try {
         const jsonStr = data.choices[0].message.content;
         result = JSON.parse(jsonStr);
-      } catch (e) {
-        console.error('Failed to parse API response:', data);
+      } catch (error) {
+        console.error('Failed to parse API response:', data, 'Error:', error);
         throw new Error('Invalid response format from Perplexity API');
       }
 

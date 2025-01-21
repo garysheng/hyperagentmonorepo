@@ -31,13 +31,13 @@
   script.src = WIDGET_URL;
   script.onload = () => {
     // Initialize widget with config
-    (window as any).HyperAgentWidget.init({
+    (window).HyperAgentWidget.init({
       container: shadow,
-      celebrityId,
+      celebrityId: celebrityId || '',
       theme: {
-        primaryColor: currentScript.getAttribute('data-primary-color'),
-        position: currentScript.getAttribute('data-position') || 'bottom-right'
-      }
+        primaryColor: currentScript.getAttribute('data-primary-color') || ''    ,
+        position: currentScript.getAttribute('data-position') as 'bottom-right' | 'bottom-left' || 'bottom-right'
+      } 
     });
   };
   shadow.appendChild(script);

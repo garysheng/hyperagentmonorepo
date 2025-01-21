@@ -36,5 +36,11 @@ class HyperAgentWidget {
   }
 }
 
+declare global {
+  interface Window {
+    HyperAgentWidget: HyperAgentWidget;
+  }
+}
+
 // Expose to global scope
-;(window as any).HyperAgentWidget = new HyperAgentWidget() 
+(window as Window).HyperAgentWidget = new HyperAgentWidget(); 
