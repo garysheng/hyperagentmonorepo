@@ -1,4 +1,4 @@
-import { DM } from '@/types'
+import { Opportunity as DM } from '@/types'
 
 export async function getDMs(): Promise<DM[]> {
   const response = await fetch('/api/dms')

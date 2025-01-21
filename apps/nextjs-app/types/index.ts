@@ -1,4 +1,4 @@
-export type DMStatus = "pending" | "approved" | "rejected" | "on_hold";
+export type OpportunityStatus = "pending" | "approved" | "rejected" | "on_hold" | "conversation_started";
 
 export interface Goal {
   id: string;
@@ -17,14 +17,14 @@ export interface Celebrity {
   created_at: string;
 }
 
-export interface DM {
+export interface Opportunity {
   id: string;
   celebrity_id: string;
   sender_id: string;
   sender_handle: string;
   initial_content: string;
   created_at: string;
-  status: DMStatus;
+  status: OpportunityStatus;
   relevance_score: number;
   tags: string[];
   goal_id?: string;
@@ -54,19 +54,4 @@ export interface TeamMember {
   email: string;
   role: string;
   created_at: string;
-}
-
-export interface Opportunity {
-  id: string;
-  celebrity_id: string;
-  sender_id: string;
-  sender_handle: string;
-  initial_content: string;
-  created_at: string;
-  relevance_score: number;
-  status: 'pending' | 'approved' | 'rejected';
-  tags: string[];
-  goal_id?: string;
-  assigned_to?: string;
-  needs_discussion: boolean;
 } 

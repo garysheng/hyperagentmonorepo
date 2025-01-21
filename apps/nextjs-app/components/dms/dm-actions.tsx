@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { MoreHorizontal, Star, Flag, Users, Target, UserPlus } from 'lucide-react'
+import { MoreHorizontal, Star, Flag, Users, Target, UserPlus, MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import { useQueryClient } from '@tanstack/react-query'
@@ -33,7 +33,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { useOpportunityActions } from '@/hooks/use-opportunity-actions'
 import { useGoals } from '@/hooks/use-goals'
 import { useTeamMembers } from '@/hooks/use-team-members'
-import type { DM, Goal, TeamMember } from '@/types'
+import type { Opportunity as DM, Goal, TeamMember } from '@/types'
 
 interface DMActionsProps {
     dm: DM
@@ -173,6 +173,23 @@ export function DMActions({ dm }: DMActionsProps) {
         }
     }
 
+    const handleStartConversation = async () => {
+        try {
+            await actions.updateStatus('conversation_started')
+            queryClient.invalidateQueries({ queryKey: ['dms'] })
+            toast({
+                title: "Conversation started",
+                description: "DM has been moved to outbound conversations",
+            })
+        } catch {
+            toast({
+                title: "Update failed",
+                description: "Failed to start conversation. Please try again.",
+                variant: "destructive",
+            })
+        }
+    }
+
     return (
         <>
             <DropdownMenu>
@@ -183,6 +200,18 @@ export function DMActions({ dm }: DMActionsProps) {
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                    {dm.status === 'approved' && (
+                        <>
+                            <DropdownMenuItem
+                                onClick={handleStartConversation}
+                                disabled={actions.isLoading}
+                            >
+                                <MessageCircle className="mr-2 h-4 w-4" />
+                                Start Conversation
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                        </>
+                    )}
                     <DropdownMenuItem
                         onClick={() => setShowRelevanceDialog(true)}
                         disabled={actions.isLoading}

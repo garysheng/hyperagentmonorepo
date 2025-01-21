@@ -7,7 +7,7 @@ import { DMFilters, type DMFilters as DMFiltersType } from '@/components/dms/dm-
 import { DMDetail } from '@/components/dms/dm-detail'
 import { getDMs } from './actions'
 import { useQuery } from '@tanstack/react-query'
-import type { DM } from '@/types'
+import type { Opportunity as DM } from '@/types'
 
 export default function DMsPage() {
   const { user, loading } = useAuth()

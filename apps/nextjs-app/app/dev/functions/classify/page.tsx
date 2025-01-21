@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { useQuery } from '@tanstack/react-query'
 import { getDMs } from '@/app/(dashboard)/dms/actions'
-import type { DM } from '@/types'
+import type { Opportunity as DM } from '@/types'
 import { Loader2 } from 'lucide-react'
 
 // Dev secret matching the one in the API route

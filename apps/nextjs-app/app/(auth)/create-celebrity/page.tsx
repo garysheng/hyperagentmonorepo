@@ -50,20 +50,20 @@ export default function CreateCelebrityPage() {
           <div className="space-y-2">
             <h1 className="text-4xl font-bold tracking-tight">Create Your Celebrity Profile</h1>
             <p className="text-muted-foreground text-lg">
-              Set up your celebrity\'s profile to start managing their opportunities
+              Set up your celebrity&apos;s profile to start managing their opportunities
             </p>
           </div>
           <div className="space-y-4">
             <div className="space-y-2">
               <h2 className="text-xl font-semibold">Get Started Quickly</h2>
               <p className="text-muted-foreground">
-                Enter your celebrity\'s name to create their profile. You can add more details and team members later.
+                Enter your celebrity&apos;s name to create their profile. You can add more details and team members later.
               </p>
             </div>
             <div className="space-y-2">
               <h2 className="text-xl font-semibold">Manage Everything in One Place</h2>
               <p className="text-muted-foreground">
-                From your dashboard, you\'ll be able to manage opportunities, team members, and settings.
+                From your dashboard, you&apos;ll be able to manage opportunities, team members, and settings.
               </p>
             </div>
           </div>
@@ -74,7 +74,7 @@ export default function CreateCelebrityPage() {
           <div className="space-y-2 text-center">
             <h1 className="text-2xl font-bold">Create Celebrity Profile</h1>
             <p className="text-muted-foreground">
-              Enter the name of the celebrity you\'ll be managing
+              Enter the name of the celebrity you&apos;ll be managing
             </p>
           </div>
           <form action={handleSubmit} className="space-y-4">

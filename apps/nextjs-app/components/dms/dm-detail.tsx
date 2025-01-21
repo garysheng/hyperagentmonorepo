@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import Image from 'next/image'
-import type { DM } from '@/types'
+import type { Opportunity as DM } from '@/types'
 import { DMActions } from './dm-actions'
 import { DMComments } from './dm-comments'
 import { DMTags } from './dm-tags'
@@ -32,6 +32,8 @@ function getStatusBadgeVariant(status: DM['status']): "default" | "secondary" | 
 export function DMDetail({ dm }: DMDetailProps) {
   const { data: teamMembers = [] } = useTeamMembers()
   const actions = useOpportunityActions(dm?.id ?? '')
+
+  const isEmail = (handle: string) => handle.includes('@')
 
   console.log('DMDetail - Raw tags:', dm?.tags)
   console.log('DMDetail - Tags type:', dm?.tags ? typeof dm.tags : 'no dm')
@@ -63,7 +65,9 @@ export function DMDetail({ dm }: DMDetailProps) {
     <Card className="p-6 h-[calc(100vh-13rem)] flex flex-col">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">@{dm.sender_handle}</h3>
+          <h3 className="text-lg font-semibold">
+            {isEmail(dm.sender_handle) ? dm.sender_handle : `@${dm.sender_handle}`}
+          </h3>
           <Badge variant={getStatusBadgeVariant(dm.status)}>
             {dm.status}
           </Badge>

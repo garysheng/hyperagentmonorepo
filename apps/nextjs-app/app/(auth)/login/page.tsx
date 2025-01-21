@@ -101,7 +101,7 @@ export default function LoginPage() {
             <div className="space-y-2">
               <h2 className="text-xl font-semibold">For Celebrity Teams</h2>
               <p className="text-muted-foreground">
-                Whether you\'re a manager, agent, or support staff - streamline how you handle opportunities for your public figure.
+                Whether you&apos;re a manager, agent, or support staff - streamline how you handle opportunities for your public figure.
               </p>
             </div>
             <div className="space-y-2">

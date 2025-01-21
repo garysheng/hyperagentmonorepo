@@ -4,7 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
-import { DM } from '@/types'
+import { Opportunity as DM } from '@/types'
 import { Badge } from '@/components/ui/badge'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -27,6 +27,8 @@ function getStatusBadgeVariant(status: DM['status']): "default" | "secondary" | 
       return 'outline'
   }
 }
+
+const isEmail = (handle: string) => handle.includes('@')
 
 export function DMList({ dms, selectedDM, onSelectDM, isLoading }: DMListProps) {
   if (isLoading) {
@@ -66,7 +68,9 @@ export function DMList({ dms, selectedDM, onSelectDM, isLoading }: DMListProps) 
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium">@{dm.sender_handle}</span>
+                      <span className="font-medium">
+                        {isEmail(dm.sender_handle) ? dm.sender_handle : `@${dm.sender_handle}`}
+                      </span>
                       <Badge variant={getStatusBadgeVariant(dm.status)}>
                         {dm.status}
                       </Badge>

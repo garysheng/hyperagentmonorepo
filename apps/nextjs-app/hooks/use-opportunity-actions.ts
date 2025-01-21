@@ -1,6 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { OpportunityAction } from '@/types/actions'
-import type { DM } from '@/types'
+import type { Opportunity as DM } from '@/types'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useState } from 'react'
+import type { OpportunityStatus } from '@/types'
 
 async function performAction(id: string, action: OpportunityAction): Promise<DM> {
   const response = await fetch(`/api/opportunities/${id}/actions`, {
@@ -20,7 +23,9 @@ async function performAction(id: string, action: OpportunityAction): Promise<DM>
 }
 
 export function useOpportunityActions(id: string) {
+  const supabase = createClientComponentClient()
   const queryClient = useQueryClient()
+  const [isLoading, setIsLoading] = useState(false)
 
   const mutation = useMutation({
     mutationFn: (action: OpportunityAction) => performAction(id, action),
@@ -59,11 +64,21 @@ export function useOpportunityActions(id: string) {
       payload: { needs_discussion: needsDiscussion },
     })
 
-  const updateStatus = (status: 'approved' | 'rejected' | 'on_hold') =>
-    mutation.mutate({
-      type: 'update_status',
-      payload: { status },
-    })
+  const updateStatus = async (status: OpportunityStatus) => {
+    setIsLoading(true)
+    try {
+      const { error } = await supabase
+        .from('dms')
+        .update({ status })
+        .eq('id', id)
+
+      if (error) throw error
+
+      await queryClient.invalidateQueries({ queryKey: ['dms'] })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const addComment = (content: string) =>
     mutation.mutate({
@@ -86,7 +101,7 @@ export function useOpportunityActions(id: string) {
     updateStatus,
     addComment,
     updateTags,
-    isLoading: mutation.isPending,
+    isLoading,
     error: mutation.error,
   }
 } 
