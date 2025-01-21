@@ -1,19 +1,31 @@
 'use client'
 
-import Image from 'next/image'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Card } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
-import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DM } from '@/types'
+import { Badge } from '@/components/ui/badge'
+import { formatDistanceToNow } from 'date-fns'
 
 interface DMListProps {
-  dms: Array<DM>
-  selectedDM?: string
-  onSelectDM: (id: string) => void
+  dms: DM[]
+  selectedDM: DM | null
+  onSelectDM: (dm: DM) => void
   isLoading?: boolean
+}
+
+function getStatusBadgeVariant(status: DM['status']): "default" | "secondary" | "destructive" | "outline" {
+  switch (status) {
+    case 'approved':
+      return 'default'
+    case 'rejected':
+      return 'destructive'
+    case 'on_hold':
+      return 'secondary'
+    default:
+      return 'outline'
+  }
 }
 
 export function DMList({ dms, selectedDM, onSelectDM, isLoading }: DMListProps) {
@@ -38,46 +50,40 @@ export function DMList({ dms, selectedDM, onSelectDM, isLoading }: DMListProps) 
   }
 
   return (
-    <Card className="h-[calc(100vh-2rem)] w-80">
+    <Card className="h-[calc(100vh-12rem)]">
       <ScrollArea className="h-full">
-        <div className="p-4">
-          <h2 className="mb-2 text-lg font-semibold">Direct Messages</h2>
-          {dms.map((dm, index) => (
-            <div key={dm.id}>
-              {index > 0 && <Separator className="my-2" />}
-              <Button
-                variant="ghost"
-                className={cn(
-                  'w-full justify-start gap-2 p-2',
-                  selectedDM === dm.id && 'bg-muted'
-                )}
-                onClick={() => onSelectDM(dm.id)}
-              >
-                <div className="relative h-10 w-10 shrink-0">
-                  <Image
-                    src={dm.sender.avatar_url}
-                    alt={`${dm.sender.username}'s avatar`}
-                    className="rounded-full object-cover"
-                    fill
-                    sizes="40px"
-                  />
-                </div>
-                <div className="flex flex-col items-start gap-1 overflow-hidden">
-                  <div className="flex w-full items-center justify-between gap-2">
-                    <span className="font-medium">{dm.sender.username}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {dm.timestamp.toLocaleDateString()}
-                    </span>
+        <div className="p-4 space-y-4">
+          {dms.map((dm) => (
+            <Card
+              key={dm.id}
+              className={cn(
+                "cursor-pointer hover:bg-accent transition-colors",
+                selectedDM?.id === dm.id && "bg-accent"
+              )}
+              onClick={() => onSelectDM(dm)}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">@{dm.sender_handle}</span>
+                      <Badge variant={getStatusBadgeVariant(dm.status)}>
+                        {dm.status}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {dm.initial_content}
+                    </p>
                   </div>
-                  <p className="w-full truncate text-sm text-muted-foreground">
-                    {dm.message}
-                  </p>
+                  <div className="text-xs text-muted-foreground">
+                    {formatDistanceToNow(new Date(dm.created_at), { addSuffix: true })}
+                  </div>
                 </div>
-              </Button>
-            </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       </ScrollArea>
     </Card>
   )
-} 
+}
