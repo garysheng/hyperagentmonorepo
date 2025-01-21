@@ -17,10 +17,10 @@ export async function GET() {
       )
     }
 
-    // Get the user's celebrity_id first
+    // Get the user's data
     const { data: userData, error: userError } = await supabase
       .from('users')
-      .select('celebrity_id')
+      .select('id, role')
       .eq('id', user.id)
       .single()
 
@@ -28,11 +28,26 @@ export async function GET() {
       throw new Error('Failed to fetch user data')
     }
 
-    // Then get the goals for that celebrity
+    // Get all goals if admin, otherwise return empty array
+    // In a real app, you might want to implement more specific access control
+    if (userData.role !== 'admin') {
+      return NextResponse.json([])
+    }
+
     const { data: goals, error: goalsError } = await supabase
       .from('goals')
-      .select()
-      .eq('celebrity_id', userData.celebrity_id)
+      .select(`
+        id,
+        celebrity_id,
+        name,
+        description,
+        priority,
+        created_at,
+        celebrities (
+          id,
+          celebrity_name
+        )
+      `)
       .order('priority', { ascending: true })
 
     if (goalsError) throw goalsError
