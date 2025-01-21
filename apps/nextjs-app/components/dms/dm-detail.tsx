@@ -105,12 +105,15 @@ export function DMDetail({ dm }: DMDetailProps) {
               </div>
             </div>
           )}
-          {dm.goal_id && (
+          {dm.goal && (
             <div>
               <h4 className="text-sm font-medium text-muted-foreground mb-2">
                 Assigned Goal
               </h4>
-              <p className="text-sm">Goal ID: {dm.goal_id}</p>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">{dm.goal.name}</p>
+                <p className="text-sm text-muted-foreground">{dm.goal.description}</p>
+              </div>
             </div>
           )}
           {dm.needs_discussion && (
