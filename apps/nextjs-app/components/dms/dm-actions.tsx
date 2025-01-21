@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { MoreHorizontal, Star, Flag, Users, MessageSquare, Target, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,6 +41,7 @@ interface DMActionsProps {
 
 export function DMActions({ dm }: DMActionsProps) {
   const { toast } = useToast()
+  const queryClient = useQueryClient()
   const [showRelevanceDialog, setShowRelevanceDialog] = useState(false)
   const [showDowngradeDialog, setShowDowngradeDialog] = useState(false)
   const [showGoalDialog, setShowGoalDialog] = useState(false)
@@ -53,23 +55,63 @@ export function DMActions({ dm }: DMActionsProps) {
   const { data: goals = [], isLoading: isLoadingGoals } = useGoals()
   const { data: teamMembers = [], isLoading: isLoadingTeamMembers } = useTeamMembers()
 
-  const handleUpgradeRelevance = () => {
-    actions.upgradeRelevance(relevanceScore, explanation)
-    setShowRelevanceDialog(false)
-    setExplanation('')
+  const handleUpgradeRelevance = async () => {
+    try {
+      await actions.upgradeRelevance(relevanceScore, explanation)
+      queryClient.invalidateQueries({ queryKey: ['dms'] })
+      toast({
+        title: "Relevance score updated",
+        description: `DM relevance score has been upgraded to ${relevanceScore}`,
+      })
+      setShowRelevanceDialog(false)
+      setExplanation('')
+    } catch (error) {
+      toast({
+        title: "Update failed",
+        description: "Failed to update relevance score. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
-  const handleDowngradeRelevance = () => {
-    actions.downgradeRelevance(explanation)
-    setShowDowngradeDialog(false)
-    setExplanation('')
+  const handleDowngradeRelevance = async () => {
+    try {
+      await actions.downgradeRelevance(explanation)
+      queryClient.invalidateQueries({ queryKey: ['dms'] })
+      toast({
+        title: "DM marked as irrelevant",
+        description: "The DM has been marked as irrelevant",
+      })
+      setShowDowngradeDialog(false)
+      setExplanation('')
+    } catch (error) {
+      toast({
+        title: "Update failed",
+        description: "Failed to mark DM as irrelevant. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
-  const handleAssignGoal = () => {
+  const handleAssignGoal = async () => {
     if (selectedGoalId) {
-      actions.assignGoal(selectedGoalId)
-      setShowGoalDialog(false)
-      setSelectedGoalId('')
+      try {
+        const selectedGoal = goals.find(g => g.id === selectedGoalId)
+        await actions.assignGoal(selectedGoalId)
+        queryClient.invalidateQueries({ queryKey: ['dms'] })
+        toast({
+          title: "Goal assigned",
+          description: `DM has been assigned to goal: ${selectedGoal?.name}`,
+        })
+        setShowGoalDialog(false)
+        setSelectedGoalId('')
+      } catch (error) {
+        toast({
+          title: "Assignment failed",
+          description: "Failed to assign goal. Please try again.",
+          variant: "destructive",
+        })
+      }
     }
   }
 
@@ -78,6 +120,7 @@ export function DMActions({ dm }: DMActionsProps) {
       try {
         const selectedMember = teamMembers.find(m => m.id === selectedUserId)
         await actions.assignUser(selectedUserId)
+        queryClient.invalidateQueries({ queryKey: ['dms'] })
         toast({
           title: "Team member assigned",
           description: `DM has been assigned to ${selectedMember?.full_name}`,
@@ -91,6 +134,42 @@ export function DMActions({ dm }: DMActionsProps) {
           variant: "destructive",
         })
       }
+    }
+  }
+
+  const handleFlagDiscussion = async () => {
+    try {
+      await actions.flagDiscussion(!dm.needs_discussion)
+      queryClient.invalidateQueries({ queryKey: ['dms'] })
+      toast({
+        title: dm.needs_discussion ? "Discussion flag removed" : "Flagged for discussion",
+        description: dm.needs_discussion 
+          ? "The DM no longer needs team discussion" 
+          : "The DM has been flagged for team discussion",
+      })
+    } catch (error) {
+      toast({
+        title: "Update failed",
+        description: "Failed to update discussion flag. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleUpdateStatus = async (status: 'approved' | 'rejected' | 'on_hold') => {
+    try {
+      await actions.updateStatus(status)
+      queryClient.invalidateQueries({ queryKey: ['dms'] })
+      toast({
+        title: "Status updated",
+        description: `DM status has been updated to ${status}`,
+      })
+    } catch (error) {
+      toast({
+        title: "Update failed",
+        description: "Failed to update status. Please try again.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -134,14 +213,14 @@ export function DMActions({ dm }: DMActionsProps) {
             Assign to Team Member
           </DropdownMenuItem>
           <DropdownMenuItem
-            onClick={() => actions.flagDiscussion(!dm.needs_discussion)}
+            onClick={() => handleFlagDiscussion()}
             disabled={actions.isLoading}
           >
             <Users className="mr-2 h-4 w-4" />
             {dm.needs_discussion ? 'Remove Discussion Flag' : 'Flag for Discussion'}
           </DropdownMenuItem>
           <DropdownMenuItem
-            onClick={() => actions.updateStatus('on_hold')}
+            onClick={() => handleUpdateStatus('on_hold')}
             disabled={actions.isLoading}
           >
             <Flag className="mr-2 h-4 w-4" />
