@@ -7,10 +7,11 @@ import { DMFilters, type DMFilters as DMFiltersType } from '@/components/dms/dm-
 import { DMDetail } from '@/components/dms/dm-detail'
 import { fetchDMs } from './actions'
 import { useQuery } from '@tanstack/react-query'
+import type { DM } from '@/types'
 
 export default function DMsPage() {
   const { user, loading } = useAuth()
-  const [selectedDM, setSelectedDM] = useState<string>()
+  const [selectedDM, setSelectedDM] = useState<DM | null>(null)
   const [filters, setFilters] = useState<DMFiltersType>({
     status: 'all',
     minRelevanceScore: 1,
@@ -32,8 +33,6 @@ export default function DMsPage() {
     return true
   })
 
-  const selectedDMData = dms.find((dm) => dm.id === selectedDM)
-
   if (loading || !user) {
     return null
   }
@@ -53,7 +52,7 @@ export default function DMsPage() {
           />
         </div>
         <div className="col-span-2">
-          <DMDetail dm={selectedDMData} />
+          <DMDetail dm={selectedDM} />
         </div>
         <div className="col-span-2">
           <DMFilters filters={filters} onFiltersChange={setFilters} />

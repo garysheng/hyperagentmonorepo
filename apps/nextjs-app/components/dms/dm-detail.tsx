@@ -9,7 +9,7 @@ import { DMActions } from './dm-actions'
 import { formatDistanceToNow } from 'date-fns'
 
 interface DMDetailProps {
-  dm: DM | undefined
+  dm: DM | null
 }
 
 function getStatusBadgeVariant(status: DM['status']): "default" | "secondary" | "destructive" | "outline" {
