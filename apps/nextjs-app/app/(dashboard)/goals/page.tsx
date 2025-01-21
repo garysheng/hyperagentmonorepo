@@ -106,7 +106,7 @@ export default function GoalsPage() {
   }
 
   return (
-    <div className="container py-8">
+    <div className="container py-8 px-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Goals</h1>
