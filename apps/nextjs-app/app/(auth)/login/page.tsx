@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,12 +9,15 @@ import { useAuth } from '@/components/providers'
 import { login, signup } from './actions'
 import { Suspense } from 'react'
 import { Card } from '@/components/ui/card'
+import { useToast } from '@/hooks/use-toast'
 
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user, loading } = useAuth()
   const message = searchParams.get('message')
+  const [isSignup, setIsSignup] = useState(false)
+  const { toast } = useToast()
 
   useEffect(() => {
     if (!loading && user) {
@@ -22,6 +25,15 @@ function LoginForm() {
       router.refresh()
     }
   }, [loading, user, router])
+
+  useEffect(() => {
+    if (message) {
+      toast({
+        title: isSignup ? 'Sign Up' : 'Sign In',
+        description: message
+      })
+    }
+  }, [message, toast, isSignup])
 
   if (loading) {
     return (
@@ -31,24 +43,15 @@ function LoginForm() {
     )
   }
 
-  if (user) {
-    return (
-      <Card className="p-6 space-y-4 w-full max-w-sm">
-        <div className="text-center">Redirecting to dashboard...</div>
-      </Card>
-    )
-  }
-
   return (
     <Card className="p-6 space-y-4 w-full max-w-sm">
       <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-bold">Welcome back</h1>
-        <p className="text-muted-foreground">Enter your email to sign in to your account</p>
+        <h1 className="text-2xl font-bold">{isSignup ? 'Create an account' : 'Welcome back'}</h1>
+        <p className="text-muted-foreground">
+          {isSignup ? 'Enter your details to create an account' : 'Enter your email to sign in to your account'}
+        </p>
       </div>
-      {message && (
-        <p className="text-sm text-muted-foreground text-center">{message}</p>
-      )}
-      <form action={login} className="space-y-4">
+      <form action={isSignup ? signup : login} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input id="email" name="email" type="email" required />
@@ -58,7 +61,7 @@ function LoginForm() {
           <Input id="password" name="password" type="password" required />
         </div>
         <Button type="submit" className="w-full">
-          Sign In
+          {isSignup ? 'Sign Up' : 'Sign In'}
         </Button>
       </form>
       <div className="relative">
@@ -69,11 +72,14 @@ function LoginForm() {
           <span className="bg-background px-2 text-muted-foreground">Or</span>
         </div>
       </div>
-      <form action={signup} className="space-y-4">
-        <Button type="submit" variant="outline" className="w-full">
-          Create an account
-        </Button>
-      </form>
+      <Button 
+        type="button" 
+        variant="outline" 
+        className="w-full"
+        onClick={() => setIsSignup(!isSignup)}
+      >
+        {isSignup ? 'Already have an account?' : 'Create an account'}
+      </Button>
     </Card>
   )
 }

@@ -14,15 +14,14 @@ export async function login(formData: FormData) {
     password: formData.get('password') as string,
   }
 
-  const { error, data: { session } } = await supabase.auth.signInWithPassword(data)
+  const { error } = await supabase.auth.signInWithPassword(data)
 
   if (error) {
     console.error('Login error:', error)
-    redirect('/auth/auth-code-error')
-  }
-
-  if (!session) {
-    redirect('/login?message=Something went wrong. Please try again.')
+    if (error.message === 'Email not confirmed') {
+      redirect('/login?message=Please check your email to confirm your account before logging in')
+    }
+    redirect('/login?message=' + encodeURIComponent(error.message))
   }
 
   revalidatePath('/', 'layout')
@@ -50,9 +49,8 @@ export async function signup(formData: FormData) {
 
   if (error) {
     console.error('Signup error:', error)
-    redirect('/auth/auth-code-error')
+    redirect('/login?message=' + encodeURIComponent(error.message))
   }
 
-  revalidatePath('/', 'layout')
-  redirect('/login?message=Check your email to confirm your account')
+  redirect('/login?message=Check your email to confirm your account before logging in')
 } 
