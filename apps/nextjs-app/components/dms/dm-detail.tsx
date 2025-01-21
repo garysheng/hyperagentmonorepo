@@ -7,8 +7,10 @@ import Image from 'next/image'
 import type { DM } from '@/types'
 import { DMActions } from './dm-actions'
 import { DMComments } from './dm-comments'
+import { DMTags } from './dm-tags'
 import { formatDistanceToNow } from 'date-fns'
 import { useTeamMembers } from '@/hooks/use-team-members'
+import { useOpportunityActions } from '@/hooks/use-opportunity-actions'
 
 interface DMDetailProps {
   dm: DM | null
@@ -29,6 +31,7 @@ function getStatusBadgeVariant(status: DM['status']): "default" | "secondary" | 
 
 export function DMDetail({ dm }: DMDetailProps) {
   const { data: teamMembers = [] } = useTeamMembers()
+  const actions = dm ? useOpportunityActions(dm.id) : null
 
   if (!dm) {
     return (
@@ -43,6 +46,11 @@ export function DMDetail({ dm }: DMDetailProps) {
   const assignedTeamMember = dm.assigned_to 
     ? teamMembers.find(member => member.id === dm.assigned_to)
     : null
+
+  const handleTagsChange = async (newTags: string[]) => {
+    if (!actions) return
+    await actions.updateTags(newTags)
+  }
 
   return (
     <Card className="p-6 h-[calc(100vh-13rem)] flex flex-col">
@@ -79,6 +87,12 @@ export function DMDetail({ dm }: DMDetailProps) {
               Message
             </h4>
             <p className="text-sm">{dm.initial_content}</p>
+          </div>
+          <div>
+            <h4 className="text-sm font-medium text-muted-foreground mb-2">
+              Tags
+            </h4>
+            <DMTags tags={dm.tags} onTagsChange={handleTagsChange} />
           </div>
           <div>
             <h4 className="text-sm font-medium text-muted-foreground mb-2">

@@ -143,6 +143,22 @@ export async function POST(
         return NextResponse.json(data)
       }
 
+      case 'update_tags': {
+        const { data, error } = await supabase
+          .from('opportunities')
+          .update({
+            tags: payload.tags,
+            updated_by: user.id,
+            updated_at: now,
+          })
+          .eq('id', id)
+          .select()
+          .single()
+
+        if (error) throw error
+        return NextResponse.json(data)
+      }
+
       default:
         return NextResponse.json(
           { error: 'Invalid action type' },

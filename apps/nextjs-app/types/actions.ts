@@ -41,4 +41,10 @@ export type OpportunityAction =
       payload: {
         content: string
       }
+    }
+  | {
+      type: 'update_tags'
+      payload: {
+        tags: string[]
+      }
     } 

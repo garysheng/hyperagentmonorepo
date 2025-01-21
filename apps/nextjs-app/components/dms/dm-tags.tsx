@@ -39,20 +39,31 @@ interface DMTagsProps {
 export function DMTags({ tags, onTagsChange, className }: DMTagsProps) {
   const [open, setOpen] = useState(false)
   const [selectedTags, setSelectedTags] = useState<string[]>(tags)
+  const [isUpdating, setIsUpdating] = useState(false)
 
-  const handleSelect = (tag: string) => {
+  const handleSelect = async (tag: string) => {
     const newTags = selectedTags.includes(tag)
       ? selectedTags.filter(t => t !== tag)
       : [...selectedTags, tag]
     
     setSelectedTags(newTags)
-    onTagsChange(newTags)
+    setIsUpdating(true)
+    try {
+      await onTagsChange(newTags)
+    } finally {
+      setIsUpdating(false)
+    }
   }
 
-  const handleRemove = (tag: string) => {
+  const handleRemove = async (tag: string) => {
     const newTags = selectedTags.filter(t => t !== tag)
     setSelectedTags(newTags)
-    onTagsChange(newTags)
+    setIsUpdating(true)
+    try {
+      await onTagsChange(newTags)
+    } finally {
+      setIsUpdating(false)
+    }
   }
 
   return (
@@ -62,7 +73,10 @@ export function DMTags({ tags, onTagsChange, className }: DMTagsProps) {
           <Badge
             key={tag}
             variant="secondary"
-            className="flex items-center gap-1"
+            className={cn(
+              'flex items-center gap-1',
+              isUpdating && 'opacity-50'
+            )}
           >
             {tag}
             <button
@@ -77,6 +91,7 @@ export function DMTags({ tags, onTagsChange, className }: DMTagsProps) {
                 e.stopPropagation()
               }}
               onClick={() => handleRemove(tag)}
+              disabled={isUpdating}
             >
               <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
             </button>
@@ -88,6 +103,7 @@ export function DMTags({ tags, onTagsChange, className }: DMTagsProps) {
               variant="outline"
               size="sm"
               className="h-8 border-dashed"
+              disabled={isUpdating}
             >
               <Plus className="mr-2 h-4 w-4" />
               Add Tag

@@ -71,6 +71,12 @@ export function useOpportunityActions(id: string) {
       payload: { content },
     })
 
+  const updateTags = (tags: string[]) =>
+    mutation.mutate({
+      type: 'update_tags',
+      payload: { tags },
+    })
+
   return {
     upgradeRelevance,
     downgradeRelevance,
@@ -79,6 +85,7 @@ export function useOpportunityActions(id: string) {
     flagDiscussion,
     updateStatus,
     addComment,
+    updateTags,
     isLoading: mutation.isPending,
     error: mutation.error,
   }
