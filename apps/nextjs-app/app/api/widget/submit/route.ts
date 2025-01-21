@@ -33,7 +33,7 @@ export async function POST(request: Request) {
         sender_handle: email,
         initial_content: message,
         status: 'pending',
-        relevance_score: 1,
+        relevance_score: -1,
         needs_discussion: false
       })
       .select()
