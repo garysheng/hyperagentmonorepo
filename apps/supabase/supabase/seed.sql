@@ -44,6 +44,17 @@ VALUES
   ('22222222-2222-2222-2222-222222222222', '0ca0f921-7ccd-4975-9afb-3bed98367403', 'Find Software Engineering Role', 'Connect with great employers for a software engineering position', 1, now()),
   ('33333333-3333-3333-3333-333333333333', '0ca0f921-7ccd-4975-9afb-3bed98367403', 'Find Romantic Partner', 'Meet a romantic partner', 2, now());
 
+-- Insert test celebrity if not exists
+INSERT INTO celebrities (id, celebrity_name, twitter_username, twitter_password, created_at)
+VALUES ('00000000-0000-0000-0000-000000000001', 'Test Celebrity', 'testceleb', 'test_password_123', NOW())
+ON CONFLICT (id) DO NOTHING;
+
+-- Insert test goals
+INSERT INTO goals (id, celebrity_id, name, description, priority, created_at) VALUES
+('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'Charity Events', 'Looking for meaningful charity collaborations and events', 1, NOW()),
+('00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000001', 'Podcast Opportunities', 'Interested in appearing on tech and entrepreneurship podcasts', 2, NOW()),
+('00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000001', 'Speaking Engagements', 'Open to speaking at conferences and events about technology', 3, NOW());
+
 -- Insert opportunities (DMs)
 INSERT INTO opportunities (
   id, 

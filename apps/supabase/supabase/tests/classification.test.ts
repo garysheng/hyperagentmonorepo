@@ -1,6 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { v4 as uuidv4 } from 'uuid'
+import { describe, it, expect } from 'vitest'
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -10,9 +9,9 @@ const supabase = createClient(
 describe('Opportunity Classification', () => {
   // Test data
   const testCelebrity = {
-    id: uuidv4(), // Generate a UUID for the test celebrity
+    id: '00000000-0000-0000-0000-000000000001', // Use seeded celebrity ID
     celebrity_name: 'Test Celebrity',
-    twitter_username: 'test_celeb',
+    twitter_username: 'testceleb',
     twitter_password: 'test_password_123'
   }
 
@@ -33,20 +32,6 @@ describe('Opportunity Classification', () => {
       expected_tags: ['podcast', 'technology']
     }
   ]
-
-  // Setup: Create test celebrity
-  beforeAll(async () => {
-    const { error } = await supabase
-      .from('celebrities')
-      .insert(testCelebrity)
-
-    if (error) throw error
-  })
-
-  // Cleanup: Delete test data
-  afterAll(async () => {
-    await supabase.from('celebrities').delete().eq('id', testCelebrity.id)
-  })
 
   // Test trigger creation
   it('should have classification trigger installed', async () => {
