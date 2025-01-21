@@ -38,11 +38,19 @@ CREATE TABLE opportunities (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   celebrity_id UUID NOT NULL REFERENCES celebrities(id),
   goal_id UUID REFERENCES goals(id),
+  sender_id UUID NOT NULL DEFAULT uuid_generate_v4(),
   sender_handle VARCHAR NOT NULL,
   initial_content TEXT NOT NULL,
   relevance_score FLOAT CHECK (relevance_score >= 1 AND relevance_score <= 5),
   tags JSONB DEFAULT '[]',
   status VARCHAR NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'in_progress', 'snoozed', 'archived')),
+  assigned_to UUID REFERENCES auth.users(id),
+  needs_discussion BOOLEAN DEFAULT FALSE,
+  relevance_override_explanation TEXT,
+  relevance_override_by UUID REFERENCES auth.users(id),
+  relevance_override_at TIMESTAMPTZ,
+  status_updated_by UUID REFERENCES auth.users(id),
+  status_updated_at TIMESTAMPTZ,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -56,6 +64,16 @@ CREATE TABLE opportunity_messages (
   message_content TEXT NOT NULL,
   direction VARCHAR NOT NULL CHECK (direction IN ('inbound', 'outbound')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Opportunity Comments table for team discussions
+CREATE TABLE opportunity_comments (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  opportunity_id UUID REFERENCES opportunities(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id),
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Opportunity Actions table
@@ -74,5 +92,25 @@ CREATE INDEX idx_users_celebrity_id ON users(celebrity_id);
 CREATE INDEX idx_goals_celebrity_id ON goals(celebrity_id);
 CREATE INDEX idx_opportunities_celebrity_id ON opportunities(celebrity_id);
 CREATE INDEX idx_opportunities_goal_id ON opportunities(goal_id);
+CREATE INDEX idx_opportunities_assigned_to ON opportunities(assigned_to);
+CREATE INDEX idx_opportunities_needs_discussion ON opportunities(needs_discussion);
 CREATE INDEX idx_opportunity_messages_opportunity_id ON opportunity_messages(opportunity_id);
-CREATE INDEX idx_opportunity_actions_opportunity_id ON opportunity_actions(opportunity_id); 
+CREATE INDEX idx_opportunity_comments_opportunity_id ON opportunity_comments(opportunity_id);
+CREATE INDEX idx_opportunity_actions_opportunity_id ON opportunity_actions(opportunity_id);
+
+-- Add RLS policies
+ALTER TABLE opportunity_comments ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view comments on opportunities they have access to" ON opportunity_comments
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM opportunities o
+      WHERE o.id = opportunity_id
+    )
+  );
+
+CREATE POLICY "Authenticated users can create comments" ON opportunity_comments
+  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
+CREATE POLICY "Users can update their own comments" ON opportunity_comments
+  FOR UPDATE USING (auth.uid() = user_id); 

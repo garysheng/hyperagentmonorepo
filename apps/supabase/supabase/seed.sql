@@ -7,7 +7,7 @@ DELETE FROM celebrities WHERE twitter_username = 'garysheng';
 -- Insert Gary's celebrity profile
 INSERT INTO celebrities (id, celebrity_name, twitter_username, twitter_password, created_at)
 VALUES (
-  'ce571147-9c4d-4a98-955c-0cb3a40c03f9',
+  gen_random_uuid(),
   'Gary Sheng',
   'garysheng',
   'placeholder_password',
@@ -15,19 +15,22 @@ VALUES (
 );
 
 -- Insert Gary's goals
+WITH celebrity_id AS (
+  SELECT id FROM celebrities WHERE twitter_username = 'garysheng'
+)
 INSERT INTO goals (id, celebrity_id, name, description, priority, created_at)
 VALUES
   (
-    'goal-1-uid',
-    'ce571147-9c4d-4a98-955c-0cb3a40c03f9',
+    gen_random_uuid(),
+    (SELECT id FROM celebrity_id),
     'Find Great Tech Opportunities',
     'Connect with employers looking for an AI-first software engineer',
     1,
     NOW()
   ),
   (
-    'goal-2-uid',
-    'ce571147-9c4d-4a98-955c-0cb3a40c03f9',
+    gen_random_uuid(),
+    (SELECT id FROM celebrity_id),
     'Find Romantic Partner',
     'Meet a hot, smart romantic partner',
     2,
@@ -35,9 +38,19 @@ VALUES
   );
 
 -- Insert sample opportunities
+WITH celebrity_id AS (
+  SELECT id FROM celebrities WHERE twitter_username = 'garysheng'
+),
+tech_goal AS (
+  SELECT id FROM goals WHERE name = 'Find Great Tech Opportunities'
+),
+dating_goal AS (
+  SELECT id FROM goals WHERE name = 'Find Romantic Partner'
+)
 INSERT INTO opportunities (
   id,
   celebrity_id,
+  sender_id,
   sender_handle,
   initial_content,
   relevance_score,
@@ -49,47 +62,51 @@ INSERT INTO opportunities (
 ) VALUES
   -- High relevance tech opportunity
   (
-    'opp-1-uid',
-    'ce571147-9c4d-4a98-955c-0cb3a40c03f9',
+    gen_random_uuid(),
+    (SELECT id FROM celebrity_id),
+    gen_random_uuid(),
     'elonmusk',
     'Hey @garysheng - saw your work on AI agents. We''re building something similar at X. Would you be interested in leading our AI infrastructure team?',
     5,
     'pending',
-    'goal-1-uid',
+    (SELECT id FROM tech_goal),
     NOW() - INTERVAL '2 days',
     true,
     '{"tags": ["job_opportunity", "senior_role", "ai_focus"]}'
   ),
   -- Medium relevance tech opportunity
   (
-    'opp-2-uid',
-    'ce571147-9c4d-4a98-955c-0cb3a40c03f9',
+    gen_random_uuid(),
+    (SELECT id FROM celebrity_id),
+    gen_random_uuid(),
     'techrecruiter',
     'Hi Gary! I represent a Series A startup working on AI agents. Looking for a senior engineer. Competitive package. Interested?',
     3,
     'pending',
-    'goal-1-uid',
+    (SELECT id FROM tech_goal),
     NOW() - INTERVAL '1 day',
     false,
     '{"tags": ["job_opportunity", "startup"]}'
   ),
   -- High relevance dating opportunity
   (
-    'opp-3-uid',
-    'ce571147-9c4d-4a98-955c-0cb3a40c03f9',
+    gen_random_uuid(),
+    (SELECT id FROM celebrity_id),
+    gen_random_uuid(),
     'brilliant_dev',
     'Hey Gary! I''m a ML researcher at Stanford, also into rock climbing and philosophy. Would love to grab coffee and chat about AI and life :)',
     4,
     'pending',
-    'goal-2-uid',
+    (SELECT id FROM dating_goal),
     NOW() - INTERVAL '12 hours',
     false,
     '{"tags": ["dating", "shared_interests"]}'
   ),
   -- Low relevance spam
   (
-    'opp-4-uid',
-    'ce571147-9c4d-4a98-955c-0cb3a40c03f9',
+    gen_random_uuid(),
+    (SELECT id FROM celebrity_id),
+    gen_random_uuid(),
     'crypto_bro',
     'YO BRO! Want to make 100x returns on this new NFT project?!?!',
     1,
@@ -101,21 +118,23 @@ INSERT INTO opportunities (
   ),
   -- Medium relevance, needs discussion
   (
-    'opp-5-uid',
-    'ce571147-9c4d-4a98-955c-0cb3a40c03f9',
+    gen_random_uuid(),
+    (SELECT id FROM celebrity_id),
+    gen_random_uuid(),
     'startup_ceo',
     'Gary - interested in being an advisor for our AI startup? 1% equity, minimal time commitment.',
     3,
     'pending',
-    'goal-1-uid',
+    (SELECT id FROM tech_goal),
     NOW() - INTERVAL '6 hours',
     true,
     '{"tags": ["advisor_role", "equity", "needs_discussion"]}'
   ),
   -- Ambiguous opportunity
   (
-    'opp-6-uid',
-    'ce571147-9c4d-4a98-955c-0cb3a40c03f9',
+    gen_random_uuid(),
+    (SELECT id FROM celebrity_id),
+    gen_random_uuid(),
     'tech_influencer',
     'Love your work on AI agents! Would you be up for dinner next week? Have some interesting opportunities to discuss.',
     3,
@@ -127,58 +146,71 @@ INSERT INTO opportunities (
   ),
   -- Low relevance tech opportunity
   (
-    'opp-7-uid',
-    'ce571147-9c4d-4a98-955c-0cb3a40c03f9',
+    gen_random_uuid(),
+    (SELECT id FROM celebrity_id),
+    gen_random_uuid(),
     'junior_dev',
     'Hi! Would you mentor me in web development? I''m just starting out with HTML and CSS.',
     2,
     'pending',
-    'goal-1-uid',
+    (SELECT id FROM tech_goal),
     NOW() - INTERVAL '4 days',
     false,
     '{"tags": ["mentorship", "low_priority"]}'
   ),
   -- Medium relevance dating opportunity
   (
-    'opp-8-uid',
-    'ce571147-9c4d-4a98-955c-0cb3a40c03f9',
+    gen_random_uuid(),
+    (SELECT id FROM celebrity_id),
+    gen_random_uuid(),
     'yoga_teacher',
     'Hey Gary! Your profile is fascinating. Would love to discuss consciousness and AI over tea sometime.',
     3,
     'pending',
-    'goal-2-uid',
+    (SELECT id FROM dating_goal),
     NOW() - INTERVAL '2 hours',
     false,
     '{"tags": ["dating", "philosophical"]}'
   ),
   -- High priority, on hold
   (
-    'opp-9-uid',
-    'ce571147-9c4d-4a98-955c-0cb3a40c03f9',
+    gen_random_uuid(),
+    (SELECT id FROM celebrity_id),
+    gen_random_uuid(),
     'google_recruiter',
     'Hi Gary - I''m a technical recruiter at Google AI. Would love to discuss our Agent Development team. Are you open to a chat?',
     5,
     'on_hold',
-    'goal-1-uid',
+    (SELECT id FROM tech_goal),
     NOW() - INTERVAL '5 days',
     false,
     '{"tags": ["job_opportunity", "big_tech", "ai_focus"]}'
   ),
   -- Approved opportunity
   (
-    'opp-10-uid',
-    'ce571147-9c4d-4a98-955c-0cb3a40c03f9',
+    gen_random_uuid(),
+    (SELECT id FROM celebrity_id),
+    gen_random_uuid(),
     'tech_founder',
     'Gary - impressed by your work. We''re building an AI agent marketplace. Series B, strong team from Google/Meta. Let''s talk?',
     4,
     'approved',
-    'goal-1-uid',
+    (SELECT id FROM tech_goal),
     NOW() - INTERVAL '7 days',
     false,
     '{"tags": ["job_opportunity", "startup", "ai_focus"]}'
   );
 
 -- Add some comments
+WITH user_id AS (
+  SELECT id FROM auth.users WHERE email = 'garysheng11@gmail.com' LIMIT 1
+),
+opp_1 AS (
+  SELECT id FROM opportunities WHERE sender_handle = 'elonmusk' LIMIT 1
+),
+opp_2 AS (
+  SELECT id FROM opportunities WHERE sender_handle = 'startup_ceo' LIMIT 1
+)
 INSERT INTO opportunity_comments (
   id,
   opportunity_id,
@@ -187,16 +219,16 @@ INSERT INTO opportunity_comments (
   created_at
 ) VALUES
   (
-    'comment-1-uid',
-    'opp-1-uid',
-    (SELECT id FROM auth.users WHERE email = 'garysheng11@gmail.com' LIMIT 1),
+    gen_random_uuid(),
+    (SELECT id FROM opp_1),
+    (SELECT id FROM user_id),
     'This looks like a great opportunity! Need to research X''s AI initiatives.',
     NOW() - INTERVAL '1 day'
   ),
   (
-    'comment-2-uid',
-    'opp-5-uid',
-    (SELECT id FROM auth.users WHERE email = 'garysheng11@gmail.com' LIMIT 1),
+    gen_random_uuid(),
+    (SELECT id FROM opp_2),
+    (SELECT id FROM user_id),
     'Need to clarify equity terms and expected time commitment.',
     NOW() - INTERVAL '5 hours'
   ); 
