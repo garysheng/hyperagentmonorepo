@@ -6,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Separator } from '@/components/ui/separator'
 import { Slider } from '@/components/ui/slider'
 import { useTeamMembers } from '@/hooks/use-team-members'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Select,
   SelectContent,
@@ -18,6 +19,7 @@ export interface DMFilters {
   status: 'all' | 'pending' | 'approved' | 'rejected'
   minRelevanceScore: number
   assignedTo: string | 'all'
+  needsDiscussion: boolean
 }
 
 interface DMFiltersProps {
@@ -108,6 +110,22 @@ export function DMFilters({ filters, onFiltersChange }: DMFiltersProps) {
             Score: {filters.minRelevanceScore}+
           </div>
         </div>
+      </div>
+
+      <Separator />
+
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="needs-discussion"
+          checked={filters.needsDiscussion}
+          onCheckedChange={(checked: boolean | 'indeterminate') =>
+            onFiltersChange({
+              ...filters,
+              needsDiscussion: checked as boolean,
+            })
+          }
+        />
+        <Label htmlFor="needs-discussion">Needs Team Discussion</Label>
       </div>
     </Card>
   )

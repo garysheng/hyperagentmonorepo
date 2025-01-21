@@ -15,7 +15,8 @@ export default function DMsPage() {
   const [filters, setFilters] = useState<DMFiltersType>({
     status: 'all',
     minRelevanceScore: 1,
-    assignedTo: 'all'
+    assignedTo: 'all',
+    needsDiscussion: false
   })
 
   const { data: dms = [], isLoading } = useQuery({
@@ -32,6 +33,9 @@ export default function DMsPage() {
       return false
     }
     if (filters.assignedTo !== 'all' && dm.assigned_to !== filters.assignedTo) {
+      return false
+    }
+    if (filters.needsDiscussion && !dm.needs_discussion) {
       return false
     }
     return true
