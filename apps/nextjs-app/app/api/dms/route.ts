@@ -30,7 +30,7 @@ export async function GET() {
       message: dm.initial_content,
       sender: {
         username: dm.sender_handle,
-        avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${dm.sender_id}`,
+        avatar_url: `https://api.dicebear.com/9.x/adventurer/svg?seed=${dm.sender_id}`,
       },
     }))
 

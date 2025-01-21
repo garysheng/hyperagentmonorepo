@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { MoreHorizontal, Star, Flag, Users, MessageSquare, Target } from 'lucide-react'
+import { MoreHorizontal, Star, Flag, Users, MessageSquare, Target, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -30,6 +30,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useOpportunityActions } from '@/hooks/use-opportunity-actions'
 import { useGoals } from '@/hooks/use-goals'
+import { useTeamMembers } from '@/hooks/use-team-members'
 import type { DM } from '@/types'
 
 interface DMActionsProps {
@@ -40,12 +41,15 @@ export function DMActions({ dm }: DMActionsProps) {
   const [showRelevanceDialog, setShowRelevanceDialog] = useState(false)
   const [showDowngradeDialog, setShowDowngradeDialog] = useState(false)
   const [showGoalDialog, setShowGoalDialog] = useState(false)
+  const [showAssignDialog, setShowAssignDialog] = useState(false)
   const [relevanceScore, setRelevanceScore] = useState(dm.relevance_score)
   const [explanation, setExplanation] = useState('')
   const [selectedGoalId, setSelectedGoalId] = useState<string>('')
+  const [selectedUserId, setSelectedUserId] = useState<string>('')
 
   const actions = useOpportunityActions(dm.id)
   const { data: goals = [], isLoading: isLoadingGoals } = useGoals()
+  const { data: teamMembers = [], isLoading: isLoadingTeamMembers } = useTeamMembers()
 
   const handleUpgradeRelevance = () => {
     actions.upgradeRelevance(relevanceScore, explanation)
@@ -64,6 +68,14 @@ export function DMActions({ dm }: DMActionsProps) {
       actions.assignGoal(selectedGoalId)
       setShowGoalDialog(false)
       setSelectedGoalId('')
+    }
+  }
+
+  const handleAssignUser = () => {
+    if (selectedUserId) {
+      actions.assignUser(selectedUserId)
+      setShowAssignDialog(false)
+      setSelectedUserId('')
     }
   }
 
@@ -98,6 +110,13 @@ export function DMActions({ dm }: DMActionsProps) {
           >
             <Target className="mr-2 h-4 w-4" />
             Assign to Goal
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setShowAssignDialog(true)}
+            disabled={actions.isLoading}
+          >
+            <UserPlus className="mr-2 h-4 w-4" />
+            Assign to Team Member
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => actions.flagDiscussion(!dm.needs_discussion)}
@@ -249,6 +268,54 @@ export function DMActions({ dm }: DMActionsProps) {
               disabled={!selectedGoalId || actions.isLoading}
             >
               Assign Goal
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showAssignDialog} onOpenChange={setShowAssignDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign to Team Member</DialogTitle>
+            <DialogDescription>
+              Select a team member to assign this DM to.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="user">Team Member</Label>
+              <Select
+                value={selectedUserId}
+                onValueChange={setSelectedUserId}
+                disabled={isLoadingTeamMembers}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a team member" />
+                </SelectTrigger>
+                <SelectContent>
+                  {teamMembers.map((member) => (
+                    <SelectItem key={member.id} value={member.id}>
+                      {member.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedUserId && (
+                <p className="text-sm text-muted-foreground">
+                  {teamMembers.find((m) => m.id === selectedUserId)?.email}
+                </p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAssignDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAssignUser}
+              disabled={!selectedUserId || actions.isLoading}
+            >
+              Assign Team Member
             </Button>
           </DialogFooter>
         </DialogContent>
