@@ -54,4 +54,19 @@ export interface TeamMember {
   email: string;
   role: string;
   created_at: string;
+}
+
+export interface Opportunity {
+  id: string;
+  celebrity_id: string;
+  sender_id: string;
+  sender_handle: string;
+  initial_content: string;
+  created_at: string;
+  relevance_score: number;
+  status: 'pending' | 'approved' | 'rejected';
+  tags: string[];
+  goal_id?: string;
+  assigned_to?: string;
+  needs_discussion: boolean;
 } 

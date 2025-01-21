@@ -108,7 +108,7 @@ export function DMDetail({ dm }: DMDetailProps) {
             <h4 className="text-sm font-medium text-muted-foreground mb-2">
               Relevance Score
             </h4>
-            <p className="text-sm">{dm.relevance_score} / 5</p>
+            <p className="text-sm">{dm.relevance_score === -1 ? 'Unclassified' : `${dm.relevance_score} / 5`}</p>
           </div>
           {assignedTeamMember && (
             <div>

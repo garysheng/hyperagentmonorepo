@@ -150,6 +150,17 @@ serve(async (req: Request) => {
       return new Response('Missing opportunityId', { status: 400 });
     }
 
+    // Get authorization header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return new Response('Unauthorized', { status: 401 });
+    }
+
+    const token = authHeader.split(' ')[1];
+    if (token !== supabaseKey) {
+      return new Response('Invalid token', { status: 401 });
+    }
+
     // Queue classification
     await classifyOpportunity(opportunityId);
 

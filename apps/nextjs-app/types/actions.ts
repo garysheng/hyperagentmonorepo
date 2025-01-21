@@ -47,4 +47,8 @@ export type OpportunityAction =
       payload: {
         tags: string[]
       }
+    }
+  | {
+      type: 'trigger_classification'
+      payload: Record<string, never>
     } 

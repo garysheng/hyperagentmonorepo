@@ -15,21 +15,51 @@ $$;
 
 -- Function to manually trigger classification
 CREATE OR REPLACE FUNCTION trigger_classification(opportunity_id uuid)
-RETURNS void
+RETURNS opportunities
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
   opp opportunities%ROWTYPE;
+  response_status int;
+  response_body text;
+  edge_function_url text;
 BEGIN
-  -- Verify opportunity exists
+  -- Get the opportunity
   SELECT * INTO opp FROM opportunities WHERE id = opportunity_id;
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Opportunity not found';
   END IF;
 
-  -- Call the classification function directly with the opportunity data
-  PERFORM handle_opportunity_classification_internal(opp);
+  -- Get the edge function URL and service role key
+  edge_function_url := 'https://avbjfurvihtlhwfozrez.supabase.co/functions/v1/classifyOpportunity';
+
+  -- Log the function call
+  RAISE NOTICE 'Classification function called for opportunity % with content: %', opp.id, opp.initial_content;
+
+  -- Call the edge function
+  SELECT 
+    status,
+    content::text
+  INTO
+    response_status,
+    response_body
+  FROM net.http_post(
+    url := edge_function_url,
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key')
+    ),
+    body := jsonb_build_object(
+      'opportunityId', opportunity_id
+    )
+  );
+
+  -- Log the response for debugging
+  RAISE NOTICE 'Edge function response: status %, body %', response_status, response_body;
+
+  -- Return the opportunity
+  RETURN opp;
 END;
 $$;
 
@@ -39,37 +69,10 @@ RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
-DECLARE
-  edge_function_url text;
-  service_role_key text;
-  response record;
 BEGIN
-  -- Log the function call
-  RAISE NOTICE 'Classification function called for opportunity % with content: %', opp.id, opp.initial_content;
-
-  -- Get settings from environment
-  edge_function_url := 'http://127.0.0.1:54321/functions/v1/classifyOpportunity';
-  service_role_key := 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU';
-
   -- Only trigger classification for unclassified opportunities
   IF opp.relevance_score = -1 THEN
-    -- Log the API call
-    RAISE NOTICE 'Calling edge function for opportunity %', opp.id;
-
-    -- Queue the classification task
-    SELECT * INTO response FROM net.http_post(
-      url := edge_function_url,
-      headers := jsonb_build_object(
-        'Content-Type', 'application/json',
-        'Authorization', 'Bearer ' || service_role_key
-      ),
-      body := jsonb_build_object(
-        'opportunityId', opp.id
-      )
-    );
-
-    -- Log response
-    RAISE NOTICE 'Edge function response for opportunity %: %', opp.id, response;
+    PERFORM trigger_classification(opp.id);
   END IF;
 END;
 $$;

@@ -14,7 +14,7 @@ export default function DMsPage() {
   const [selectedDM, setSelectedDM] = useState<DM | null>(null)
   const [filters, setFilters] = useState<DMFiltersType>({
     status: 'all',
-    minRelevanceScore: 1,
+    minRelevanceScore: -1,
     assignedTo: 'all',
     needsDiscussion: false
   })

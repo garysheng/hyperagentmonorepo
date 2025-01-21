@@ -103,11 +103,11 @@ export function DMFilters({ filters, onFiltersChange }: DMFiltersProps) {
               })
             }
             max={5}
-            min={1}
+            min={-1}
             step={1}
           />
           <div className="text-sm text-muted-foreground">
-            Score: {filters.minRelevanceScore}+
+            Score: {filters.minRelevanceScore === -1 ? 'Unclassified' : `${filters.minRelevanceScore}+`}
           </div>
         </div>
       </div>

@@ -159,6 +159,15 @@ export async function POST(
         return NextResponse.json(data)
       }
 
+      case 'trigger_classification': {
+        const { data, error } = await supabase
+          .rpc('trigger_classification', { opportunity_id: id })
+          .single()
+
+        if (error) throw error
+        return NextResponse.json(data)
+      }
+
       default:
         return NextResponse.json(
           { error: 'Invalid action type' },
