@@ -4,13 +4,14 @@ import { NextResponse } from 'next/server'
 type CommentWithUser = {
   id: string
   content: string
+  user_id: string
   created_at: string
   updated_at: string
   users: {
     id: string
     full_name: string
     email: string
-  }
+  } | null
 }
 
 export async function GET(
@@ -26,6 +27,7 @@ export async function GET(
       .select(`
         id,
         content,
+        user_id,
         created_at,
         updated_at,
         users!opportunity_comments_user_id_fkey (
@@ -40,15 +42,15 @@ export async function GET(
 
     if (error) throw error
 
-    // Transform the response to match our type
+    // Transform the response to match our type, handling null users
     const commentsWithUser = data.map(comment => ({
       ...comment,
-      user_id: comment.users.id,
-      user: {
+      user_id: comment.users?.id || comment.user_id, // Fallback to the foreign key
+      user: comment.users ? {
         id: comment.users.id,
         full_name: comment.users.full_name,
         email: comment.users.email
-      }
+      } : null
     }))
 
     return NextResponse.json(commentsWithUser)
