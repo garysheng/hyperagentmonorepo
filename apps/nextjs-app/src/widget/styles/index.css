@@ -1,10 +1,11 @@
 /* Base styles for the widget container */
-#hyperagent-chat-widget {
-  position: fixed;
-  z-index: 9999;
-  bottom: 20px;
-  right: 20px;
+:host {
+  display: block;
+  width: auto;
+  height: auto;
   font-family: system-ui, -apple-system, sans-serif;
+  margin: 0;
+  padding: 0;
 }
 
 /* Loading state */
@@ -49,6 +50,15 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+/* Position the chat window based on container position */
+:host-context([style*="right:"]) .chat-window {
+  right: 0;
+}
+
+:host-context([style*="left:"]) .chat-window {
+  left: 0;
 }
 
 /* Chat header */
@@ -177,10 +187,4 @@
     border-color: rgba(255, 255, 255, 0.1);
     color: white;
   }
-}
-
-/* Position variants */
-.position-bottom-left #hyperagent-chat-widget {
-  left: 20px;
-  right: auto;
 } 

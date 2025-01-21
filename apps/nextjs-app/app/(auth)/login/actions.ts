@@ -24,7 +24,26 @@ export async function login(formData: FormData) {
     redirect('/login?message=' + encodeURIComponent(error.message))
   }
 
+  // Check if user has a celebrity assigned
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) {
+    redirect('/login?message=Authentication failed')
+  }
+
+  const { data: userData } = await supabase
+    .from('users')
+    .select('celebrity_id')
+    .eq('id', user.id)
+    .single()
+
   revalidatePath('/', 'layout')
+  
+  // If no celebrity is assigned, redirect to create-celebrity page
+  if (!userData?.celebrity_id) {
+    redirect('/create-celebrity')
+  }
+
   redirect('/dashboard')
 }
 

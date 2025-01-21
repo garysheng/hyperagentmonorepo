@@ -6,7 +6,6 @@ interface ChatWidgetProps {
   celebrityId: string
   theme: {
     primaryColor?: string
-    position?: 'bottom-right' | 'bottom-left'
   }
 }
 
@@ -15,7 +14,7 @@ interface Message {
   content: string
 }
 
-export function ChatWidget({ celebrityId }: ChatWidgetProps) {
+export function ChatWidget({ celebrityId, theme }: ChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -81,6 +80,9 @@ export function ChatWidget({ celebrityId }: ChatWidgetProps) {
       <button 
         className="chat-button"
         onClick={() => setIsOpen(!isOpen)}
+        style={{ 
+          backgroundColor: theme.primaryColor 
+        }}
       >
         💬
       </button>
@@ -118,7 +120,13 @@ export function ChatWidget({ celebrityId }: ChatWidgetProps) {
                 rows={3}
                 required
               />
-              <button type="submit" disabled={isSubmitting || !email}>
+              <button 
+                type="submit" 
+                disabled={isSubmitting || !email}
+                style={{ 
+                  backgroundColor: theme.primaryColor 
+                }}
+              >
                 {isSubmitting ? '...' : '→'}
               </button>
             </div>

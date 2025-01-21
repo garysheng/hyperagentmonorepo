@@ -61,26 +61,27 @@ export function DMDetail({ dm }: DMDetailProps) {
 
   return (
     <Card className="p-6 h-[calc(100vh-13rem)] flex flex-col">
-      <div className="flex items-start justify-between">
-        <div className="flex items-start gap-4">
-          <Image
-            src={`https://api.dicebear.com/9.x/adventurer/svg?seed=${dm.sender_id}`}
-            alt={dm.sender_handle}
-            width={48}
-            height={48}
-            className="rounded-full"
-          />
-          <div>
-            <h3 className="font-medium">@{dm.sender_handle}</h3>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">@{dm.sender_handle}</h3>
+          <Badge variant={getStatusBadgeVariant(dm.status)}>
+            {dm.status}
+          </Badge>
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Image
+              src={`https://api.dicebear.com/9.x/adventurer/svg?seed=${dm.sender_id}`}
+              alt={dm.sender_handle}
+              width={32}
+              height={32}
+              className="rounded-full"
+            />
             <p className="text-sm text-muted-foreground">
               {formatDistanceToNow(new Date(dm.created_at), { addSuffix: true })}
             </p>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant={getStatusBadgeVariant(dm.status)}>
-            {dm.status}
-          </Badge>
           <DMActions dm={dm} />
         </div>
       </div>

@@ -46,9 +46,11 @@ function LoginForm() {
   return (
     <Card className="p-6 space-y-4 w-full max-w-sm">
       <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-bold">{isSignup ? 'Create an account' : 'Welcome back'}</h1>
+        <h1 className="text-2xl font-bold">{isSignup ? 'Join Your Celebrity\'s Team' : 'Welcome Back'}</h1>
         <p className="text-muted-foreground">
-          {isSignup ? 'Enter your details to create an account' : 'Enter your email to sign in to your account'}
+          {isSignup 
+            ? 'Create your account to manage celebrity opportunities' 
+            : 'Sign in to manage your celebrity\'s opportunities'}
         </p>
       </div>
       <form action={isSignup ? signup : login} className="space-y-4">
@@ -86,10 +88,42 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Suspense fallback={<div>Loading...</div>}>
-        <LoginForm />
-      </Suspense>
+    <div className="flex min-h-screen">
+      <div className="hidden lg:flex w-1/2 bg-muted items-center justify-center p-8">
+        <div className="max-w-lg space-y-8">
+          <div className="space-y-2">
+            <h1 className="text-4xl font-bold tracking-tight">HyperAgent.so</h1>
+            <p className="text-muted-foreground text-lg">
+              The AI-powered platform for celebrity teams to manage inbound opportunities
+            </p>
+          </div>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <h2 className="text-xl font-semibold">For Celebrity Teams</h2>
+              <p className="text-muted-foreground">
+                Whether you\'re a manager, agent, or support staff - streamline how you handle opportunities for your public figure.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-xl font-semibold">Smart Opportunity Management</h2>
+              <p className="text-muted-foreground">
+                Collect and classify opportunities from Twitter DMs and chat widgets, all in one place for your team.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-xl font-semibold">AI-Powered Triage</h2>
+              <p className="text-muted-foreground">
+                Let AI score and categorize thousands of opportunities, so your team can focus on the most promising ones.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="flex w-full lg:w-1/2 items-center justify-center p-4">
+        <Suspense fallback={<div>Loading...</div>}>
+          <LoginForm />
+        </Suspense>
+      </div>
     </div>
   )
 } 
