@@ -34,16 +34,6 @@ export default function DMsPage() {
 
   const selectedDMData = dms.find((dm) => dm.id === selectedDM)
 
-  const handleApprove = async (id: string) => {
-    // TODO: Implement approve action
-    console.log('Approve DM:', id)
-  }
-
-  const handleReject = async (id: string) => {
-    // TODO: Implement reject action
-    console.log('Reject DM:', id)
-  }
-
   if (loading || !user) {
     return null
   }
@@ -63,11 +53,7 @@ export default function DMsPage() {
           />
         </div>
         <div className="col-span-2">
-          <DMDetail
-            dm={selectedDMData}
-            onApprove={handleApprove}
-            onReject={handleReject}
-          />
+          <DMDetail dm={selectedDMData} />
         </div>
         <div className="col-span-2">
           <DMFilters filters={filters} onFiltersChange={setFilters} />

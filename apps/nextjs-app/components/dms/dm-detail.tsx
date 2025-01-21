@@ -1,20 +1,17 @@
 'use client'
 
 import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import Image from 'next/image'
 import type { DM } from '@/types'
-import { Check, X } from 'lucide-react'
+import { DMActions } from './dm-actions'
 
 interface DMDetailProps {
   dm: DM | undefined
-  onApprove: (id: string) => void
-  onReject: (id: string) => void
 }
 
-export function DMDetail({ dm, onApprove, onReject }: DMDetailProps) {
+export function DMDetail({ dm }: DMDetailProps) {
   if (!dm) {
     return (
       <Card className="p-6 h-[calc(100vh-13rem)]">
@@ -43,17 +40,20 @@ export function DMDetail({ dm, onApprove, onReject }: DMDetailProps) {
             </p>
           </div>
         </div>
-        <Badge
-          variant={
-            dm.status === 'approved'
-              ? 'default'
-              : dm.status === 'rejected'
-              ? 'destructive'
-              : 'secondary'
-          }
-        >
-          {dm.status}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge
+            variant={
+              dm.status === 'approved'
+                ? 'default'
+                : dm.status === 'rejected'
+                ? 'destructive'
+                : 'secondary'
+            }
+          >
+            {dm.status}
+          </Badge>
+          <DMActions dm={dm} />
+        </div>
       </div>
 
       <Separator className="my-4" />
@@ -74,27 +74,6 @@ export function DMDetail({ dm, onApprove, onReject }: DMDetailProps) {
           </div>
         </div>
       </div>
-
-      {dm.status === 'pending' && (
-        <div className="flex gap-2 mt-4">
-          <Button
-            className="flex-1"
-            variant="outline"
-            onClick={() => onReject(dm.id)}
-          >
-            <X className="w-4 h-4 mr-2" />
-            Reject
-          </Button>
-          <Button
-            className="flex-1"
-            variant="default"
-            onClick={() => onApprove(dm.id)}
-          >
-            <Check className="w-4 h-4 mr-2" />
-            Approve
-          </Button>
-        </div>
-      )}
     </Card>
   )
 } 
