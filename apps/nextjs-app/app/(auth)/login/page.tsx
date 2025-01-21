@@ -18,12 +18,25 @@ function LoginForm() {
 
   useEffect(() => {
     if (!loading && user) {
-      router.push('/dashboard')
+      router.replace('/dashboard')
+      router.refresh()
     }
   }, [loading, user, router])
 
-  if (loading || user) {
-    return null
+  if (loading) {
+    return (
+      <Card className="p-6 space-y-4 w-full max-w-sm">
+        <div className="text-center">Loading...</div>
+      </Card>
+    )
+  }
+
+  if (user) {
+    return (
+      <Card className="p-6 space-y-4 w-full max-w-sm">
+        <div className="text-center">Redirecting to dashboard...</div>
+      </Card>
+    )
   }
 
   return (

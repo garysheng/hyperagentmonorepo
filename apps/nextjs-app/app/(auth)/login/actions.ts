@@ -14,10 +14,15 @@ export async function login(formData: FormData) {
     password: formData.get('password') as string,
   }
 
-  const { error } = await supabase.auth.signInWithPassword(data)
+  const { error, data: { session } } = await supabase.auth.signInWithPassword(data)
 
   if (error) {
+    console.error('Login error:', error)
     redirect('/auth/auth-code-error')
+  }
+
+  if (!session) {
+    redirect('/login?message=Something went wrong. Please try again.')
   }
 
   revalidatePath('/', 'layout')
