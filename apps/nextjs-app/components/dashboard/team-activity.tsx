@@ -1,22 +1,33 @@
 'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useQuery } from '@tanstack/react-query'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { formatDistanceToNow } from 'date-fns'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Skeleton } from '@/components/ui/skeleton'
+
+interface TeamMember {
+  id: string
+  full_name: string
+  role: string
+  created_at: string
+  actionCount: number
+  lastAction: string | null
+  actionTypes: string[]
+}
 
 export function TeamActivity() {
   const supabase = createClientComponentClient()
 
-  const { data: teamActivity } = useQuery({
+  const { data: teamMembers, isLoading } = useQuery({
     queryKey: ['team-activity'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
-      // Get team members
-      const { data: teamMembers } = await supabase
+      // Get team members with their action counts and last action
+      const { data: members } = await supabase
         .from('users')
         .select(`
           id,
@@ -24,74 +35,98 @@ export function TeamActivity() {
           role,
           created_at
         `)
-        .eq('celebrity_id', user.id)
+        .order('full_name')
 
-      // Get team member stats
-      const { data: memberStats } = await supabase
-        .from('opportunity_actions')
-        .select(`
-          user_id,
-          action_type,
-          created_at
-        `)
-        .order('created_at', { ascending: false })
+      if (!members) return []
 
-      // Calculate stats per team member
-      const stats = teamMembers?.map(member => {
-        const actions = memberStats?.filter(stat => stat.user_id === member.id) || []
-        const lastAction = actions[0]
-        const actionCount = actions.length
+      // For each member, get their action stats
+      const membersWithStats = await Promise.all(
+        members.map(async (member) => {
+          const { count: actionCount } = await supabase
+            .from('actions')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', member.id)
 
-        return {
-          ...member,
-          actionCount,
-          lastAction: lastAction?.created_at,
-          actionTypes: actions.reduce((acc, { action_type }) => {
-            acc[action_type] = (acc[action_type] || 0) + 1
-            return acc
-          }, {} as Record<string, number>)
-        }
-      })
+          const { data: lastActionData } = await supabase
+            .from('actions')
+            .select('created_at')
+            .eq('user_id', member.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single()
 
-      return {
-        teamStats: stats || []
-      }
+          const { data: actionTypes } = await supabase
+            .from('actions')
+            .select('type')
+            .eq('user_id', member.id)
+            .order('created_at', { ascending: false })
+
+          return {
+            ...member,
+            actionCount: actionCount || 0,
+            lastAction: lastActionData?.created_at || null,
+            actionTypes: [...new Set(actionTypes?.map(a => a.type) || [])]
+          }
+        })
+      )
+
+      return membersWithStats as TeamMember[]
     }
   })
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Team Activity</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-8">
-            {teamActivity?.teamStats.map(member => (
-              <div key={member.id} className="flex items-center">
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src={`https://api.dicebear.com/9.x/adventurer/svg?seed=${member.id}`} />
-                  <AvatarFallback>
-                    {member.full_name.split(' ').map((n: string) => n[0]).join('')}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="ml-4 space-y-1">
-                  <p className="text-sm font-medium leading-none">{member.full_name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {member.role}
-                  </p>
-                </div>
-                <div className="ml-auto text-sm text-muted-foreground text-right">
-                  <p>{member.actionCount} actions</p>
-                  {member.lastAction && (
-                    <p>Last active {formatDistanceToNow(new Date(member.lastAction), { addSuffix: true })}</p>
-                  )}
-                </div>
-              </div>
-            ))}
+    <div className="space-y-8">
+      {isLoading ? (
+        <>
+          <div className="flex items-center space-x-4">
+            <Skeleton className="h-12 w-12 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-[200px]" />
+              <Skeleton className="h-4 w-[150px]" />
+            </div>
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex items-center space-x-4">
+            <Skeleton className="h-12 w-12 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-[200px]" />
+              <Skeleton className="h-4 w-[150px]" />
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+            <Skeleton className="h-12 w-12 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-[200px]" />
+              <Skeleton className="h-4 w-[150px]" />
+            </div>
+          </div>
+        </>
+      ) : (
+        teamMembers?.map((member) => (
+          <div key={member.id} className="flex items-start space-x-4">
+            <Avatar className="h-12 w-12">
+              <AvatarFallback>
+                {member.full_name.split(' ').map(n => n[0]).join('')}
+              </AvatarFallback>
+            </Avatar>
+            <div className="space-y-1">
+              <div className="flex items-center space-x-2">
+                <p className="text-sm font-medium leading-none">{member.full_name}</p>
+                <p className="text-sm text-muted-foreground">·</p>
+                <p className="text-sm text-muted-foreground">{member.role}</p>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {member.actionCount} actions
+                {member.lastAction && ` · Last active ${formatDistanceToNow(new Date(member.lastAction), { addSuffix: true })}`}
+              </p>
+              {member.actionTypes.length > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  Most common: {member.actionTypes.slice(0, 3).map(type => type.replace('_', ' ')).join(', ')}
+                </p>
+              )}
+            </div>
+          </div>
+        ))
+      )}
     </div>
   )
 } 

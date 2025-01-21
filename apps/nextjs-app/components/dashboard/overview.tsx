@@ -4,11 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useQuery } from '@tanstack/react-query'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { MessagesSquare, Goal, AlertCircle, BarChart3 } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export function Overview() {
   const supabase = createClientComponentClient()
 
-  const { data: stats } = useQuery({
+  const { data: stats, isLoading } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -66,10 +67,16 @@ export function Overview() {
           <MessagesSquare className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats?.totalDMs}</div>
-          <p className="text-xs text-muted-foreground">
-            Across all statuses
-          </p>
+          {isLoading ? (
+            <Skeleton className="h-8 w-20" />
+          ) : (
+            <>
+              <div className="text-2xl font-bold">{stats?.totalDMs}</div>
+              <p className="text-xs text-muted-foreground">
+                Across all statuses
+              </p>
+            </>
+          )}
         </CardContent>
       </Card>
       <Card>
@@ -80,10 +87,16 @@ export function Overview() {
           <BarChart3 className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats?.averageRelevance}</div>
-          <p className="text-xs text-muted-foreground">
-            Out of 5.0
-          </p>
+          {isLoading ? (
+            <Skeleton className="h-8 w-20" />
+          ) : (
+            <>
+              <div className="text-2xl font-bold">{stats?.averageRelevance}</div>
+              <p className="text-xs text-muted-foreground">
+                Out of 5.0
+              </p>
+            </>
+          )}
         </CardContent>
       </Card>
       <Card>
@@ -94,28 +107,42 @@ export function Overview() {
           <AlertCircle className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats?.needsDiscussion}</div>
-          <p className="text-xs text-muted-foreground">
-            Flagged for team review
-          </p>
+          {isLoading ? (
+            <Skeleton className="h-8 w-20" />
+          ) : (
+            <>
+              <div className="text-2xl font-bold">{stats?.needsDiscussion}</div>
+              <p className="text-xs text-muted-foreground">
+                Flagged for team review
+              </p>
+            </>
+          )}
         </CardContent>
       </Card>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">
-            Active Goals
+            Status Breakdown
           </CardTitle>
           <Goal className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">
-            {Object.entries(stats?.dmsByStatus || {}).map(([status, count]) => (
-              <div key={status} className="flex items-center justify-between">
-                <span className="capitalize">{status}</span>
-                <span>{count}</span>
-              </div>
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {Object.entries(stats?.dmsByStatus || {}).map(([status, count]) => (
+                <div key={status} className="flex items-center justify-between">
+                  <span className="capitalize">{status}</span>
+                  <span>{count}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
