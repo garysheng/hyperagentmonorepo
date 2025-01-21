@@ -15,7 +15,11 @@ export async function GET() {
         created_at,
         relevance_score,
         status,
-        tags
+        tags,
+        goal_id,
+        goal:goals(id, name, description),
+        assigned_to,
+        needs_discussion
       `)
       .order('created_at', { ascending: false })
 

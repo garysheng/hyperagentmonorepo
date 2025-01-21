@@ -1,12 +1,13 @@
 import { createServerClient } from '@/lib/supabase/server'
-import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import type { OpportunityAction } from '@/types/actions'
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
+  const { id } = context.params
+
   try {
     const supabase = await createServerClient()
 
@@ -35,7 +36,7 @@ export async function POST(
             relevance_override_by: user.id,
             relevance_override_at: now,
           })
-          .eq('id', params.id)
+          .eq('id', id)
           .select()
           .single()
 
@@ -55,7 +56,7 @@ export async function POST(
             status_updated_by: user.id,
             status_updated_at: now,
           })
-          .eq('id', params.id)
+          .eq('id', id)
           .select()
           .single()
 
@@ -71,7 +72,7 @@ export async function POST(
             status_updated_by: user.id,
             status_updated_at: now,
           })
-          .eq('id', params.id)
+          .eq('id', id)
           .select()
           .single()
 
@@ -87,7 +88,7 @@ export async function POST(
             status_updated_by: user.id,
             status_updated_at: now,
           })
-          .eq('id', params.id)
+          .eq('id', id)
           .select()
           .single()
 
@@ -103,7 +104,7 @@ export async function POST(
             status_updated_by: user.id,
             status_updated_at: now,
           })
-          .eq('id', params.id)
+          .eq('id', id)
           .select()
           .single()
 
@@ -119,7 +120,7 @@ export async function POST(
             status_updated_by: user.id,
             status_updated_at: now,
           })
-          .eq('id', params.id)
+          .eq('id', id)
           .select()
           .single()
 
@@ -131,7 +132,7 @@ export async function POST(
         const { data, error } = await supabase
           .from('opportunity_comments')
           .insert({
-            opportunity_id: params.id,
+            opportunity_id: id,
             user_id: user.id,
             content: payload.content,
           })
