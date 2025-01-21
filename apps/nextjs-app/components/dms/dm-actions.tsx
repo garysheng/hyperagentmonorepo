@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { MoreHorizontal, Star, Flag, Users, MessageSquare, Target, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useToast } from '@/hooks/use-toast'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,6 +39,7 @@ interface DMActionsProps {
 }
 
 export function DMActions({ dm }: DMActionsProps) {
+  const { toast } = useToast()
   const [showRelevanceDialog, setShowRelevanceDialog] = useState(false)
   const [showDowngradeDialog, setShowDowngradeDialog] = useState(false)
   const [showGoalDialog, setShowGoalDialog] = useState(false)
@@ -71,11 +73,24 @@ export function DMActions({ dm }: DMActionsProps) {
     }
   }
 
-  const handleAssignUser = () => {
+  const handleAssignUser = async () => {
     if (selectedUserId) {
-      actions.assignUser(selectedUserId)
-      setShowAssignDialog(false)
-      setSelectedUserId('')
+      try {
+        const selectedMember = teamMembers.find(m => m.id === selectedUserId)
+        await actions.assignUser(selectedUserId)
+        toast({
+          title: "Team member assigned",
+          description: `DM has been assigned to ${selectedMember?.full_name}`,
+        })
+        setShowAssignDialog(false)
+        setSelectedUserId('')
+      } catch (error) {
+        toast({
+          title: "Assignment failed",
+          description: "Failed to assign team member. Please try again.",
+          variant: "destructive",
+        })
+      }
     }
   }
 
