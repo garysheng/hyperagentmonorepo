@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-import { Opportunity } from '@/types';
+import { Opportunity, Goal } from '@/types';
 import { PerplexityAI } from '@/lib/perplexity';
 
 // Initialize Supabase client
@@ -40,12 +40,39 @@ export async function GET(request: Request) {
       return NextResponse.json({ message: 'No unclassified opportunities found' });
     }
 
+    // Group opportunities by celebrity_id for efficient goal fetching
+    const celebrityIds = [...new Set(opportunities.map(opp => opp.celebrity_id))];
+
+    // Fetch goals for all relevant celebrities
+    const { data: goals, error: goalsError } = await supabase
+      .from('goals')
+      .select('*')
+      .in('celebrity_id', celebrityIds)
+      .order('priority', { ascending: false });
+
+    if (goalsError) throw goalsError;
+
+    // Create a map of celebrity_id to their goals
+    const goalsByCelebrity = goals?.reduce((acc, goal) => {
+      if (!acc[goal.celebrity_id]) {
+        acc[goal.celebrity_id] = [];
+      }
+      acc[goal.celebrity_id].push(goal);
+      return acc;
+    }, {} as Record<string, Goal[]>) ?? {};
+
     // Process each opportunity
     const results = await Promise.all(
       opportunities.map(async (opp: Opportunity) => {
         try {
+          // Get goals for this celebrity
+          const celebrityGoals = goalsByCelebrity[opp.celebrity_id] || [];
+
           // Get the classification from Perplexity
-          const classification = await perplexity.classifyOpportunity(opp.initial_content);
+          const classification = await perplexity.classifyOpportunity(
+            opp.initial_content,
+            celebrityGoals
+          );
 
           // Update the opportunity with the classification results
           const { error: updateError } = await supabase
@@ -54,7 +81,8 @@ export async function GET(request: Request) {
               relevance_score: classification.relevanceScore,
               tags: classification.tags,
               status: classification.status,
-              needs_discussion: classification.needsDiscussion
+              needs_discussion: classification.needsDiscussion,
+              goal_id: classification.goalId
             })
             .eq('id', opp.id);
 
