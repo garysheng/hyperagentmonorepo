@@ -8,7 +8,7 @@ export default function ContactPage() {
     // Load widget script
     const script = document.createElement('script')
     script.src = '/api/widget/v1.js'
-    script.dataset.celebrityId = 'hyperagentman'
+    script.dataset.celebrityId = '0ca0f921-7ccd-4975-9afb-3bed98367403'
     script.dataset.primaryColor = '#0F172A'
     script.async = true
     document.body.appendChild(script)
@@ -29,16 +29,17 @@ export default function ContactPage() {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <Card className="p-6">
-          <h2 className="text-2xl font-semibold mb-4">About HyperAgent Man</h2>
+          <h2 className="text-2xl font-semibold mb-4">About HyperAgent</h2>
           <p className="text-muted-foreground mb-4">
-            Your friendly neighborhood AI assistant, helping teams manage their communications more effectively.
+            We help teams manage their communications more effectively using AI.
           </p>
           <div className="space-y-2">
-            <h3 className="font-medium">Interested in:</h3>
+            <h3 className="font-medium">What we\'re interested in:</h3>
             <ul className="list-disc list-inside text-muted-foreground">
               <li>AI/ML Solutions</li>
               <li>Automation</li>
               <li>Developer Tools</li>
+              <li>Team Collaboration</li>
             </ul>
           </div>
         </Card>
@@ -46,7 +47,7 @@ export default function ContactPage() {
         <Card className="p-6">
           <h2 className="text-2xl font-semibold mb-4">Get in Touch</h2>
           <p className="text-muted-foreground">
-            Use the chat widget in the bottom right corner to send us a message. We\'ll get back to you as soon as possible.
+            Use the chat widget in the bottom right corner to send us a message. Our team will review your proposal and get back to you as soon as possible.
           </p>
         </Card>
       </div>

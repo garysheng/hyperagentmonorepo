@@ -6,7 +6,9 @@
     "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "build:widget": "tsx widget.config.ts",
+    "dev:widget": "tsx watch widget.config.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -28,20 +30,25 @@
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.48.0",
     "@tanstack/react-query": "^5.64.2",
+    "@types/uuid": "^9.0.8",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.0",
     "date-fns": "^4.1.0",
+    "esbuild": "^0.19.12",
     "instagram-private-api": "^1.46.1",
     "lucide-react": "^0.473.0",
     "next": "15.1.5",
     "next-themes": "^0.4.4",
+    "preact": "^10.19.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.54.2",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
+    "tsx": "^4.7.0",
     "twitter-api-v2": "^1.19.0",
+    "uuid": "^9.0.1",
     "zod": "^3.24.1"
   },
   "devDependencies": {
