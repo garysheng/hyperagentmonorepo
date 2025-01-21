@@ -30,4 +30,12 @@
 - Added proper TypeScript types:
   - Updated database types to reflect new schema
   - Created action types for all possible operations
-  - Added proper event types for form handling
+  - Added event types for form handling
+
+- Built dashboard with real-time metrics and activity tracking:
+  - Created Overview component with key metrics (total DMs, average relevance, needs discussion, status breakdown)
+  - Added RecentActivity component showing latest DMs and team actions
+  - Implemented TeamActivity component with member stats and action history
+  - Added loading states and skeletons throughout dashboard
+  - Used tabs to organize activity views
+  - Fixed type issues with Supabase query responses
