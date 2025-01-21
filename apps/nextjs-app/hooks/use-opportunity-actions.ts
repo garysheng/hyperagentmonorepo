@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { OpportunityAction } from '@/types/actions'
-import type { DM } from '@/app/(dashboard)/dms/actions'
+import type { DM } from '@/types'
 
 async function performAction(id: string, action: OpportunityAction): Promise<DM> {
   const response = await fetch(`/api/opportunities/${id}/actions`, {

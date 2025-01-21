@@ -9,3 +9,25 @@
 - Configured LangSmith for observability
 - Decided to use Perplexity API for both user research and classification instead of OpenAI
 - Created initial classification pipeline using LangChain and Perplexity 
+
+- Created database schema for opportunity actions and team collaboration:
+  - Added fields to opportunities table: assigned_to, needs_discussion, relevance_override details, status_updated details
+  - Created opportunity_comments table for team discussions with proper RLS policies
+  - Added indexes for performance optimization
+
+- Implemented opportunity actions system:
+  - Created types for all possible actions (upgrade/downgrade relevance, assign goal/user, flag for discussion)
+  - Built API endpoint for handling actions with proper authentication
+  - Added hooks for managing opportunity actions and fetching comments
+  - Created API endpoint for fetching goals filtered by celebrity_id
+
+- Built UI components for opportunity management:
+  - Added DMActions component with dropdown menu for all available actions
+  - Created dialogs for relevance changes that require explanations
+  - Implemented goal assignment dialog with goal descriptions
+  - Added loading states and error handling throughout
+
+- Added proper TypeScript types:
+  - Updated database types to reflect new schema
+  - Created action types for all possible operations
+  - Added proper event types for form handling

@@ -5,9 +5,8 @@ import { useAuth } from '@/components/providers'
 import { DMList } from '@/components/dms/dm-list'
 import { DMFilters, type DMFilters as DMFiltersType } from '@/components/dms/dm-filters'
 import { DMDetail } from '@/components/dms/dm-detail'
-import { getDMs } from './actions'
+import { fetchDMs } from './actions'
 import { useQuery } from '@tanstack/react-query'
-import type { DM } from './actions'
 
 export default function DMsPage() {
   const { user, loading } = useAuth()
@@ -19,7 +18,7 @@ export default function DMsPage() {
 
   const { data: dms = [], isLoading } = useQuery({
     queryKey: ['dms'],
-    queryFn: getDMs,
+    queryFn: fetchDMs,
     enabled: !!user,
   })
 

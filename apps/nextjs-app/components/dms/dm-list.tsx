@@ -7,19 +7,10 @@ import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
+import { DM } from '@/types'
 
 interface DMListProps {
-  dms: Array<{
-    id: string
-    sender: {
-      username: string
-      avatar_url: string
-    }
-    message: string
-    timestamp: Date
-    relevance_score: number
-    status: 'pending' | 'approved' | 'rejected'
-  }>
+  dms: Array<DM>
   selectedDM?: string
   onSelectDM: (id: string) => void
   isLoading?: boolean

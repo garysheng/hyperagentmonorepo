@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import Image from 'next/image'
-import type { DM } from '@/app/(dashboard)/dms/actions'
+import type { DM } from '@/types'
 import { Check, X } from 'lucide-react'
 
 interface DMDetailProps {
