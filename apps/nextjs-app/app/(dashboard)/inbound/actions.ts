@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/utils/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import type { Opportunity } from '@/types'
 
 export async function getOpportunities(): Promise<Opportunity[]> {

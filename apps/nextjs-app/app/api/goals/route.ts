@@ -1,9 +1,9 @@
-import { createServerClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
   try {
-    const supabase = await createServerClient()
+    const supabase = await createClient()
 
     const {
       data: { user },
@@ -64,7 +64,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createServerClient()
+    const supabase = await createClient()
     const goal = await request.json()
 
     const {
@@ -99,7 +99,7 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const supabase = await createServerClient()
+    const supabase = await createClient()
     const goal = await request.json()
 
     const {
@@ -135,7 +135,7 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const supabase = await createServerClient()
+    const supabase = await createClient()
     const { id } = await request.json()
 
     const {

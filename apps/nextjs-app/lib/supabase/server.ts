@@ -1,27 +1,26 @@
-import { createServerClient as _createServerClient } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { Database } from '@/types/supabase'
-import { ResponseCookie } from 'next/dist/compiled/@edge-runtime/cookies'
 
-export async function createServerClient() {
+export const createClient = async () => {
   const cookieStore = await cookies()
-  return _createServerClient<Database>(
+
+  return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll() {
-          return cookieStore.getAll().map((cookie: ResponseCookie) => ({
+          return cookieStore.getAll().map((cookie) => ({
             name: cookie.name,
-            value: cookie.value,
+            value: cookie.value
           }))
         },
-        setAll(newCookies) {
-          newCookies.map(({ name, value, ...options }) => {
+        setAll(cookies) {
+          cookies.forEach(({ name, value, ...options }) => {
             cookieStore.set({ name, value, ...options })
           })
-        },
-      },
+        }
+      }
     }
   )
 } 

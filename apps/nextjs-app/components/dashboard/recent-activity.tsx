@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useQuery } from '@tanstack/react-query'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/lib/supabase/client'
 import { formatDistanceToNow } from 'date-fns'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -25,25 +25,49 @@ interface DMWithRelations {
 }
 
 export function RecentActivity() {
-  const supabase = createClientComponentClient()
+  const supabase = createClient()
 
   const { data: recentActions, isLoading: isLoadingActions } = useQuery({
     queryKey: ['recent-actions'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser()
+      console.log('Recent Actions - Auth user:', user)
       if (!user) throw new Error('Not authenticated')
+
+      // Get the user's profile to get the celebrity_id
+      const { data: userProfile } = await supabase
+        .from('users')
+        .select('celebrity_id')
+        .eq('id', user.id)
+        .single()
+      console.log('Recent Actions - User profile:', userProfile)
+
+      if (!userProfile?.celebrity_id) throw new Error('No celebrity profile found')
 
       const { data } = await supabase
         .from('opportunity_actions')
-        .select('id, action_type, created_at, user:users!inner(full_name)')
+        .select(`
+          id,
+          action_type,
+          created_at,
+          user:users!inner(full_name)
+        `)
+        .eq('celebrity_id', userProfile.celebrity_id)
         .order('created_at', { ascending: false })
         .limit(5)
+      console.log('Recent Actions - Raw data:', data)
 
-      return (data || []).map(item => ({
-        ...item,
+      const mappedData = (data || []).map(item => ({
+        id: item.id,
         type: item.action_type,
-        user: item.user[0]
-      })) as ActionWithRelations[]
+        created_at: item.created_at,
+        user: {
+          full_name: item.user[0].full_name
+        }
+      }))
+      console.log('Recent Actions - Mapped data:', mappedData)
+
+      return mappedData as ActionWithRelations[]
     }
   })
 
@@ -51,15 +75,34 @@ export function RecentActivity() {
     queryKey: ['recent-dms'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser()
+      console.log('Recent DMs - Auth user:', user)
       if (!user) throw new Error('Not authenticated')
+
+      // Get the user's profile to get the celebrity_id
+      const { data: userProfile } = await supabase
+        .from('users')
+        .select('celebrity_id')
+        .eq('id', user.id)
+        .single()
+      console.log('Recent DMs - User profile:', userProfile)
+
+      if (!userProfile?.celebrity_id) throw new Error('No celebrity profile found')
 
       const { data } = await supabase
         .from('opportunities')
-        .select('id, sender_handle, status, created_at, content')
+        .select('id, sender_handle, status, created_at, initial_content')
+        .eq('celebrity_id', userProfile.celebrity_id)
         .order('created_at', { ascending: false })
         .limit(5)
+      console.log('Recent DMs - Raw data:', data)
 
-      return (data || []) as DMWithRelations[]
+      const mappedData = (data || []).map(dm => ({
+        ...dm,
+        content: dm.initial_content
+      }))
+      console.log('Recent DMs - Mapped data:', mappedData)
+
+      return mappedData as DMWithRelations[]
     }
   })
 
@@ -91,7 +134,7 @@ export function RecentActivity() {
               <div key={dm.id} className="flex flex-col space-y-1">
                 <div className="flex items-center gap-2">
                   <span className="font-medium">@{dm.sender_handle}</span>
-                  <Badge variant="outline" className="capitalize">{dm.status}</Badge>
+                  <Badge variant="outline" className="capitalize">{dm.status.replace('_', ' ')}</Badge>
                 </div>
                 <p className="text-sm text-muted-foreground line-clamp-1">{dm.content}</p>
                 <span className="text-xs text-muted-foreground">

@@ -1,4 +1,4 @@
-import { createServerClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import type { OpportunityAction } from '@/types/actions'
 
@@ -9,7 +9,7 @@ export async function POST(
   const { id } = await context.params
 
   try {
-    const supabase = await createServerClient()
+    const supabase = await createClient()
 
     const {
       data: { user },

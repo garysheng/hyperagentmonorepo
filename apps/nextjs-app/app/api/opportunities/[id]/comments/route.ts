@@ -1,4 +1,4 @@
-import { createServerClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 type CommentWithUser = {
@@ -20,7 +20,7 @@ export async function GET(
 ) {
   try {
     const { id } = await context.params
-    const supabase = await createServerClient()
+    const supabase = await createClient()
 
     const { data, error } = await supabase
       .from('opportunity_comments')
@@ -61,4 +61,9 @@ export async function GET(
       { status: 500 }
     )
   }
+}
+
+export async function POST(request: Request) {
+  const supabase = await createClient()
+  // ... existing code ...
 } 

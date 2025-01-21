@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { v5 as uuidv5 } from 'uuid'
 
 // Generate a deterministic UUID based on email
@@ -20,7 +20,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = await createServerClient()
+    const supabase = await createClient()
 
     // Create opportunity
     const { data: opportunity, error: opportunityError } = await supabase
