@@ -5,10 +5,19 @@ import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Separator } from '@/components/ui/separator'
 import { Slider } from '@/components/ui/slider'
+import { useTeamMembers } from '@/hooks/use-team-members'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 export interface DMFilters {
   status: 'all' | 'pending' | 'approved' | 'rejected'
   minRelevanceScore: number
+  assignedTo: string | 'all'
 }
 
 interface DMFiltersProps {
@@ -17,6 +26,8 @@ interface DMFiltersProps {
 }
 
 export function DMFilters({ filters, onFiltersChange }: DMFiltersProps) {
+  const { data: teamMembers = [] } = useTeamMembers()
+
   return (
     <Card className="p-6 space-y-6">
       <div>
@@ -47,6 +58,33 @@ export function DMFilters({ filters, onFiltersChange }: DMFiltersProps) {
             <Label htmlFor="rejected">Rejected</Label>
           </div>
         </RadioGroup>
+      </div>
+
+      <Separator />
+
+      <div>
+        <h3 className="font-medium mb-4">Assigned To</h3>
+        <Select
+          value={filters.assignedTo}
+          onValueChange={(value) =>
+            onFiltersChange({
+              ...filters,
+              assignedTo: value,
+            })
+          }
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select team member" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Team Members</SelectItem>
+            {teamMembers.map((member) => (
+              <SelectItem key={member.id} value={member.id}>
+                {member.full_name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <Separator />
