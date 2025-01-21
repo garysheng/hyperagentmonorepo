@@ -3,9 +3,10 @@ import { NextResponse } from 'next/server'
 
 export async function GET(
   _request: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await context.params
     const supabase = await createServerClient()
 
     const { data, error } = await supabase
@@ -21,7 +22,7 @@ export async function GET(
           email
         )
       `)
-      .eq('opportunity_id', params.id)
+      .eq('opportunity_id', id)
       .order('created_at', { ascending: true })
 
     if (error) throw error

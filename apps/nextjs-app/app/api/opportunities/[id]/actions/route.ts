@@ -4,9 +4,9 @@ import type { OpportunityAction } from '@/types/actions'
 
 export async function POST(
   request: Request,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = context.params
+  const { id } = await context.params
 
   try {
     const supabase = await createServerClient()
