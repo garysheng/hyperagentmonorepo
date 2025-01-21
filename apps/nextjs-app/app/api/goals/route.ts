@@ -21,12 +21,21 @@ export async function GET() {
     // Get the user's data
     const { data: userData, error: userError } = await supabase
       .from('users')
-      .select('id, role, celebrity_id')
+      .select('id, role')
       .eq('id', user.id)
       .single()
 
-    if (userError || !userData) {
-      throw new Error('Failed to fetch user data')
+    if (userError) {
+      console.error('Error fetching user:', userError)
+      return NextResponse.json(
+        { error: 'Failed to fetch user data' },
+        { status: 500 }
+      )
+    }
+
+    // If no user data found, return empty goals
+    if (!userData) {
+      return NextResponse.json([])
     }
 
     // Get goals based on role

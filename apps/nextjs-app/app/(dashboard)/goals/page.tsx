@@ -17,7 +17,7 @@ import * as z from 'zod'
 
 const goalSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  description: z.string().optional(),
+  description: z.string().nullable(),
   priority: z.number().min(1).max(5),
 })
 
