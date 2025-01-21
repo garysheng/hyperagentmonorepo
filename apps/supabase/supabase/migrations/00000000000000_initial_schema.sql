@@ -3,6 +3,63 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- Users table (synced with auth.users)
+CREATE TABLE users (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  full_name TEXT,
+  email TEXT,
+  role TEXT CHECK (role IN ('admin', 'support_agent', 'celebrity')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS on users table
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+
+-- Grant access to authenticated users
+CREATE POLICY "Users can view all users" ON users
+  FOR SELECT TO authenticated USING (true);
+
+-- Create function to handle user creation
+CREATE OR REPLACE FUNCTION public.handle_user_creation()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.users (id, full_name, email)
+  VALUES (
+    NEW.id,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email),
+    NEW.email
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Create trigger for new user creation
+CREATE OR REPLACE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_user_creation();
+
+-- Create function to handle user updates
+CREATE OR REPLACE FUNCTION public.handle_user_update()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE public.users
+  SET 
+    full_name = COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email),
+    email = NEW.email,
+    updated_at = NOW()
+  WHERE id = NEW.id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Create trigger for user updates
+CREATE OR REPLACE TRIGGER on_auth_user_updated
+  AFTER UPDATE ON auth.users
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_user_update();
+
 -- Celebrities table
 CREATE TABLE celebrities (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -23,16 +80,6 @@ CREATE TABLE goals (
   UNIQUE(celebrity_id, name)
 );
 
--- Users table
-CREATE TABLE users (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  celebrity_id UUID NOT NULL REFERENCES celebrities(id),
-  email VARCHAR NOT NULL UNIQUE,
-  role VARCHAR NOT NULL CHECK (role IN ('admin', 'support_agent', 'celebrity')),
-  full_name VARCHAR NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
 -- Opportunities table
 CREATE TABLE opportunities (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -44,12 +91,12 @@ CREATE TABLE opportunities (
   relevance_score FLOAT CHECK (relevance_score >= 1 AND relevance_score <= 5),
   tags JSONB DEFAULT '[]',
   status VARCHAR NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'on_hold')),
-  assigned_to UUID REFERENCES auth.users(id),
+  assigned_to UUID REFERENCES users(id),
   needs_discussion BOOLEAN DEFAULT FALSE,
   relevance_override_explanation TEXT,
-  relevance_override_by UUID REFERENCES auth.users(id),
+  relevance_override_by UUID REFERENCES users(id),
   relevance_override_at TIMESTAMPTZ,
-  status_updated_by UUID REFERENCES auth.users(id),
+  status_updated_by UUID REFERENCES users(id),
   status_updated_at TIMESTAMPTZ,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -70,7 +117,7 @@ CREATE TABLE opportunity_messages (
 CREATE TABLE opportunity_comments (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   opportunity_id UUID REFERENCES opportunities(id) ON DELETE CASCADE,
-  user_id UUID REFERENCES auth.users(id),
+  user_id UUID REFERENCES users(id),
   content TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -88,7 +135,6 @@ CREATE TABLE opportunity_actions (
 );
 
 -- Indexes
-CREATE INDEX idx_users_celebrity_id ON users(celebrity_id);
 CREATE INDEX idx_goals_celebrity_id ON goals(celebrity_id);
 CREATE INDEX idx_opportunities_celebrity_id ON opportunities(celebrity_id);
 CREATE INDEX idx_opportunities_goal_id ON opportunities(goal_id);
