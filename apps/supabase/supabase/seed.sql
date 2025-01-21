@@ -5,44 +5,32 @@ DELETE FROM goals;
 DELETE FROM users;
 DELETE FROM celebrities;
 
--- Create auth user first
-INSERT INTO auth.users (id, email, encrypted_password, email_confirmed_at, created_at, updated_at)
-VALUES (
-  '00000000-0000-0000-0000-000000000000',
-  'garysheng11@gmail.com',
-  crypt('password123', gen_salt('bf')),
-  now(),
-  now(),
-  now()
-);
-
 -- Insert celebrity
-INSERT INTO celebrities (id, name, twitter_username, created_at, updated_at)
+INSERT INTO celebrities (id, celebrity_name, twitter_username, twitter_password, created_at)
 VALUES (
   '11111111-1111-1111-1111-111111111111',
   'Gary Sheng',
   'garysheng',
-  now(),
+  'placeholder_password',
   now()
 );
 
 -- Insert user profile
-INSERT INTO users (id, email, role, full_name, celebrity_id, created_at, updated_at)
+INSERT INTO users (id, email, role, full_name, celebrity_id, created_at)
 VALUES (
-  '00000000-0000-0000-0000-000000000000',
+  '1575508b-6997-4d35-aa43-514d7b502dd9',
   'garysheng11@gmail.com',
   'celebrity',
   'Gary Sheng',
   '11111111-1111-1111-1111-111111111111',
-  now(),
   now()
 );
 
 -- Insert goals
-INSERT INTO goals (id, celebrity_id, name, description, priority, created_at, updated_at)
+INSERT INTO goals (id, celebrity_id, name, description, priority, created_at)
 VALUES
-  ('22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111', 'Find Software Engineering Role', 'Connect with great employers for a software engineering position', 1, now(), now()),
-  ('33333333-3333-3333-3333-333333333333', '11111111-1111-1111-1111-111111111111', 'Find Romantic Partner', 'Meet a romantic partner', 2, now(), now());
+  ('22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111', 'Find Software Engineering Role', 'Connect with great employers for a software engineering position', 1, now()),
+  ('33333333-3333-3333-3333-333333333333', '11111111-1111-1111-1111-111111111111', 'Find Romantic Partner', 'Meet a romantic partner', 2, now());
 
 -- Insert opportunities (DMs)
 INSERT INTO opportunities (id, celebrity_id, sender_id, sender_handle, initial_content, relevance_score, status, goal_id, created_at, updated_at)
@@ -65,7 +53,7 @@ VALUES
 -- Insert comments
 INSERT INTO opportunity_comments (id, opportunity_id, user_id, content, created_at, updated_at)
 VALUES
-  ('dddddddd-dddd-dddd-dddd-dddddddddddd', '44444444-4444-4444-4444-444444444444', '00000000-0000-0000-0000-000000000000', 'Interesting opportunity at Google, should follow up.', now(), now()),
-  ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', '66666666-6666-6666-6666-666666666666', '00000000-0000-0000-0000-000000000000', 'Great background and shared interests. Stanford connection is a plus.', now(), now()),
-  ('ffffffff-ffff-ffff-ffff-ffffffffffff', '77777777-7777-7777-7777-777777777777', '00000000-0000-0000-0000-000000000000', 'Creative and technical background is intriguing. Worth exploring.', now(), now()),
-  ('11111111-1111-1111-1111-111111111112', '88888888-8888-8888-8888-888888888888', '00000000-0000-0000-0000-000000000000', 'Founder, into climbing and philosophy - lots of common interests.', now(), now()); 
+  ('dddddddd-dddd-dddd-dddd-dddddddddddd', '44444444-4444-4444-4444-444444444444', '1575508b-6997-4d35-aa43-514d7b502dd9', 'Interesting opportunity at Google, should follow up.', now(), now()),
+  ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', '66666666-6666-6666-6666-666666666666', '1575508b-6997-4d35-aa43-514d7b502dd9', 'Great background and shared interests. Stanford connection is a plus.', now(), now()),
+  ('ffffffff-ffff-ffff-ffff-ffffffffffff', '77777777-7777-7777-7777-777777777777', '1575508b-6997-4d35-aa43-514d7b502dd9', 'Creative and technical background is intriguing. Worth exploring.', now(), now()),
+  ('11111111-1111-1111-1111-111111111112', '88888888-8888-8888-8888-888888888888', '1575508b-6997-4d35-aa43-514d7b502dd9', 'Founder, into climbing and philosophy - lots of common interests.', now(), now());
