@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
@@ -5,7 +7,8 @@ import { getAuthLink } from '@/lib/twitter/auth';
 
 export async function GET() {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    const cookieStore = cookies();
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
     const { data: { session } } = await supabase.auth.getSession();
 
     if (!session) {

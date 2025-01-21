@@ -39,3 +39,13 @@
   - Added loading states and skeletons throughout dashboard
   - Used tabs to organize activity views
   - Fixed type issues with Supabase query responses
+
+# 2025-01-21
+
+- Integrated Twitter OAuth for DM management:
+  - Set up Twitter Developer App with proper permissions
+  - Added Twitter API credentials and environment variables
+  - Created Twitter API client utilities with proper typing
+  - Implemented OAuth 1.0a flow with temporary token storage
+  - Added Supabase table for storing Twitter auth data with RLS
+  - Created API routes for Twitter auth flow and callback handling

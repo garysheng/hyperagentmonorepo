@@ -1,23 +1,25 @@
-import { TweetV1, DirectMessageCreateV1, UserV1 } from 'twitter-api-v2';
+import { TweetV1, DirectMessageCreateV1 } from 'twitter-api-v2';
 
 export interface TwitterTokens {
   oauth_token: string;
   oauth_token_secret: string;
 }
 
-export interface TwitterUser extends UserV1 {
+export interface TwitterUserMinimal {
+  id_str: string;
+  screen_name: string;
   tokens?: TwitterTokens;
 }
 
 export interface TwitterDM extends DirectMessageCreateV1 {
   id: string;
   created_at: string;
-  sender: TwitterUser;
-  recipient: TwitterUser;
+  sender: TwitterUserMinimal;
+  recipient: TwitterUserMinimal;
 }
 
 export interface TwitterAuthState {
   isAuthenticated: boolean;
-  user?: TwitterUser;
+  user?: TwitterUserMinimal;
   error?: string;
 } 
