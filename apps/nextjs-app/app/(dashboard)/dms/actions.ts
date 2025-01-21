@@ -1,13 +1,23 @@
 import { DM } from '@/types'
 
-export async function fetchDMs(): Promise<DM[]> {
-  const res = await fetch('/api/dms')
-  if (!res.ok) {
+export async function getDMs(): Promise<DM[]> {
+  const response = await fetch('/api/dms')
+  if (!response.ok) {
     throw new Error('Failed to fetch DMs')
   }
-  const data = await res.json()
-  return data.map((dm: any) => ({
-    ...dm,
-    timestamp: new Date(dm.created_at)
-  }))
+  return response.json()
+}
+
+export async function updateDM(id: string, data: Partial<DM>): Promise<DM> {
+  const response = await fetch(`/api/dms/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  })
+  if (!response.ok) {
+    throw new Error('Failed to update DM')
+  }
+  return response.json()
 } 

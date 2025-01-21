@@ -46,4 +46,12 @@ export interface User {
   role: 'admin' | 'support_agent' | 'celebrity';
   created_at: string;
   updated_at: string;
+}
+
+export interface TeamMember {
+  id: string;
+  full_name: string;
+  email: string;
+  role: string;
+  created_at: string;
 } 

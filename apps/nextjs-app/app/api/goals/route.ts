@@ -1,6 +1,5 @@
 import { createServerClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { Goal } from '@/types'
 
 export async function GET() {
   try {
