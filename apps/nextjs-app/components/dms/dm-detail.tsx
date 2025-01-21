@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator'
 import Image from 'next/image'
 import type { DM } from '@/types'
 import { DMActions } from './dm-actions'
+import { DMComments } from './dm-comments'
 import { formatDistanceToNow } from 'date-fns'
 import { useTeamMembers } from '@/hooks/use-team-members'
 
@@ -71,7 +72,7 @@ export function DMDetail({ dm }: DMDetailProps) {
 
       <Separator className="my-4" />
 
-      <div className="flex-1">
+      <div className="flex-1 overflow-auto">
         <div className="space-y-4">
           <div>
             <h4 className="text-sm font-medium text-muted-foreground mb-2">
@@ -124,6 +125,12 @@ export function DMDetail({ dm }: DMDetailProps) {
               <p className="text-sm">This DM needs team discussion</p>
             </div>
           )}
+          <div>
+            <h4 className="text-sm font-medium text-muted-foreground mb-2">
+              Comments
+            </h4>
+            <DMComments dmId={dm.id} />
+          </div>
         </div>
       </div>
     </Card>

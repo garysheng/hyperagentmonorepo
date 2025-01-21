@@ -73,6 +73,11 @@ export interface Database {
           content: string
           created_at: string
           updated_at: string
+          user: {
+            id: string
+            full_name: string
+            email: string
+          }
         }
         Insert: {
           id?: string
