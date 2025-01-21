@@ -1,4 +1,4 @@
-import { authClient } from './client';
+import { getAuthClient } from './client';
 import { TwitterTokens } from '@/types/twitter';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import crypto from 'crypto';
@@ -23,6 +23,7 @@ function generatePKCE() {
 
 export async function generateAuthUrl(state: string) {
     const { verifier, challenge } = generatePKCE();
+    const authClient = getAuthClient();
 
     // Store verifier in Supabase for later use
     const supabase = createClientComponentClient();
@@ -34,10 +35,13 @@ export async function generateAuthUrl(state: string) {
     return authClient.generateOAuth2AuthLink(process.env.TWITTER_CALLBACK_URL!, {
         scope: SCOPES,
         state,
+        codeVerifier: verifier,
     });
 }
 
 export async function handleCallback(code: string, state: string) {
+    const authClient = getAuthClient();
+    
     // Get stored verifier
     const supabase = createClientComponentClient();
     const { data: storedState } = await supabase
@@ -81,6 +85,8 @@ export async function storeTwitterTokens(userId: string, tokens: TwitterTokens) 
 }
 
 export async function refreshTokens(userId: string, refreshToken: string): Promise<TwitterTokens> {
+    const authClient = getAuthClient();
+    
     const { accessToken, refreshToken: newRefreshToken, expiresIn } =
         await authClient.refreshOAuth2Token(refreshToken);
 
