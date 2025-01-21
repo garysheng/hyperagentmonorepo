@@ -88,6 +88,13 @@ We'll store `celebrity_id` **directly** in the `users` table.
 | `status` | VARCHAR | e.g. "new", "in_progress", "snoozed", "archived." |
 | `created_at` | TIMESTAMP | Defaults to `now()`. |
 | `updated_at` | TIMESTAMP | Last time a user or process updated the record. |
+| `assigned_to` | UUID | UUID of team member assigned |
+| `needs_discussion` | BOOLEAN | Boolean flag for team discussion |
+| `relevance_override_explanation` | TEXT | Text explanation when overriding AI score |
+| `relevance_override_by` | UUID | UUID of user who overrode the score |
+| `relevance_override_at` | TIMESTAMP | Timestamp of override |
+| `status_updated_by` | UUID | UUID of user who last updated status |
+| `status_updated_at` | TIMESTAMP | Timestamp of last status update |
 
 ### 3.5 **Opportunity Messages** (Thread Content)
 
@@ -112,6 +119,17 @@ We'll store `celebrity_id` **directly** in the `users` table.
 | `old_value` | JSONB | Optional. Stores prior status, prior score, etc. |
 | `new_value` | JSONB | Optional. The new status, new tags, new score, etc. |
 | `created_at` | TIMESTAMP | Defaults to `now()`. |
+
+### 3.7 **Opportunity Comments Table**
+
+| Column | Type | Description |
+| --- | --- | --- |
+| `id` | UUID | Primary key |
+| `opportunity_id` | UUID | References opportunities table |
+| `user_id` | UUID | UUID of comment author |
+| `content` | TEXT | Text content of comment |
+| `created_at` | TIMESTAMP | Timestamp of creation |
+| `updated_at` | TIMESTAMP | Timestamp of last update |
 
 ---
 
@@ -610,3 +628,70 @@ We've simplified the classification pipeline to use Perplexity API for both user
      - Timing and performance metrics
 
 This approach provides better stability (UUIDs vs indices), simpler integration (one API instead of multiple), and comprehensive observability through LangSmith.
+
+# Opportunity Actions & Workflow
+
+## Actions Available
+1. **Classification Actions**
+   - Upgrade relevance (requires explanation for overriding AI's score)
+   - Downgrade to irrelevant (marks as rejected)
+
+2. **Assignment Actions**
+   - Assign to goal
+   - Assign to team member
+   - Flag for team discussion
+
+3. **Status Management**
+   - Mark for follow-up (approved)
+   - Archive (rejected)
+   - Put on hold
+
+## Data Model Updates
+
+### Opportunities Table
+New fields added to track actions and assignments:
+- `assigned_to` - UUID of team member assigned
+- `needs_discussion` - Boolean flag for team discussion
+- `relevance_override_explanation` - Text explanation when overriding AI score
+- `relevance_override_by` - UUID of user who overrode the score
+- `relevance_override_at` - Timestamp of override
+- `status_updated_by` - UUID of user who last updated status
+- `status_updated_at` - Timestamp of last status update
+- Status now includes 'on_hold' in addition to existing states
+
+### New: Opportunity Comments Table
+Enables team discussions on opportunities:
+- `id` - UUID primary key
+- `opportunity_id` - References opportunities table
+- `user_id` - UUID of comment author
+- `content` - Text content of comment
+- `created_at` - Timestamp of creation
+- `updated_at` - Timestamp of last update
+
+## Workflow
+1. **Initial AI Classification**
+   - AI assigns initial relevance score
+   - Sets initial status (pending/rejected)
+
+2. **Human Review**
+   - Can override AI classification with explanation
+   - Can assign to team members
+   - Can flag for discussion
+   - Can add comments for team input
+
+3. **Team Collaboration**
+   - Team members can discuss via comments
+   - Can be assigned to specific team members
+   - Status can be updated based on team decisions
+
+4. **Final Processing**
+   - Mark for follow-up (approved)
+   - Archive (rejected)
+   - Put on hold for later review
+
+## Security
+- Row Level Security (RLS) policies ensure:
+  - Comments are only visible to team members
+  - Only authenticated users can create comments
+  - Users can only edit their own comments
+  - Actions are tracked with user IDs and timestamps
