@@ -7,6 +7,7 @@ import Image from 'next/image'
 import type { DM } from '@/types'
 import { DMActions } from './dm-actions'
 import { formatDistanceToNow } from 'date-fns'
+import { useTeamMembers } from '@/hooks/use-team-members'
 
 interface DMDetailProps {
   dm: DM | null
@@ -26,6 +27,8 @@ function getStatusBadgeVariant(status: DM['status']): "default" | "secondary" | 
 }
 
 export function DMDetail({ dm }: DMDetailProps) {
+  const { data: teamMembers = [] } = useTeamMembers()
+
   if (!dm) {
     return (
       <Card className="p-6 h-[calc(100vh-13rem)]">
@@ -35,6 +38,10 @@ export function DMDetail({ dm }: DMDetailProps) {
       </Card>
     )
   }
+
+  const assignedTeamMember = dm.assigned_to 
+    ? teamMembers.find(member => member.id === dm.assigned_to)
+    : null
 
   return (
     <Card className="p-6 h-[calc(100vh-13rem)] flex flex-col">
@@ -78,6 +85,26 @@ export function DMDetail({ dm }: DMDetailProps) {
             </h4>
             <p className="text-sm">{dm.relevance_score} / 5</p>
           </div>
+          {assignedTeamMember && (
+            <div>
+              <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                Assigned To
+              </h4>
+              <div className="flex items-center gap-2">
+                <Image
+                  src={`https://api.dicebear.com/9.x/adventurer/svg?seed=${assignedTeamMember.id}`}
+                  alt={assignedTeamMember.full_name}
+                  width={24}
+                  height={24}
+                  className="rounded-full"
+                />
+                <div>
+                  <p className="text-sm font-medium">{assignedTeamMember.full_name}</p>
+                  <p className="text-xs text-muted-foreground">{assignedTeamMember.role}</p>
+                </div>
+              </div>
+            </div>
+          )}
           {dm.goal_id && (
             <div>
               <h4 className="text-sm font-medium text-muted-foreground mb-2">
