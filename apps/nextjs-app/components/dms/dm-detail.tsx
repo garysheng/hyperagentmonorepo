@@ -31,7 +31,10 @@ function getStatusBadgeVariant(status: DM['status']): "default" | "secondary" | 
 
 export function DMDetail({ dm }: DMDetailProps) {
   const { data: teamMembers = [] } = useTeamMembers()
-  const actions = dm ? useOpportunityActions(dm.id) : null
+  const actions = useOpportunityActions(dm?.id ?? '')
+
+  console.log('DMDetail - Raw tags:', dm?.tags)
+  console.log('DMDetail - Tags type:', dm?.tags ? typeof dm.tags : 'no dm')
 
   if (!dm) {
     return (
@@ -48,9 +51,13 @@ export function DMDetail({ dm }: DMDetailProps) {
     : null
 
   const handleTagsChange = async (newTags: string[]) => {
-    if (!actions) return
+    if (!dm) return
+    console.log('handleTagsChange - Sending tags:', newTags)
     await actions.updateTags(newTags)
   }
+
+  const tagsToPass = Array.isArray(dm.tags) ? dm.tags : []
+  console.log('DMDetail - Tags being passed to DMTags:', tagsToPass)
 
   return (
     <Card className="p-6 h-[calc(100vh-13rem)] flex flex-col">
@@ -92,7 +99,10 @@ export function DMDetail({ dm }: DMDetailProps) {
             <h4 className="text-sm font-medium text-muted-foreground mb-2">
               Tags
             </h4>
-            <DMTags tags={dm.tags} onTagsChange={handleTagsChange} />
+            <DMTags 
+              tags={tagsToPass}
+              onTagsChange={handleTagsChange} 
+            />
           </div>
           <div>
             <h4 className="text-sm font-medium text-muted-foreground mb-2">

@@ -2,32 +2,43 @@
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from '@/components/ui/command'
+import { Input } from '@/components/ui/input'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
-import { Check, Plus, X } from 'lucide-react'
-import { useState } from 'react'
+import { Plus, X } from 'lucide-react'
+import { useState, useEffect } from 'react'
 
 const defaultTags = [
-  'High Priority',
-  'Follow Up',
-  'Needs Review',
-  'Interesting',
-  'Not Relevant',
-  'Spam',
-  'Technical',
+  // Opportunity Type
+  'Sponsorship',
+  'Partnership',
+  'Media Request',
+  'Fan Message',
+  'Business Inquiry',
+  'Technical Issue',
+  
+  // Sender Type
+  'Influencer',
   'Business',
-  'Personal',
+  'Media',
+  'Developer',
+  'Fan',
+  
+  // Content Type
+  'Question',
+  'Feedback',
+  'Proposal',
+  'Introduction',
+  
+  // Priority Flags
+  'High Value',
+  'Quick Win',
+  'Complex Deal',
+  'Needs Research'
 ]
 
 interface DMTagsProps {
@@ -38,20 +49,34 @@ interface DMTagsProps {
 
 export function DMTags({ tags, onTagsChange, className }: DMTagsProps) {
   const [open, setOpen] = useState(false)
-  const [selectedTags, setSelectedTags] = useState<string[]>(tags)
+  const [selectedTags, setSelectedTags] = useState<string[]>(() => {
+    return Array.isArray(tags) ? tags : []
+  })
   const [isUpdating, setIsUpdating] = useState(false)
+  const [search, setSearch] = useState('')
+
+  // Update selected tags when props change
+  useEffect(() => {
+    setSelectedTags(Array.isArray(tags) ? tags : [])
+  }, [tags])
+
+  const filteredTags = defaultTags.filter(tag => 
+    tag.toLowerCase().includes(search.toLowerCase()) &&
+    !selectedTags.includes(tag)
+  )
 
   const handleSelect = async (tag: string) => {
-    const newTags = selectedTags.includes(tag)
-      ? selectedTags.filter(t => t !== tag)
-      : [...selectedTags, tag]
+    if (selectedTags.includes(tag)) return
     
+    const newTags = [...selectedTags, tag]
     setSelectedTags(newTags)
     setIsUpdating(true)
     try {
       await onTagsChange(newTags)
+      setSearch('')
     } finally {
       setIsUpdating(false)
+      setOpen(false)
     }
   }
 
@@ -109,29 +134,36 @@ export function DMTags({ tags, onTagsChange, className }: DMTagsProps) {
               Add Tag
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[200px] p-0" align="start">
-            <Command>
-              <CommandInput placeholder="Search tags..." />
-              <CommandEmpty>No tags found.</CommandEmpty>
-              <CommandGroup>
-                {defaultTags.map(tag => (
-                  <CommandItem
-                    key={tag}
-                    onSelect={() => handleSelect(tag)}
-                  >
-                    <Check
+          <PopoverContent className="w-[200px] p-2" align="start">
+            <div className="space-y-2">
+              <Input
+                placeholder="Search tags..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-8"
+              />
+              <div className="max-h-[200px] overflow-auto space-y-1">
+                {filteredTags.length === 0 ? (
+                  <p className="text-sm text-muted-foreground p-2">
+                    No tags found
+                  </p>
+                ) : (
+                  filteredTags.map(tag => (
+                    <button
+                      key={tag}
+                      onClick={() => handleSelect(tag)}
                       className={cn(
-                        'mr-2 h-4 w-4',
-                        selectedTags.includes(tag)
-                          ? 'opacity-100'
-                          : 'opacity-0'
+                        'w-full text-left px-2 py-1 text-sm rounded-md',
+                        'hover:bg-accent hover:text-accent-foreground',
+                        'focus:outline-none focus:bg-accent focus:text-accent-foreground'
                       )}
-                    />
-                    {tag}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </Command>
+                    >
+                      {tag}
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
           </PopoverContent>
         </Popover>
       </div>

@@ -148,8 +148,8 @@ export async function POST(
           .from('opportunities')
           .update({
             tags: payload.tags,
-            updated_by: user.id,
-            updated_at: now,
+            status_updated_by: user.id,
+            status_updated_at: now,
           })
           .eq('id', id)
           .select()
