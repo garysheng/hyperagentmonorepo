@@ -1,9 +1,12 @@
+import { AI_MODELS, AI_DEFAULTS } from './constants';
+
 interface ClassificationResult {
   relevanceScore: number;
   tags: string[];
   status: 'pending' | 'approved' | 'rejected';
   needsDiscussion: boolean;
   goalId?: string;
+  explanation: string;
 }
 
 export class PerplexityAI {
@@ -32,6 +35,7 @@ export class PerplexityAI {
       - status: either "pending", "approved", or "rejected"
       - needsDiscussion: boolean indicating if this needs team discussion
       - goalId: string ID of the most relevant goal from the list above, or null if none are relevant
+      - explanation: a detailed explanation (2-3 sentences) of why you assigned these ratings and classifications, specifically mentioning how the message relates to any matched goal
 
       Consider the goals when determining relevance and status. If the message aligns well with any goal, it should have a higher relevance score.
       Respond only with the JSON object, no other text.
@@ -46,19 +50,19 @@ export class PerplexityAI {
           'Authorization': `Bearer ${this.apiKey}`
         },
         body: JSON.stringify({
-          model: 'sonar-pro',
+          model: AI_MODELS.PERPLEXITY_MODEL,
           messages: [
             {
               role: 'system',
-              content: 'You are a helpful assistant that analyzes messages in the context of business goals and provides classifications in JSON format.'
+              content: 'You are a helpful assistant that analyzes messages in the context of business goals and provides detailed classifications in JSON format. Your explanations should be clear and specific, highlighting key factors in your decision-making process.'
             },
             {
               role: 'user',
               content: prompt
             }
           ],
-          temperature: 0.1,
-          max_tokens: 300
+          temperature: AI_DEFAULTS.TEMPERATURE,
+          max_tokens: AI_DEFAULTS.MAX_TOKENS
         })
       });
 
@@ -83,7 +87,9 @@ export class PerplexityAI {
         typeof result.relevanceScore !== 'number' ||
         !Array.isArray(result.tags) ||
         !['pending', 'approved', 'rejected'].includes(result.status) ||
-        typeof result.needsDiscussion !== 'boolean'
+        typeof result.needsDiscussion !== 'boolean' ||
+        typeof result.explanation !== 'string' ||
+        result.explanation.length < 10
       ) {
         console.error('Invalid result structure:', result);
         throw new Error('Invalid classification result from Perplexity');

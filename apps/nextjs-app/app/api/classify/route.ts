@@ -82,7 +82,9 @@ export async function GET(request: Request) {
               tags: classification.tags,
               status: classification.status,
               needs_discussion: classification.needsDiscussion,
-              goal_id: classification.goalId
+              goal_id: classification.goalId,
+              classification_explanation: classification.explanation,
+              classified_at: new Date().toISOString()
             })
             .eq('id', opp.id);
 
