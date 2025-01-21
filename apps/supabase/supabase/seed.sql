@@ -2,6 +2,7 @@
 DELETE FROM opportunity_comments;
 DELETE FROM opportunities;
 DELETE FROM goals;
+DELETE FROM users;
 DELETE FROM celebrities WHERE twitter_username = 'garysheng';
 
 -- Insert Gary's celebrity profile
@@ -11,6 +12,20 @@ VALUES (
   'Gary Sheng',
   'garysheng',
   'placeholder_password',
+  NOW()
+);
+
+-- Insert Gary's user profile
+WITH celebrity_id AS (
+  SELECT id FROM celebrities WHERE twitter_username = 'garysheng'
+)
+INSERT INTO users (id, celebrity_id, email, role, full_name, created_at)
+VALUES (
+  gen_random_uuid(),
+  (SELECT id FROM celebrity_id),
+  'garysheng11@gmail.com',
+  'celebrity',
+  'Gary Sheng',
   NOW()
 );
 
@@ -203,7 +218,7 @@ INSERT INTO opportunities (
 
 -- Add some comments
 WITH user_id AS (
-  SELECT id FROM auth.users WHERE email = 'garysheng11@gmail.com' LIMIT 1
+  SELECT id FROM users WHERE email = 'garysheng11@gmail.com' LIMIT 1
 ),
 opp_1 AS (
   SELECT id FROM opportunities WHERE sender_handle = 'elonmusk' LIMIT 1
