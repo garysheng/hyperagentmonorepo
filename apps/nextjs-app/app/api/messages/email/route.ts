@@ -67,13 +67,14 @@ export async function POST(request: Request) {
 
     // Create message record
     const { error: messageError } = await supabase
-      .from('messages')
+      .from('opportunity_messages')
       .insert({
         opportunity_id: opportunityId,
         content: message,
         sender_type: 'celebrity',
         created_at: new Date().toISOString(),
-        platform_message_id: emailResponse.data?.id
+        platform_message_id: emailResponse.data?.id,
+        direction: 'outbound'
       })
 
     if (messageError) {

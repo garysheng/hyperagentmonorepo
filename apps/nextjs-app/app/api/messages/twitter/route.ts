@@ -58,7 +58,7 @@ export async function POST(request: Request) {
       { text: message }
     )
 
-    if (!dmResponse) {
+    if (!dmResponse || !dmResponse.dm_conversation_id) {
       throw new Error('Failed to send DM')
     }
 
@@ -81,13 +81,14 @@ export async function POST(request: Request) {
 
     // Create message record
     const { error: messageError } = await supabase
-      .from('messages')
+      .from('opportunity_messages')
       .insert({
         opportunity_id: opportunityId,
         content: message,
         sender_type: 'celebrity',
         created_at: new Date().toISOString(),
-        platform_message_id: dmResponse.dm_conversation_id
+        platform_message_id: dmResponse.dm_conversation_id,
+        direction: 'outbound'
       })
 
     if (messageError) {
