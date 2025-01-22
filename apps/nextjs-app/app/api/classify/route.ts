@@ -15,7 +15,7 @@ const perplexity = new PerplexityAI(process.env.PERPLEXITY_API_KEY!);
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes
 
-export async function GET(request: Request) {
+export async function GET() {
     try {
         // Fetch unclassified opportunities (relevance_score = -1)
         const { data: opportunities, error } = await supabase
