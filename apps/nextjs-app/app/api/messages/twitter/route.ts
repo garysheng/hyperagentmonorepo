@@ -29,6 +29,8 @@ export async function POST(request: Request) {
       .eq('id', opportunityId)
       .single()
 
+    console.log('Opportunity lookup:', { opportunity, error: oppError })
+
     if (oppError || !opportunity) {
       return NextResponse.json(
         { error: 'Could not find opportunity' },
@@ -43,6 +45,8 @@ export async function POST(request: Request) {
       .eq('celebrity_id', opportunity.celebrity_id)
       .single()
 
+    console.log('User lookup:', { user, error: userError, celebrity_id: opportunity.celebrity_id })
+
     if (userError || !user) {
       return NextResponse.json(
         { error: 'Could not find user for celebrity' },
@@ -53,31 +57,16 @@ export async function POST(request: Request) {
     // Get Twitter auth for the user
     const { data: twitterAuth, error: authError } = await supabase
       .from(TableName.TWITTER_AUTH)
-      .select('access_token, refresh_token, scopes')
+      .select('access_token, refresh_token')
       .eq('user_id', user.id)
       .single()
+
+    console.log('Twitter auth lookup:', { twitterAuth, error: authError, user_id: user.id })
 
     if (authError || !twitterAuth?.access_token) {
       return NextResponse.json(
         { error: 'Could not find Twitter authentication' },
         { status: 404 }
-      )
-    }
-
-    // Check if we have DM permissions
-    const requiredScopes = ['dm.read', 'dm.write']
-    const hasRequiredScopes = requiredScopes.every(scope => 
-      twitterAuth.scopes?.includes(scope)
-    )
-
-    if (!hasRequiredScopes) {
-      console.error('Missing required Twitter scopes:', {
-        required: requiredScopes,
-        current: twitterAuth.scopes
-      })
-      return NextResponse.json(
-        { error: 'Missing required Twitter permissions. Please reconnect your account.' },
-        { status: 403 }
       )
     }
 
@@ -88,16 +77,18 @@ export async function POST(request: Request) {
     try {
       if (opportunity.twitter_dm_conversation_id) {
         // Send message in existing conversation
-        dmResponse = await client.sendDmToParticipant(
-          opportunity.twitter_sender_id,
-          { text: message }
-        )
+        dmResponse = await client.createDmConversation({
+          participant_ids: [opportunity.twitter_sender_id],
+          message: { text: message },
+          conversation_type: 'Group'
+        })
       } else {
         // Create new conversation with participant
-        dmResponse = await client.sendDmToParticipant(
-          opportunity.twitter_sender_id,
-          { text: message }
-        )
+        dmResponse = await client.createDmConversation({
+          participant_ids: [opportunity.twitter_sender_id],
+          message: { text: message },
+          conversation_type: 'Group'
+        })
       }
     } catch (error) {
       if (error instanceof ApiResponseError) {
@@ -131,15 +122,17 @@ export async function POST(request: Request) {
             
             // Retry sending the message
             if (opportunity.twitter_dm_conversation_id) {
-              dmResponse = await client.sendDmToParticipant(
-                opportunity.twitter_sender_id,
-                { text: message }
-              )
+              dmResponse = await client.createDmConversation({
+                participant_ids: [opportunity.twitter_sender_id],
+                message: { text: message },
+                conversation_type: 'Group'
+              })
             } else {
-              dmResponse = await client.sendDmToParticipant(
-                opportunity.twitter_sender_id,
-                { text: message }
-              )
+              dmResponse = await client.createDmConversation({
+                participant_ids: [opportunity.twitter_sender_id],
+                message: { text: message },
+                conversation_type: 'Group'
+              })
             }
           } catch (refreshError) {
             console.error('Error refreshing token:', refreshError)
