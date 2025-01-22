@@ -12,6 +12,18 @@ export async function getOpportunities(): Promise<Opportunity[]> {
     return []
   }
 
+  // Get the user's celebrity_id
+  const { data: userProfile } = await supabase
+    .from('users')
+    .select('celebrity_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!userProfile?.celebrity_id) {
+    console.error('No celebrity_id found for user')
+    return []
+  }
+
   const { data: opportunities, error } = await supabase
     .from('opportunities')
     .select(`
@@ -22,6 +34,7 @@ export async function getOpportunities(): Promise<Opportunity[]> {
         description
       )
     `)
+    .eq('celebrity_id', userProfile.celebrity_id)
     .order('created_at', { ascending: false })
 
   if (error) {
