@@ -4,6 +4,7 @@ import type { Opportunity as DM } from '@/types'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useState } from 'react'
 import type { OpportunityStatus } from '@/types'
+import { TableName } from '@/types'
 
 async function performAction(id: string, action: OpportunityAction): Promise<DM> {
   const response = await fetch(`/api/opportunities/${id}/actions`, {
@@ -68,8 +69,12 @@ export function useOpportunityActions(id: string) {
     setIsLoading(true)
     try {
       const { error } = await supabase
-        .from('dms')
-        .update({ status })
+        .from(TableName.OPPORTUNITIES)
+        .update({ 
+          status,
+          status_updated_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
         .eq('id', id)
 
       if (error) throw error

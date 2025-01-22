@@ -1,9 +1,11 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { getTwitterClient } from '@/lib/twitter/client'
+import { getReadWriteClient } from '@/lib/twitter/client'
+import { TableName } from '@/types'
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient()
     const { opportunityId, message } = await request.json()
 
     if (!opportunityId || !message) {
@@ -13,97 +15,83 @@ export async function POST(request: Request) {
       )
     }
 
-    // Initialize Supabase client
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
-
     // Get opportunity details
-    const { data: opportunity, error: opportunityError } = await supabase
-      .from('opportunities')
-      .select('*, celebrity:celebrities(*)')
+    const { data: opportunity, error: oppError } = await supabase
+      .from(TableName.OPPORTUNITIES)
+      .select(`
+        id,
+        sender_id,
+        twitter_sender_id,
+        twitter_dm_conversation_id
+      `)
       .eq('id', opportunityId)
       .single()
 
-    if (opportunityError || !opportunity) {
-      console.error('Error fetching opportunity:', opportunityError)
+    if (oppError || !opportunity) {
       return NextResponse.json(
-        { error: 'Opportunity not found' },
+        { error: 'Could not find opportunity' },
         { status: 404 }
       )
     }
 
     // Get Twitter auth for the celebrity
-    const { data: twitterAuth, error: twitterAuthError } = await supabase
-      .from('twitter_auth')
+    const { data: twitterAuth, error: authError } = await supabase
+      .from(TableName.TWITTER_AUTH)
       .select('access_token, refresh_token')
-      .eq('celebrity_id', opportunity.celebrity_id)
       .single()
 
-    if (twitterAuthError || !twitterAuth) {
-      console.error('Error fetching Twitter auth:', twitterAuthError)
+    if (authError || !twitterAuth) {
       return NextResponse.json(
-        { error: 'Twitter authentication not found' },
+        { error: 'Could not find Twitter authentication' },
         { status: 404 }
       )
     }
 
-    // Initialize Twitter client
-    const twitterClient = getTwitterClient(twitterAuth.access_token)
+    // Send DM using Twitter API
+    const twitterClient = getReadWriteClient(twitterAuth.access_token, twitterAuth.refresh_token)
+    const dmResponse = await twitterClient.v1.sendDm({
+      recipient_id: opportunity.twitter_sender_id,
+      text: message
+    })
 
-    // Send DM
-    const dmResponse = await twitterClient.v2.sendDmToParticipant(
-      opportunity.sender_id,
-      { text: message }
-    )
-
-    if (!dmResponse || !dmResponse.dm_conversation_id) {
+    if (!dmResponse) {
       throw new Error('Failed to send DM')
     }
 
     // Update opportunity status
     const { error: updateError } = await supabase
-      .from('opportunities')
-      .update({ 
+      .from(TableName.OPPORTUNITIES)
+      .update({
         status: 'conversation_started',
+        status_updated_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
       .eq('id', opportunityId)
 
     if (updateError) {
-      console.error('Error updating opportunity:', updateError)
-      return NextResponse.json(
-        { error: 'Failed to update opportunity status' },
-        { status: 500 }
-      )
+      throw updateError
     }
 
     // Create message record
     const { error: messageError } = await supabase
-      .from('opportunity_messages')
+      .from(TableName.OPPORTUNITY_MESSAGES)
       .insert({
         opportunity_id: opportunityId,
         content: message,
-        sender_type: 'celebrity',
-        created_at: new Date().toISOString(),
-        platform_message_id: dmResponse.dm_conversation_id,
-        direction: 'outbound'
+        platform_message_id: dmResponse.event.id,
+        direction: 'outbound',
+        created_at: new Date().toISOString()
       })
 
     if (messageError) {
-      console.error('Error creating message record:', messageError)
-      return NextResponse.json(
-        { error: 'Failed to create message record' },
-        { status: 500 }
-      )
+      throw messageError
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error sending Twitter DM:', error)
     return NextResponse.json(
-      { error: 'Failed to send Twitter DM' },
+      { error: 'Failed to send message' },
       { status: 500 }
     )
   }

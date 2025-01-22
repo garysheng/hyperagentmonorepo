@@ -60,4 +60,16 @@ export interface TeamMember {
   email: string;
   role: string;
   created_at: string;
+}
+
+export enum TableName {
+  OPPORTUNITIES = 'opportunities',
+  OPPORTUNITY_ACTIONS = 'opportunity_actions',
+  OPPORTUNITY_MESSAGES = 'opportunity_messages',
+  OPPORTUNITY_COMMENTS = 'opportunity_comments',
+  GOALS = 'goals',
+  USERS = 'users',
+  CELEBRITIES = 'celebrities',
+  TEAM_MEMBERS = 'team_members',
+  TWITTER_AUTH = 'twitter_auth'
 } 

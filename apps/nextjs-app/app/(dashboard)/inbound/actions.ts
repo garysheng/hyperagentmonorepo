@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import type { Opportunity } from '@/types'
+import { TableName } from '@/types'
 
 export async function getOpportunities(): Promise<Opportunity[]> {
   const supabase = await createClient()
@@ -14,7 +15,7 @@ export async function getOpportunities(): Promise<Opportunity[]> {
 
   // Get the user's celebrity_id
   const { data: userProfile } = await supabase
-    .from('users')
+    .from(TableName.USERS)
     .select('celebrity_id')
     .eq('id', user.id)
     .single()
@@ -25,7 +26,7 @@ export async function getOpportunities(): Promise<Opportunity[]> {
   }
 
   const { data: opportunities, error } = await supabase
-    .from('opportunities')
+    .from(TableName.OPPORTUNITIES)
     .select(`
       *,
       goals (

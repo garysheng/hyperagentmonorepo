@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { MoreHorizontal, Star, Flag, Users, Target, UserPlus, MessageCircle } from 'lucide-react'
+import { MoreHorizontal, Star, Flag, Users, Target, UserPlus, MessageCircle, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import { useQueryClient } from '@tanstack/react-query'
@@ -200,6 +200,18 @@ export function DMActions({ dm }: DMActionsProps) {
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                    {dm.status === 'pending' && (
+                        <>
+                            <DropdownMenuItem
+                                onClick={() => handleUpdateStatus('approved')}
+                                disabled={actions.isLoading}
+                            >
+                                <Check className="mr-2 h-4 w-4" />
+                                Approve
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                        </>
+                    )}
                     {dm.status === 'approved' && (
                         <>
                             <DropdownMenuItem
