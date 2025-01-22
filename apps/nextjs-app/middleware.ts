@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 // Define routes that don't require authentication or celebrity association
 const PUBLIC_ROUTES = ['/', '/login', '/signup', '/auth/confirm']
 const CREATE_CELEBRITY_ROUTE = '/create-celebrity'
+const SET_GOALS_ROUTE = '/set-goals'
 const AUTH_ROUTES = ['/auth', '/api/auth']
 const STATIC_ROUTES = ['/_next', '/favicon.ico']
 
@@ -91,6 +92,24 @@ export async function middleware(request: NextRequest) {
       if (!userData?.celebrity_id) {
         console.log('⚠️ No celebrity_id - redirecting to create-celebrity')
         return NextResponse.redirect(new URL('/create-celebrity', request.url))
+      }
+
+      // For all routes except set-goals, check if celebrity has any goals
+      if (pathname !== SET_GOALS_ROUTE) {
+        const { count, error: goalsError } = await supabase
+          .from('goals')
+          .select('*', { count: 'exact', head: true })
+          .eq('celebrity_id', userData.celebrity_id)
+
+        console.log('🎯 Goals check result:', {
+          hasGoals: count && count > 0,
+          error: goalsError?.message
+        })
+
+        if (!count || count === 0) {
+          console.log('⚠️ No goals found - redirecting to set-goals')
+          return NextResponse.redirect(new URL('/set-goals', request.url))
+        }
       }
     }
 

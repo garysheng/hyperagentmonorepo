@@ -29,21 +29,33 @@ export function Header() {
   const pathname = usePathname()
   const { user, signOut } = useAuth()
   const [isSigningOut, setIsSigningOut] = useState(false)
+  const supabase = createClient()
 
-  // Fetch user profile and celebrity info
+  // Fetch user profile, celebrity info, and check for goals
   const { data: profile } = useQuery({
     queryKey: ['profile'],
     queryFn: async () => {
       if (!user) return null
-      const supabase = createClient()
+      
+      // Get user profile and celebrity info
       const { data } = await supabase
         .from('users')
-        .select('role, celebrities!inner(celebrity_name)')
+        .select('role, celebrity_id, celebrities!inner(celebrity_name)')
         .eq('id', user.id)
         .single()
+
+      if (!data?.celebrity_id) return { role: data?.role }
+
+      // Check if celebrity has goals
+      const { count } = await supabase
+        .from('goals')
+        .select('*', { count: 'exact', head: true })
+        .eq('celebrity_id', data.celebrity_id)
+
       return {
         role: data?.role,
-        celebrity_name: data?.celebrities?.[0]?.celebrity_name
+        celebrity_name: data?.celebrities?.[0]?.celebrity_name,
+        hasGoals: count && count > 0
       }
     },
     enabled: !!user
@@ -66,7 +78,7 @@ export function Header() {
           <Link href="/" className="ml-6 mr-6 flex items-center space-x-2">
             <span className="font-bold">HyperAgent</span>
           </Link>
-          {user && (
+          {!!user && !!profile?.hasGoals && (
             <nav className="flex items-center space-x-6 text-sm font-medium">
               {navigation.map((item) => (
                 <Link
