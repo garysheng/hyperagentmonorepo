@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import type { OpportunityAction } from '@/types/actions'
-import { PostgrestError } from '@supabase/supabase-js'
 
 type ActionValue = {
   score?: number
