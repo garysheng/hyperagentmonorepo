@@ -11,14 +11,11 @@ import { Badge } from '@/components/ui/badge'
 import { useInviteCodeList } from '@/hooks/use-invite-code-list'
 import { useCelebrity } from '@/hooks/use-celebrity'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Button } from '@/components/ui/button'
-import { Copy } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
+import { PreviewInviteDialog } from './preview-invite-dialog'
 
 export function InviteCodeTable() {
   const { data: inviteCodes, isLoading, error } = useInviteCodeList()
   const { data: celebrity } = useCelebrity()
-  const { toast } = useToast()
 
   const generateInviteMessage = (code: string, role: string) => {
     return `Hi! You've been invited to join the Hyperagent team for ${celebrity?.celebrity_name || 'our celebrity'}.
@@ -31,15 +28,6 @@ To get started:
 3. Enter your invite code: ${code}
 
 This invite code will expire in 7 days. Looking forward to working with you!`
-  }
-
-  const handleCopy = async (code: string, role: string) => {
-    const message = generateInviteMessage(code, role)
-    await navigator.clipboard.writeText(message)
-    toast({
-      title: 'Copied!',
-      description: 'Invite message copied to clipboard',
-    })
   }
 
   if (error) {
@@ -115,14 +103,11 @@ This invite code will expire in 7 days. Looking forward to working with you!`
             </TableCell>
             <TableCell>
               {!code.used_at && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleCopy(code.code, code.role)}
-                  title="Copy invite message"
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
+                <PreviewInviteDialog
+                  code={code.code}
+                  role={code.role === 'admin' ? 'Admin' : 'Support Agent'}
+                  message={generateInviteMessage(code.code, code.role)}
+                />
               )}
             </TableCell>
           </TableRow>
