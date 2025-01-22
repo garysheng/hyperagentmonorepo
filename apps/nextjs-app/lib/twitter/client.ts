@@ -17,4 +17,8 @@ export function getReadWriteClient(token: string, secret: string) {
 export function getDMCapableClient(token: string, secret: string) {
   const client = getReadWriteClient(token, secret);
   return client.readWrite.v1;
+}
+
+export function getTwitterClient(accessToken: string) {
+  return new TwitterApi(accessToken);
 } 

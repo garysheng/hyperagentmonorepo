@@ -5,15 +5,28 @@ import { validateCallback } from '@/lib/twitter/auth';
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const oauth_token = searchParams.get('oauth_token');
-    const oauth_verifier = searchParams.get('oauth_verifier');
-    console.log('Received tokens:', { oauth_token, oauth_verifier });
+    const code = searchParams.get('code');
+    const state = searchParams.get('state');
 
-    if (!oauth_token || !oauth_verifier) {
+    console.log('Received callback params:', { code, state });
+
+    if (!code || !state) {
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL}/channels?error=Missing Twitter OAuth parameters`
+        `${process.env.NEXT_PUBLIC_APP_URL}/channels?error=Missing OAuth parameters`
       );
     }
+
+    // Get code verifier from cookie
+    const codeVerifier = request.cookies.get('twitter_code_verifier')?.value;
+    
+    if (!codeVerifier) {
+      console.error('Missing code verifier cookie');
+      return NextResponse.redirect(
+        `${process.env.NEXT_PUBLIC_APP_URL}/channels?error=Missing code verifier`
+      );
+    }
+
+    console.log('Found code verifier:', { codeVerifier });
 
     const supabase = await createClient();
     const { data: { user }, error } = await supabase.auth.getUser();
@@ -25,51 +38,35 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('Looking up tokens for user:', user.id);
+    console.log('Exchanging code for tokens...');
 
-    // Get the stored tokens
-    const { data: storedTokens, error: lookupError } = await supabase
-      .from('twitter_auth')
-      .select('refresh_token')
-      .eq('user_id', user.id)
-      .single();
-
-    if (lookupError) {
-      console.error('Error looking up tokens:', lookupError);
-      return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL}/channels?error=Failed to retrieve stored tokens`
-      );
-    }
-
-    if (!storedTokens?.refresh_token) {
-      console.log('No matching tokens found:', { storedTokens });
-      return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL}/channels?error=Invalid OAuth state`
-      );
-    }
-
-    console.log('Found stored tokens:', storedTokens);
-
-    // Exchange the verifier for access tokens
+    // Exchange the code for access token
     const { user: twitterUser, tokens } = await validateCallback(
-      oauth_token,
-      oauth_verifier,
-      storedTokens.refresh_token
+      code,
+      state,
+      state, // Original state is the same since we're not storing it
+      codeVerifier
     );
 
-    console.log('Validated Twitter tokens:', { tokens, screenName: twitterUser.screen_name });
+    console.log('Received tokens from Twitter:', {
+      hasAccessToken: !!tokens.access_token,
+      hasRefreshToken: !!tokens.refresh_token,
+      screenName: twitterUser.username
+    });
 
-    // Update the Twitter tokens
+    // Store the final tokens
     const { error: updateError } = await supabase
       .from('twitter_auth')
-      .update({
-        access_token: tokens.oauth_token,
-        refresh_token: tokens.oauth_token_secret,
-        screen_name: twitterUser.screen_name,
-        twitter_id: twitterUser.id_str,
+      .upsert({
+        user_id: user.id,
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        screen_name: twitterUser.username,
+        twitter_id: twitterUser.id,
         updated_at: new Date().toISOString(),
-      })
-      .eq('user_id', user.id);
+      }, {
+        onConflict: 'user_id'
+      });
 
     if (updateError) {
       console.error('Error updating tokens:', updateError);
@@ -78,9 +75,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.redirect(
+    console.log('Successfully stored tokens in database');
+
+    // Clear the code verifier cookie
+    const response = NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_APP_URL}/channels?success=Twitter connected successfully`
     );
+    response.cookies.delete('twitter_code_verifier');
+    return response;
   } catch (error) {
     console.error('Twitter callback error:', error);
     return NextResponse.redirect(

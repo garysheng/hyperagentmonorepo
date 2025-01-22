@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { TwitterApi } from 'twitter-api-v2'
+import { getTwitterClient } from '@/lib/twitter/client'
 
 export async function GET() {
   try {
@@ -8,6 +8,7 @@ export async function GET() {
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
+      console.error('Auth error:', authError)
       return NextResponse.json(
         { error: 'Not authenticated' },
         { status: 401 }
@@ -22,36 +23,45 @@ export async function GET() {
       .single()
 
     if (tokenError || !twitterAuth) {
+      console.error('Token lookup error:', tokenError)
       return NextResponse.json(
         { error: 'Twitter not connected' },
-        { status: 400 }
+        { status: 401 }
       )
     }
 
-    // Initialize Twitter client
-    const client = new TwitterApi({
-      appKey: process.env.TWITTER_API_KEY!,
-      appSecret: process.env.TWITTER_API_SECRET!,
-      accessToken: twitterAuth.access_token,
-      accessSecret: twitterAuth.refresh_token,
+    console.log('Found Twitter tokens:', {
+      hasAccessToken: !!twitterAuth.access_token,
+      hasRefreshToken: !!twitterAuth.refresh_token
     })
 
-    // Fetch DMs
-    const dms = await client.v1.listDmEvents({
-      count: 10,
-    })
+    const client = getTwitterClient(twitterAuth.access_token)
 
-    return NextResponse.json(dms.events.map(event => ({
-      id: event.id,
-      text: event.message_create.message_data.text,
-      sender_id: event.message_create.sender_id,
-      sender_screen_name: event.message_create.sender_id, // We'll need to fetch user details separately
-      created_at: event.created_timestamp,
-    })))
+    try {
+      const dms = await client.v2.listDmEvents({
+        max_results: 50,
+        "dm_event.fields": ["id", "text", "created_at", "sender_id", "dm_conversation_id"]
+      })
+      return NextResponse.json(dms)
+    } catch (twitterError: any) {
+      console.error('Twitter API error details:', {
+        error: twitterError,
+        message: twitterError.message,
+        data: twitterError.data,
+        code: twitterError.code,
+        rateLimitInfo: twitterError.rateLimit,
+        headers: twitterError.headers
+      })
+      
+      return NextResponse.json(
+        { error: 'Failed to fetch Twitter DMs', details: twitterError.message },
+        { status: 500 }
+      )
+    }
   } catch (error) {
     console.error('Error fetching Twitter DMs:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch DMs' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

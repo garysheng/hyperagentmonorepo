@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { getAuthLink } from '@/lib/twitter/auth';
+import { cookies } from 'next/headers';
 
 export async function GET() {
   try {
@@ -16,33 +17,20 @@ export async function GET() {
       );
     }
 
-    // Get Twitter auth link and temporary tokens
+    // Get Twitter auth link with state and code verifier
     const { url, tokens } = await getAuthLink();
     console.log('Generated tokens:', tokens);
 
-    // Store tokens in twitter_auth table
-    const { error: upsertError } = await supabase
-      .from('twitter_auth')
-      .upsert({
-        user_id: user.id,
-        access_token: tokens.oauth_token,
-        refresh_token: tokens.oauth_token_secret,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'user_id',
-        ignoreDuplicates: false
-      });
-
-    if (upsertError) {
-      console.error('Error storing tokens:', upsertError);
-      return NextResponse.json(
-        { error: 'Failed to store tokens' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({ url });
+    // Store code verifier in an HTTP-only cookie
+    const response = NextResponse.json({ url: `${url}&state=${tokens.state}` });
+    response.cookies.set('twitter_code_verifier', tokens.code_verifier, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 5 // 5 minutes
+    });
+    
+    return response;
   } catch (error) {
     console.error('Twitter auth error:', error);
     return NextResponse.json(

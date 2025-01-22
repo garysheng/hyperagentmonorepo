@@ -1,50 +1,59 @@
 import { TwitterApi } from 'twitter-api-v2';
 import { TwitterTokens } from '@/types/twitter';
 
-// Initialize the client for OAuth 1.0a
+// Initialize the client for OAuth 2.0
 const client = new TwitterApi({
-  appKey: process.env.TWITTER_API_KEY!,
-  appSecret: process.env.TWITTER_API_SECRET!,
+  clientId: process.env.TWITTER_CLIENT_ID!,
+  clientSecret: process.env.TWITTER_CLIENT_SECRET!,
 });
 
 export async function getAuthLink() {
-  const { url, oauth_token, oauth_token_secret } = await client.generateAuthLink(
+  const { url, state, codeVerifier } = client.generateOAuth2AuthLink(
     process.env.TWITTER_CALLBACK_URL!,
-    { linkMode: 'authorize' }
+    { 
+      scope: [
+        'tweet.read',
+        'users.read',
+        'dm.read',
+        'offline.access'
+      ] 
+    }
   );
 
   return {
     url,
     tokens: {
-      oauth_token,
-      oauth_token_secret,
+      state,
+      code_verifier: codeVerifier,
     },
   };
 }
 
 export async function validateCallback(
-  oauth_token: string,
-  oauth_verifier: string,
-  oauth_token_secret: string
+  code: string,
+  state: string,
+  storedState: string,
+  codeVerifier: string,
 ) {
-  const tempClient = new TwitterApi({
-    appKey: process.env.TWITTER_API_KEY!,
-    appSecret: process.env.TWITTER_API_SECRET!,
-    accessToken: oauth_token,
-    accessSecret: oauth_token_secret,
-  });
+  if (state !== storedState) {
+    throw new Error('Stored tokens do not match.');
+  }
 
-  const { client: loggedClient, accessToken, accessSecret } =
-    await tempClient.login(oauth_verifier);
+  const { client: loggedClient, accessToken, refreshToken } =
+    await client.loginWithOAuth2({
+      code,
+      codeVerifier,
+      redirectUri: process.env.TWITTER_CALLBACK_URL!,
+    });
 
   // Get the user details
-  const user = await loggedClient.currentUser();
+  const user = await loggedClient.v2.me();
 
   return {
-    user,
+    user: user.data,
     tokens: {
-      oauth_token: accessToken,
-      oauth_token_secret: accessSecret,
+      access_token: accessToken,
+      refresh_token: refreshToken,
     } as TwitterTokens,
   };
 } 

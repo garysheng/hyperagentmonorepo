@@ -1,8 +1,8 @@
 import { TweetV1, DirectMessageCreateV1 } from 'twitter-api-v2';
 
 export interface TwitterTokens {
-  oauth_token: string;
-  oauth_token_secret: string;
+  access_token: string
+  refresh_token?: string
 }
 
 export interface TwitterUserMinimal {
