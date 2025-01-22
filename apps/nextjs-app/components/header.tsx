@@ -11,6 +11,7 @@ const navigation = [
   { name: 'Inbound', href: '/inbound' },
   { name: 'Outbound', href: '/outbound' },
   { name: 'Goals', href: '/goals' },
+  { name: 'Channels', href: '/channels' },
 ]
 
 export function Header() {
