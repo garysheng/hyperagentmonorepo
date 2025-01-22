@@ -37,15 +37,16 @@ describe('createTwitterDMOpportunity', () => {
 
   it('should create an opportunity with provided IDs', async () => {
     const mockParams = {
+      supabase: mockSupabase,
       celebrity_id: 'celeb-123',
-      conversation_id: 'conv-123',
+      dm_conversation_id: 'conv-123',
       sender_username: 'testuser',
-      message_content: 'Hello!',
+      message_text: 'Hello!',
       event_id: 'event-123',
       sender_id: 'sender-123'
     }
 
-    await createTwitterDMOpportunity(mockSupabase, mockParams)
+    await createTwitterDMOpportunity(mockParams)
 
     expect(opportunitiesModule.createOpportunity).toHaveBeenCalledWith(
       mockSupabase,
@@ -65,13 +66,14 @@ describe('createTwitterDMOpportunity', () => {
 
   it('should generate IDs when not provided', async () => {
     const mockParams = {
+      supabase: mockSupabase,
       celebrity_id: 'celeb-123',
-      conversation_id: 'conv-123',
+      dm_conversation_id: 'conv-123',
       sender_username: 'testuser',
-      message_content: 'Hello!'
+      message_text: 'Hello!'
     }
 
-    await createTwitterDMOpportunity(mockSupabase, mockParams)
+    await createTwitterDMOpportunity(mockParams)
 
     const call = vi.mocked(opportunitiesModule.createOpportunity).mock.calls[0][1] as TwitterDMOpportunityData
     

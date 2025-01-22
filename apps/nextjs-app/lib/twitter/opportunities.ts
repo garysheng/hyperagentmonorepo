@@ -8,6 +8,8 @@ interface CreateTwitterDMOpportunityParams {
   dm_conversation_id: string;
   sender_username: string;
   message_text: string;
+  sender_id?: string;
+  event_id?: string;
 }
 
 /**
@@ -18,18 +20,22 @@ export async function createTwitterDMOpportunity({
   celebrity_id,
   dm_conversation_id,
   sender_username,
-  message_text
+  message_text,
+  sender_id,
+  event_id
 }: CreateTwitterDMOpportunityParams) {
-  const sender_id = randomUUID()
+  const finalSenderId = sender_id || randomUUID()
+  const finalEventId = event_id || randomUUID()
+
   return createOpportunity(supabase, {
     celebrity_id,
     source: 'TWITTER_DM',
     twitter_dm_conversation_id: dm_conversation_id,
-    twitter_dm_event_id: dm_conversation_id, // Using conversation_id as event_id for manual entries
-    twitter_sender_id: sender_id,
+    twitter_dm_event_id: finalEventId,
+    twitter_sender_id: finalSenderId,
     twitter_sender_username: sender_username,
     initial_content: message_text,
-    sender_id,
+    sender_id: finalSenderId,
     sender_handle: sender_username
   })
 } 
