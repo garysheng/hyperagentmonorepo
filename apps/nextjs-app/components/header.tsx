@@ -56,7 +56,7 @@ export function Header() {
           celebrity:celebrities(celebrity_name)
         `)
         .eq('id', user.id)
-        .single() as { data: ProfileResponse | null, error: any }
+        .single() as { data: ProfileResponse | null, error: Error }
 
       if (!data?.celebrity_id) return { role: data?.role }
 

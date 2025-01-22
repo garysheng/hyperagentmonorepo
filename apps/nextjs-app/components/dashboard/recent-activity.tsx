@@ -24,6 +24,18 @@ interface DMWithRelations {
   content: string
 }
 
+interface ActionResponse {
+  id: string
+  action_type: string
+  created_at: string
+  user: {
+    full_name: string
+  } | null
+  opportunities: {
+    celebrity_id: string
+  }
+}
+
 export function RecentActivity() {
   const supabase = createClient()
 
@@ -50,25 +62,26 @@ export function RecentActivity() {
           id,
           action_type,
           created_at,
-          users!opportunity_actions_user_id_fkey(full_name),
-          opportunity:opportunities!inner(celebrity_id)
+          user:users!opportunity_actions_user_id_fkey (
+            full_name
+          ),
+          opportunities!opportunity_actions_opportunity_id_fkey (
+            celebrity_id
+          )
         `)
-        .eq('opportunity.celebrity_id', userProfile.celebrity_id)
+        .eq('opportunities.celebrity_id', userProfile.celebrity_id)
         .order('created_at', { ascending: false })
-        .limit(5)
+        .limit(5) as { data: ActionResponse[] | null, error: any }
       console.log('Recent Actions - Raw data:', data)
 
-      const mappedData = (data || []).map(item => {
-        console.log('Mapping item:', item)
-        return {
-          id: item.id,
-          type: item.action_type,
-          created_at: item.created_at,
-          user: {
-            full_name: item.users[0].full_name
-          }
+      const mappedData = (data || []).map(item => ({
+        id: item.id,
+        type: item.action_type,
+        created_at: item.created_at,
+        user: {
+          full_name: item.user?.full_name || 'Unknown User'
         }
-      })
+      }))
       console.log('Recent Actions - Mapped data:', mappedData)
 
       return mappedData as ActionWithRelations[]
