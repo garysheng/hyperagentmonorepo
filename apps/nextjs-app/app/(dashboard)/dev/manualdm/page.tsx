@@ -8,13 +8,68 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useAuth } from '@/components/providers/auth-provider'
+import { createOpportunity } from '@/lib/opportunities'
+import { useCelebrity } from '@/hooks/use-celebrity'
+
+// Helper function to generate UUID v4
+function uuidv4() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
 
 export default function ManualDMPage() {
+  const { user, loading: authLoading } = useAuth()
+  const { data: celebrity, isLoading: celebrityLoading } = useCelebrity()
   const [senderUsername, setSenderUsername] = useState('')
   const [messageText, setMessageText] = useState('')
+  const [conversationId, setConversationId] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+
+  const isLoading = authLoading || celebrityLoading
+
+  if (isLoading) {
+    return (
+      <div className="container space-y-8 py-8 pl-6">
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-96" />
+        </div>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-72" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-10 w-32" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (!user || !celebrity) {
+    return (
+      <div className="container space-y-8 py-8 pl-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {!user ? 'You must be logged in to access this page.' : 'No celebrity profile found for your account.'}
+          </AlertDescription>
+        </Alert>
+      </div>
+    )
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -24,48 +79,38 @@ export default function ManualDMPage() {
 
     try {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        throw new Error('Not authenticated')
-      }
+      const senderId = uuidv4()
+      const eventId = uuidv4()
 
-      // Get the celebrity ID for the current user
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('celebrity_id')
-        .eq('user_id', user.id)
-        .single()
+      // Create opportunity using helper
+      const opportunity = await createOpportunity(supabase, {
+        celebrity_id: celebrity.id,
+        source: 'TWITTER_DM',
+        twitter_dm_conversation_id: conversationId,
+        twitter_dm_event_id: eventId,
+        twitter_sender_id: senderId,
+        twitter_sender_username: senderUsername,
+        initial_content: messageText,
+        sender_id: senderId,
+        sender_handle: senderUsername
+      })
 
-      if (profileError || !profile?.celebrity_id) {
-        throw new Error('Could not find celebrity profile')
-      }
-
-      // Create an opportunity directly from the DM
-      const { error: opportunityError } = await supabase
-        .from('opportunities')
-        .insert({
-          celebrity_id: profile.celebrity_id,
-          source: 'TWITTER_DM',
-          twitter_dm_conversation_id: `manual_${Date.now()}`,
-          twitter_dm_event_id: `manual_${Date.now()}`,
-          twitter_sender_id: `manual_${Date.now()}`,
-          twitter_sender_username: senderUsername,
-          description: messageText,
-          status: 'NEW',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-
-      if (opportunityError) {
-        throw opportunityError
-      }
+      console.log('Created opportunity:', opportunity)
 
       setSuccess(true)
       setSenderUsername('')
       setMessageText('')
+      setConversationId('')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create opportunity from DM')
+      console.error('Error creating opportunity:', err)
+      if (err instanceof Error) {
+        setError(err.message)
+      } else if (typeof err === 'object' && err !== null) {
+        const supabaseError = err as { message?: string, details?: string, hint?: string }
+        setError(supabaseError.message || supabaseError.details || supabaseError.hint || 'An unknown error occurred')
+      } else {
+        setError('Failed to create opportunity from DM')
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -84,7 +129,7 @@ export default function ManualDMPage() {
         <CardHeader>
           <CardTitle>Create Opportunity from DM</CardTitle>
           <CardDescription>
-            Enter Twitter username and message content to create a test opportunity
+            Enter Twitter username and message content to create a test opportunity for {celebrity.celebrity_name}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -95,6 +140,15 @@ export default function ManualDMPage() {
                 placeholder="e.g. johndoe"
                 value={senderUsername}
                 onChange={(e) => setSenderUsername(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Conversation ID</label>
+              <Input
+                placeholder="e.g. 50858307-2211138776 (from Twitter DM URL)"
+                value={conversationId}
+                onChange={(e) => setConversationId(e.target.value)}
                 required
               />
             </div>

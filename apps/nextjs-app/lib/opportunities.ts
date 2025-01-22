@@ -3,7 +3,9 @@ import { OpportunityStatus } from '@/types'
 
 interface BaseOpportunityData {
   celebrity_id: string
-  description: string
+  initial_content: string
+  sender_id: string
+  sender_handle: string
   status?: OpportunityStatus
   created_at?: string
   updated_at?: string
