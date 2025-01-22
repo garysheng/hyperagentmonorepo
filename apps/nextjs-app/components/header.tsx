@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useQuery } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard' },
@@ -26,6 +27,14 @@ const navigation = [
   { name: 'Channels', href: '/channels' },
 ]
 
+interface ProfileResponse {
+  role: string | null
+  celebrity_id: string | null
+  celebrity: {
+    celebrity_name: string
+  } | null
+}
+
 export function Header() {
   const pathname = usePathname()
   const { user, signOut } = useAuth()
@@ -33,7 +42,7 @@ export function Header() {
   const supabase = createClient()
 
   // Fetch user profile, celebrity info, and check for goals
-  const { data: profile } = useQuery({
+  const { data: profile, isLoading: isLoadingProfile } = useQuery({
     queryKey: ['profile'],
     queryFn: async () => {
       if (!user) return null
@@ -41,9 +50,13 @@ export function Header() {
       // Get user profile and celebrity info
       const { data } = await supabase
         .from('users')
-        .select('role, celebrity_id, celebrities!inner(celebrity_name)')
+        .select(`
+          role,
+          celebrity_id,
+          celebrity:celebrities(celebrity_name)
+        `)
         .eq('id', user.id)
-        .single()
+        .single() as { data: ProfileResponse | null, error: any }
 
       if (!data?.celebrity_id) return { role: data?.role }
 
@@ -55,7 +68,7 @@ export function Header() {
 
       return {
         role: data?.role,
-        celebrity_name: data?.celebrities?.[0]?.celebrity_name,
+        celebrity_name: data.celebrity?.celebrity_name,
         hasGoals: count && count > 0
       }
     },
@@ -109,14 +122,24 @@ export function Header() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="flex flex-col items-start">
                   <span className="font-medium">{user.email}</span>
-                  <span className="text-xs text-muted-foreground capitalize">{profile?.role || 'Loading...'}</span>
+                  {isLoadingProfile ? (
+                    <Skeleton className="h-4 w-16 mt-1" />
+                  ) : (
+                    <span className="text-xs text-muted-foreground capitalize">
+                      {profile?.role || 'No role assigned'}
+                    </span>
+                  )}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="flex flex-col items-start">
                   <span className="text-sm font-medium">Managing</span>
-                  <span className="text-xs text-muted-foreground">
-                    {profile?.celebrity_name || 'Loading...'}
-                  </span>
+                  {isLoadingProfile ? (
+                    <Skeleton className="h-4 w-24 mt-1" />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">
+                      {profile?.celebrity_name || 'No celebrity assigned'}
+                    </span>
+                  )}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem

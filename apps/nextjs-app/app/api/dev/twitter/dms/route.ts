@@ -40,7 +40,7 @@ export async function GET() {
 
     try {
       const dms = await client.v2.listDmEvents({
-        max_results: 50,
+        max_results: 5,
         "dm_event.fields": ["id", "text", "created_at", "sender_id", "dm_conversation_id"]
       })
       return NextResponse.json(dms)
