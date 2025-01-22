@@ -4,24 +4,23 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { login, signup } from './actions'
+import { login } from './actions'
 import { Suspense } from 'react'
 import { Card } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
 
 function LoginForm() {
-  const [isSignup, setIsSignup] = useState(false)
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   async function handleSubmit(formData: FormData) {
     setIsSubmitting(true)
     try {
-      const result = await (isSignup ? signup(formData) : login(formData))
+      const result = await login(formData)
       
       if ('error' in result) {
         toast({
-          title: isSignup ? 'Sign Up Error' : 'Sign In Error',
+          title: 'Sign In Error',
           description: result.error,
           variant: 'destructive'
         })
@@ -45,11 +44,9 @@ function LoginForm() {
   return (
     <Card className="p-6 space-y-4 w-full max-w-sm">
       <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-bold">{isSignup ? 'Join Your Celebrity&apos;s Team' : 'Welcome Back'}</h1>
+        <h1 className="text-2xl font-bold">Welcome Back</h1>
         <p className="text-muted-foreground">
-          {isSignup 
-            ? 'Create your account to manage celebrity opportunities' 
-            : 'Sign in to manage your celebrity&apos;s opportunities'}
+          Sign in to manage your celebrity&apos;s opportunities
         </p>
       </div>
       <form action={handleSubmit} className="space-y-4">
@@ -62,7 +59,7 @@ function LoginForm() {
           <Input id="password" name="password" type="password" required />
         </div>
         <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? 'Loading...' : (isSignup ? 'Sign Up' : 'Sign In')}
+          {isSubmitting ? 'Loading...' : 'Sign In'}
         </Button>
       </form>
       <div className="relative">
@@ -77,10 +74,10 @@ function LoginForm() {
         type="button" 
         variant="outline" 
         className="w-full"
-        onClick={() => setIsSignup(!isSignup)}
+        onClick={() => window.location.href = '/'}
         disabled={isSubmitting}
       >
-        {isSignup ? 'Already have an account?' : 'Create an account'}
+        Create an account
       </Button>
     </Card>
   )
