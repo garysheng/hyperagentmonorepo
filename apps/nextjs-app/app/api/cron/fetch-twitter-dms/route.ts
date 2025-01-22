@@ -3,7 +3,7 @@ import { getTwitterClient, refreshTwitterToken } from '@/lib/twitter/client'
 import { NextResponse } from 'next/server'
 import { ApiResponseError } from 'twitter-api-v2'
 import { createTwitterDMOpportunity } from '@/lib/twitter/opportunities'
-import { DMEventV2, TwitterDM } from '@/types/twitter'
+import { DMEventV2 } from '@/types/twitter'
 import { TableName } from '@/types'
 
 // Only allow this endpoint to be called by cron jobs
@@ -108,13 +108,9 @@ export async function GET(request: Request) {
                             const result = await createTwitterDMOpportunity({
                                 supabase,
                                 celebrity_id: userWithCelebrity.celebrity_id,
-                                dm: {
-                                    ...event,
-                                    sender: {
-                                        id: twitterUser.data.id,
-                                        username: twitterUser.data.username
-                                    }
-                                } as TwitterDM
+                                dm_conversation_id: event.dm_conversation_id,
+                                sender_username: twitterUser.data.username,
+                                message_text: event.text || ''
                             })
 
                             results.push(result)
