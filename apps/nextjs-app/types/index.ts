@@ -1,5 +1,7 @@
 export type OpportunityStatus = "pending" | "approved" | "rejected" | "on_hold" | "conversation_started";
 
+export type OpportunitySource = "TWITTER_DM" | "WIDGET";
+
 export interface Goal {
   id: string;
   celebrity_id: string;
@@ -25,6 +27,7 @@ export interface Opportunity {
   initial_content: string;
   created_at: string;
   status: OpportunityStatus;
+  source: OpportunitySource;
   relevance_score: number;
   tags: string[];
   goal_id?: string;

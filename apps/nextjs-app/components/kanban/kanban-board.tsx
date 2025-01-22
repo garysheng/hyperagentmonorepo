@@ -1,7 +1,11 @@
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { useState } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { Skeleton } from '@/components/ui/skeleton'
 import { formatDistanceToNow } from 'date-fns'
+import { MessageCircle, AlertCircle } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { MessageDraftDialog } from '@/components/outbound/message-draft-dialog'
 import type { Opportunity } from '@/types'
 
 interface KanbanColumn {
@@ -13,26 +17,40 @@ interface KanbanColumn {
 interface KanbanBoardProps {
   columns: KanbanColumn[]
   isLoading?: boolean
+  onSendMessage?: (opportunity: Opportunity, message: string) => Promise<void>
 }
 
-export function KanbanBoard({ columns, isLoading }: KanbanBoardProps) {
+export function KanbanBoard({ columns, isLoading, onSendMessage }: KanbanBoardProps) {
+  const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null)
+  const [isDraftOpen, setIsDraftOpen] = useState(false)
+
+  const handleCardClick = (opportunity: Opportunity) => {
+    if (opportunity.status === 'approved') {
+      setSelectedOpportunity(opportunity)
+      setIsDraftOpen(true)
+    }
+  }
+
+  const handleSendMessage = async (message: string) => {
+    if (selectedOpportunity && onSendMessage) {
+      await onSendMessage(selectedOpportunity, message)
+    }
+  }
+
   if (isLoading) {
     return (
-      <div className="flex gap-4">
+      <div className="grid grid-cols-2 gap-4">
         {columns.map(column => (
-          <Card key={column.id} className="w-[350px] flex flex-col animate-pulse">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <div className="h-5 w-32 bg-muted rounded" />
-                <div className="h-5 w-8 bg-muted rounded" />
-              </div>
+          <Card key={column.id}>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-6 w-6 rounded-full" />
+              </CardTitle>
             </CardHeader>
-            <CardContent className="flex-1 p-2">
-              <div className="space-y-2">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="h-24 bg-muted rounded" />
-                ))}
-              </div>
+            <CardContent className="space-y-4">
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-24 w-full" />
             </CardContent>
           </Card>
         ))}
@@ -41,49 +59,74 @@ export function KanbanBoard({ columns, isLoading }: KanbanBoardProps) {
   }
 
   return (
-    <div className="flex gap-4">
-      {columns.map(column => (
-        <Card key={column.id} className="w-[350px] flex flex-col">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium">{column.title}</CardTitle>
-              <Badge variant="secondary" className="text-xs">
-                {column.opportunities.length}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="flex-1 p-2">
-            <ScrollArea className="h-[calc(100vh-12rem)]">
-              <div className="space-y-2 pr-2">
-                {column.opportunities.map((opportunity) => (
-                  <Card key={opportunity.id} className="p-3 cursor-pointer hover:bg-accent">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-sm">
-                          {opportunity.sender_handle.includes('@') 
-                            ? opportunity.sender_handle 
-                            : `@${opportunity.sender_handle}`}
-                        </span>
+    <>
+      <div className="grid grid-cols-2 gap-4">
+        {columns.map(column => (
+          <Card key={column.id}>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                {column.title}
+                <Badge variant="secondary" className="ml-2">
+                  {column.opportunities.length}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="min-h-[300px] space-y-4">
+              {column.opportunities.length === 0 ? (
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    {column.id === 'ready' 
+                      ? 'No opportunities ready for outreach yet.'
+                      : 'No active conversations at the moment.'}
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                column.opportunities.map(opportunity => (
+                  <Card 
+                    key={opportunity.id} 
+                    className={`cursor-pointer hover:bg-muted/50 ${opportunity.status === 'approved' ? 'hover:shadow-md transition-shadow' : ''}`}
+                    onClick={() => handleCardClick(opportunity)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="space-y-1">
+                          <p className="font-medium">@{opportunity.sender_handle}</p>
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {opportunity.initial_content}
+                          </p>
+                        </div>
+                        {opportunity.status === 'conversation_started' && (
+                          <MessageCircle className="h-4 w-4 text-blue-500 shrink-0" />
+                        )}
+                      </div>
+                      <div className="mt-2 flex items-center justify-between">
+                        <div className="flex gap-2">
+                          {opportunity.goal && (
+                            <Badge variant="outline" className="text-xs">
+                              {opportunity.goal.name}
+                            </Badge>
+                          )}
+                        </div>
                         <span className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(opportunity.created_at), { addSuffix: true })}
+                          {formatDistanceToNow(new Date(opportunity.updated_at), { addSuffix: true })}
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2">
-                        {opportunity.initial_content}
-                      </p>
-                      {opportunity.goal && (
-                        <Badge variant="outline" className="text-xs">
-                          {opportunity.goal.name}
-                        </Badge>
-                      )}
-                    </div>
+                    </CardContent>
                   </Card>
-                ))}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <MessageDraftDialog
+        opportunity={selectedOpportunity}
+        open={isDraftOpen}
+        onOpenChange={setIsDraftOpen}
+        onSend={handleSendMessage}
+      />
+    </>
   )
 } 
