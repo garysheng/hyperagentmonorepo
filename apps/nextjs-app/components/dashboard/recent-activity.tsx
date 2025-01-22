@@ -71,7 +71,7 @@ export function RecentActivity() {
         `)
         .eq('opportunities.celebrity_id', userProfile.celebrity_id)
         .order('created_at', { ascending: false })
-        .limit(5) as { data: ActionResponse[] | null, error: any }
+        .limit(5) as { data: ActionResponse[] | null, error: Error }
       console.log('Recent Actions - Raw data:', data)
 
       const mappedData = (data || []).map(item => ({
