@@ -1,5 +1,3 @@
-import { TweetV2, UserV2 } from 'twitter-api-v2';
-
 export interface TwitterTokens {
   access_token: string
   refresh_token?: string

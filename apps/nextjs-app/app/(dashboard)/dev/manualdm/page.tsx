@@ -72,11 +72,12 @@ export default function ManualDMPage() {
       const supabase = createClient()
 
       // Create opportunity using Twitter-specific helper
-      const opportunity = await createTwitterDMOpportunity(supabase, {
+      const opportunity = await createTwitterDMOpportunity({
+        supabase,
         celebrity_id: celebrity.id,
-        conversation_id: conversationId,
+        dm_conversation_id: conversationId,
         sender_username: senderUsername,
-        message_content: messageText
+        message_text: messageText
       })
 
       console.log('Created opportunity:', opportunity)

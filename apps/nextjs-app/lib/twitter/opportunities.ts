@@ -1,11 +1,13 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { createOpportunity } from '@/lib/opportunities'
-import { TwitterDM } from '@/types/twitter'
+import { randomUUID } from 'crypto'
 
 interface CreateTwitterDMOpportunityParams {
   supabase: SupabaseClient;
-  dm: TwitterDM;
   celebrity_id: string;
+  dm_conversation_id: string;
+  sender_username: string;
+  message_text: string;
 }
 
 /**
@@ -13,18 +15,21 @@ interface CreateTwitterDMOpportunityParams {
  */
 export async function createTwitterDMOpportunity({
   supabase,
-  dm,
-  celebrity_id
+  celebrity_id,
+  dm_conversation_id,
+  sender_username,
+  message_text
 }: CreateTwitterDMOpportunityParams) {
+  const sender_id = randomUUID()
   return createOpportunity(supabase, {
     celebrity_id,
     source: 'TWITTER_DM',
-    twitter_dm_conversation_id: dm.dm_conversation_id,
-    twitter_dm_event_id: dm.id,
-    twitter_sender_id: dm.sender.id,
-    twitter_sender_username: dm.sender.username,
-    initial_content: dm.text,
-    sender_id: dm.sender.id,
-    sender_handle: dm.sender.username
+    twitter_dm_conversation_id: dm_conversation_id,
+    twitter_dm_event_id: dm_conversation_id, // Using conversation_id as event_id for manual entries
+    twitter_sender_id: sender_id,
+    twitter_sender_username: sender_username,
+    initial_content: message_text,
+    sender_id,
+    sender_handle: sender_username
   })
 } 
