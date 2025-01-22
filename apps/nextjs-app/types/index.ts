@@ -62,6 +62,53 @@ export interface TeamMember {
   created_at: string;
 }
 
+export interface EmailThread {
+  id: string;
+  opportunity_id: string;
+  subject: string;
+  last_message_at: Date;
+  status: 'active' | 'archived' | 'spam';
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface EmailMessage {
+  id: string;
+  thread_id: string;
+  from: string;
+  to: string[];
+  subject: string;
+  content: string;
+  mailgun_message_id: string;
+  direction: 'inbound' | 'outbound';
+  created_at: Date;
+}
+
+export interface SendEmailParams {
+  to: string;
+  from: string;
+  subject: string;
+  text: string;
+  threadId?: string;
+  messageId?: string;
+}
+
+export interface MailgunWebhookPayload {
+  sender: string;
+  recipient: string;
+  subject: string;
+  'body-plain': string;
+  'Message-Id': string;
+  'In-Reply-To'?: string;
+  References?: string[];
+  timestamp: number;
+  signature: {
+    timestamp: string;
+    token: string;
+    signature: string;
+  };
+}
+
 export enum TableName {
   OPPORTUNITIES = 'opportunities',
   OPPORTUNITY_ACTIONS = 'opportunity_actions',
@@ -71,5 +118,7 @@ export enum TableName {
   USERS = 'users',
   CELEBRITIES = 'celebrities',
   TEAM_MEMBERS = 'team_members',
-  TWITTER_AUTH = 'twitter_auth'
+  TWITTER_AUTH = 'twitter_auth',
+  EMAIL_THREADS = 'email_threads',
+  EMAIL_MESSAGES = 'email_messages'
 } 

@@ -123,6 +123,153 @@ POST /api/widget/{celebrityId}/submit
 POST /api/widget/{celebrityId}/events
 ```
 
+### 4. Email Integration with Mailgun
+
+#### Overview
+The chat widget integrates with Mailgun for handling email conversations with opportunity submitters:
+- Dedicated email addresses for each celebrity (e.g., `opportunities@{celebname}.hyperagent.so`)
+- Thread-based email conversations
+- Email history tracking
+- Team collaboration on email threads
+
+#### Technical Implementation
+```typescript
+interface EmailThread {
+  id: string;
+  opportunity_id: string;
+  subject: string;
+  last_message_at: Date;
+  status: 'active' | 'archived' | 'spam';
+  created_at: Date;
+  updated_at: Date;
+}
+
+interface EmailMessage {
+  id: string;
+  thread_id: string;
+  from: string;
+  to: string[];
+  subject: string;
+  content: string;
+  mailgun_message_id: string;
+  direction: 'inbound' | 'outbound';
+  created_at: Date;
+}
+
+// Database schema
+CREATE TABLE email_threads (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  opportunity_id UUID REFERENCES opportunities(id),
+  subject TEXT NOT NULL,
+  last_message_at TIMESTAMP WITH TIME ZONE,
+  status TEXT DEFAULT 'active',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE email_messages (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  thread_id UUID REFERENCES email_threads(id),
+  from_address TEXT NOT NULL,
+  to_addresses TEXT[] NOT NULL,
+  subject TEXT NOT NULL,
+  content TEXT NOT NULL,
+  mailgun_message_id TEXT UNIQUE,
+  direction TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+// Email service setup
+class EmailService {
+  private mailgun: Mailgun;
+  private domain: string;
+
+  constructor() {
+    this.mailgun = new Mailgun(process.env.MAILGUN_API_KEY!);
+    this.domain = process.env.MAILGUN_DOMAIN!;
+  }
+
+  async sendEmail({
+    to,
+    from,
+    subject,
+    text,
+    threadId,
+    messageId
+  }: SendEmailParams) {
+    return this.mailgun.messages.create(this.domain, {
+      to,
+      from,
+      subject,
+      text,
+      'h:In-Reply-To': messageId,
+      'h:References': threadId
+    });
+  }
+
+  async receiveWebhook(payload: MailgunWebhookPayload) {
+    const { 
+      sender,
+      recipient,
+      subject,
+      'body-plain': content,
+      'Message-Id': messageId,
+      'In-Reply-To': inReplyTo,
+      References: references
+    } = payload;
+
+    // Find or create thread
+    const threadId = inReplyTo || references?.[0] || messageId;
+    
+    // Store message
+    await db.transaction(async (trx) => {
+      const thread = await findOrCreateThread({
+        threadId,
+        subject,
+        opportunityId: getOpportunityFromEmail(recipient)
+      });
+
+      await createMessage({
+        threadId: thread.id,
+        from: sender,
+        to: [recipient],
+        subject,
+        content,
+        mailgunMessageId: messageId,
+        direction: 'inbound'
+      });
+    });
+  }
+}
+```
+
+#### Configuration
+Required environment variables:
+```env
+MAILGUN_API_KEY=key-xxx...
+MAILGUN_DOMAIN=mail.hyperagent.so
+MAILGUN_WEBHOOK_SIGNING_KEY=xxx...
+```
+
+#### Email Flow
+1. **Inbound**:
+   ```
+   User → opportunities@celebname.hyperagent.so → Mailgun → Webhook → Database → Dashboard
+   ```
+
+2. **Outbound**:
+   ```
+   Dashboard → Mailgun API → User's Email
+   ```
+
+#### Security
+- SPF, DKIM, and DMARC records for the domain
+- Webhook signature verification
+- Rate limiting per sender
+- Spam filtering via Mailgun
+- Email content scanning
+- PII handling compliance
+
 ## Security Considerations
 
 1. **Domain Restrictions**
