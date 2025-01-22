@@ -1,23 +1,23 @@
 import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import type { CookieOptions } from '@supabase/ssr'
+import type { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies'
 
-export const createClient = async () => {
-  const cookieStore = await cookies()
-
+export const createClient = (cookieStore: ReadonlyRequestCookies) => {
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return cookieStore.getAll()
+        get(name: string) {
+          return cookieStore.get(name)?.value
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options)
-          })
-        }
-      }
+        set(name: string, value: string, options: CookieOptions) {
+          // This is handled by the middleware
+        },
+        remove(name: string, options: CookieOptions) {
+          // This is handled by the middleware
+        },
+      },
     }
   )
 } 
