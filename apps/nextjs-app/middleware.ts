@@ -8,6 +8,14 @@ const SET_GOALS_ROUTE = '/set-goals'
 const AUTH_ROUTES = ['/auth', '/api/auth']
 const STATIC_ROUTES = ['/_next', '/favicon.ico']
 
+// API routes that require authentication
+const PROTECTED_API_ROUTES = [
+  '/api/opportunities',
+  '/api/goals',
+  '/api/dev/twitter/dms',
+  '/api/dev/manualdm'
+]
+
 export async function middleware(request: NextRequest) {
   console.log('🚀 Middleware running for path:', request.nextUrl.pathname)
 
@@ -17,20 +25,23 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Check route type
   const pathname = request.nextUrl.pathname
   const isPublicRoute = PUBLIC_ROUTES.some(route => pathname === route)
   const isAuthRoute = AUTH_ROUTES.some(route => pathname.startsWith(route))
+  const isApiRoute = pathname.startsWith('/api/')
+  const isProtectedApiRoute = PROTECTED_API_ROUTES.some(route => pathname.startsWith(route))
 
   console.log('📍 Route checks:', {
     isPublicRoute,
     isAuthRoute,
+    isApiRoute,
+    isProtectedApiRoute,
     pathname
   })
 
-  // Allow public and auth routes without any checks
-  if (isPublicRoute || isAuthRoute) {
-    console.log('✅ Allowing public/auth route access')
+  // Allow public routes, auth routes, and non-protected API routes without any checks
+  if (isPublicRoute || isAuthRoute || (isApiRoute && !isProtectedApiRoute)) {
+    console.log('✅ Allowing public/auth/api route access')
     return NextResponse.next()
   }
 
@@ -128,6 +139,14 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|api/auth).*)',
+    /*
+     * Match all request paths except for:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     * Note: This is the default Next.js matcher
+     */
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 } 
