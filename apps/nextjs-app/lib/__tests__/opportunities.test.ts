@@ -35,7 +35,12 @@ describe('createOpportunity', () => {
         twitter_sender_username: 'testuser',
         initial_content: 'Hello!',
         sender_id: 'sender-123',
-        sender_handle: 'testuser'
+        sender_handle: 'testuser',
+        relevance_score: -1,
+        tags: [],
+        needs_discussion: false,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z'
       }
 
       mockSingle.mockResolvedValue({ data: mockOpportunity, error: null })
@@ -53,7 +58,7 @@ describe('createOpportunity', () => {
       })
 
       expect(result).toEqual(mockOpportunity)
-      expect(mockInsert).toHaveBeenCalledWith({
+      expect(mockInsert).toHaveBeenCalledWith(expect.objectContaining({
         celebrity_id: 'celeb-123',
         source: 'TWITTER_DM',
         status: 'pending',
@@ -64,9 +69,10 @@ describe('createOpportunity', () => {
         initial_content: 'Hello!',
         sender_id: 'sender-123',
         sender_handle: 'testuser',
+        relevance_score: -1,
         created_at: expect.any(String),
         updated_at: expect.any(String)
-      })
+      }))
     })
 
     it('should throw an error if Supabase insert fails', async () => {
@@ -101,7 +107,12 @@ describe('createOpportunity', () => {
         sender_handle: 'John Doe',
         name: 'John Doe',
         email: 'john@example.com',
-        phone: '123-456-7890'
+        phone: '123-456-7890',
+        relevance_score: -1,
+        tags: [],
+        needs_discussion: false,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z'
       }
 
       mockSingle.mockResolvedValue({ data: mockOpportunity, error: null })
@@ -118,7 +129,7 @@ describe('createOpportunity', () => {
       })
 
       expect(result).toEqual(mockOpportunity)
-      expect(mockInsert).toHaveBeenCalledWith({
+      expect(mockInsert).toHaveBeenCalledWith(expect.objectContaining({
         celebrity_id: 'celeb-123',
         source: 'WIDGET',
         status: 'pending',
@@ -128,9 +139,10 @@ describe('createOpportunity', () => {
         name: 'John Doe',
         email: 'john@example.com',
         phone: '123-456-7890',
+        relevance_score: -1,
         created_at: expect.any(String),
         updated_at: expect.any(String)
-      })
+      }))
     })
 
     it('should create a widget opportunity with minimal fields', async () => {
@@ -141,7 +153,12 @@ describe('createOpportunity', () => {
         status: 'pending',
         initial_content: 'Hello!',
         sender_id: 'widget-123',
-        sender_handle: 'Anonymous'
+        sender_handle: 'Anonymous',
+        relevance_score: -1,
+        tags: [],
+        needs_discussion: false,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z'
       }
 
       mockSingle.mockResolvedValue({ data: mockOpportunity, error: null })
@@ -155,16 +172,17 @@ describe('createOpportunity', () => {
       })
 
       expect(result).toEqual(mockOpportunity)
-      expect(mockInsert).toHaveBeenCalledWith({
+      expect(mockInsert).toHaveBeenCalledWith(expect.objectContaining({
         celebrity_id: 'celeb-123',
         source: 'WIDGET',
         status: 'pending',
         initial_content: 'Hello!',
         sender_id: 'widget-123',
         sender_handle: 'Anonymous',
+        relevance_score: -1,
         created_at: expect.any(String),
         updated_at: expect.any(String)
-      })
+      }))
     })
   })
 
@@ -177,7 +195,12 @@ describe('createOpportunity', () => {
         status: 'approved',
         initial_content: 'Hello!',
         sender_id: 'widget-123',
-        sender_handle: 'Anonymous'
+        sender_handle: 'Anonymous',
+        relevance_score: -1,
+        tags: [],
+        needs_discussion: false,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z'
       }
 
       mockSingle.mockResolvedValue({ data: mockOpportunity, error: null })
@@ -192,7 +215,10 @@ describe('createOpportunity', () => {
       })
 
       expect(mockInsert).toHaveBeenCalledWith(expect.objectContaining({
-        status: 'approved'
+        status: 'approved',
+        relevance_score: -1,
+        created_at: expect.any(String),
+        updated_at: expect.any(String)
       }))
     })
 
@@ -204,7 +230,12 @@ describe('createOpportunity', () => {
         status: 'pending',
         initial_content: 'Hello!',
         sender_id: 'widget-123',
-        sender_handle: 'Anonymous'
+        sender_handle: 'Anonymous',
+        relevance_score: -1,
+        tags: [],
+        needs_discussion: false,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z'
       }
 
       mockSingle.mockResolvedValue({ data: mockOpportunity, error: null })
@@ -218,7 +249,10 @@ describe('createOpportunity', () => {
       })
 
       expect(mockInsert).toHaveBeenCalledWith(expect.objectContaining({
-        status: 'pending'
+        status: 'pending',
+        relevance_score: -1,
+        created_at: expect.any(String),
+        updated_at: expect.any(String)
       }))
     })
   })

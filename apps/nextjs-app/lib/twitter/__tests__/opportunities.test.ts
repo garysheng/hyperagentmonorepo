@@ -29,9 +29,9 @@ describe('createTwitterDMOpportunity', () => {
       updated_at: new Date().toISOString(),
       status: 'pending',
       relevance_score: -1,
-      source: 'TWITTER_DM',
       tags: [],
-      needs_discussion: false
+      needs_discussion: false,
+      source: 'TWITTER_DM'
     } as Opportunity)
   })
 
