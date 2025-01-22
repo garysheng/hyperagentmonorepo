@@ -3,6 +3,7 @@ import { createTwitterDMOpportunity } from '../opportunities'
 import { createClient } from '@supabase/supabase-js'
 import * as opportunitiesModule from '@/lib/opportunities'
 import type { TwitterDMOpportunityData } from '@/lib/opportunities'
+import type { Opportunity } from '@/types'
 
 // Mock the base createOpportunity function
 vi.mock('@/lib/opportunities', () => ({
@@ -17,7 +18,20 @@ const mockSupabase = {
 describe('createTwitterDMOpportunity', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(opportunitiesModule.createOpportunity).mockResolvedValue({} as any)
+    // Mock with a properly typed empty opportunity
+    vi.mocked(opportunitiesModule.createOpportunity).mockResolvedValue({
+      id: 'test-id',
+      celebrity_id: '',
+      sender_id: '',
+      sender_handle: '',
+      initial_content: '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      status: 'pending',
+      relevance_score: 0,
+      tags: [],
+      needs_discussion: false
+    } as Opportunity)
   })
 
   it('should create an opportunity with provided IDs', async () => {
