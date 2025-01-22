@@ -1,12 +1,10 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
 export async function createCelebrity(formData: FormData) {
-  const cookieStore = await cookies()
-  const supabase = createClient(cookieStore)
+  const supabase = await createClient()
   const celebrityName = formData.get('celebrityName') as string
 
   if (!celebrityName) {
@@ -34,7 +32,7 @@ export async function createCelebrity(formData: FormData) {
   }
 
   // Get or create user
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
   
   if (!user) {
     // Redirect to sign up with state containing celebrity ID

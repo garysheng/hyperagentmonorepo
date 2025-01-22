@@ -1,12 +1,10 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { cookies } from 'next/headers'
 import { nanoid } from 'nanoid'
 
 export async function generateInviteCode(role: string) {
-  const cookieStore = await cookies()
-  const supabase = createClient(cookieStore)
+  const supabase = await createClient()
 
   // Get the current user
   const { data: { user }, error: userError } = await supabase.auth.getUser()

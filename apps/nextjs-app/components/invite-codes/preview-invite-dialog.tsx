@@ -21,7 +21,7 @@ interface PreviewInviteDialogProps {
   message: string
 }
 
-export function PreviewInviteDialog({ code, role, message: defaultMessage }: PreviewInviteDialogProps) {
+export function PreviewInviteDialog({ role, message: defaultMessage }: PreviewInviteDialogProps) {
   const [open, setOpen] = useState(false)
   const [message, setMessage] = useState(defaultMessage)
   const { toast } = useToast()

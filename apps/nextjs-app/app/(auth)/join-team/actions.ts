@@ -1,11 +1,9 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { cookies } from 'next/headers'
 
 export async function joinTeam(formData: FormData) {
-  const cookieStore = await cookies()
-  const supabase = createClient(cookieStore)
+  const supabase = await createClient()
   const inviteCode = formData.get('inviteCode') as string
 
   try {
@@ -73,7 +71,7 @@ export async function joinTeam(formData: FormData) {
     }
 
     return { success: true }
-  } catch (error) {
+  } catch {
     return {
       error: 'An unexpected error occurred'
     }

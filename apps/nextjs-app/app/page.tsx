@@ -53,7 +53,7 @@ export default function HomePage() {
                 <div className="flex flex-col items-center space-y-4 rounded-lg border p-6">
                   <h2 className="text-2xl font-bold">Team Member</h2>
                   <p className="text-gray-500 dark:text-gray-400">
-                    Join an existing celebrity\'s team using an invite code from your admin.
+                    Join an existing celebrity&apos;s team using an invite code from your admin.
                   </p>
                   <Button asChild variant="outline" size="lg" className="w-full">
                     <Link href="/join-team" className="flex items-center justify-center">

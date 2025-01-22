@@ -37,20 +37,20 @@ export default function JoinTeamPage() {
           <div className="space-y-2">
             <h1 className="text-4xl font-bold tracking-tight">Join Your Team</h1>
             <p className="text-muted-foreground text-lg">
-              Use your invite code to join your celebrity\'s team and start managing opportunities
+              Use your invite code to join your celebrity&apos;s team and start managing opportunities
             </p>
           </div>
           <div className="space-y-4">
             <div className="space-y-2">
               <h2 className="text-xl font-semibold">Get Started Quickly</h2>
               <p className="text-muted-foreground">
-                Enter your invite code to join the team. You\'ll get access based on your assigned role.
+                Enter your invite code to join the team. You&apos;ll get access based on your assigned role.
               </p>
             </div>
             <div className="space-y-2">
               <h2 className="text-xl font-semibold">Collaborate Seamlessly</h2>
               <p className="text-muted-foreground">
-                Work together with your team to manage opportunities and achieve your celebrity\'s goals.
+                Work together with your team to manage opportunities and achieve your celebrity&apos;s goals.
               </p>
             </div>
           </div>
