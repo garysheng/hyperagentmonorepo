@@ -1,19 +1,22 @@
 'use client'
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { KanbanBoard } from '@/components/kanban/kanban-board'
 import { getOpportunities } from './actions'
 import { useCelebrity } from '@/hooks/use-celebrity'
 import { toast } from '@/hooks/use-toast'
 import type { Opportunity } from '@/types'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Skeleton } from '@/components/ui/skeleton'
+import { OpportunityList } from '@/components/opportunities/opportunity-list'
 
 export default function OutboundPage() {
-  const { data: celebrity } = useCelebrity()
+  const { data: celebrity, isLoading: celebrityLoading } = useCelebrity()
   const queryClient = useQueryClient()
 
   const { data: opportunities, isLoading } = useQuery({
     queryKey: ['opportunities', celebrity?.id],
-    queryFn: () => getOpportunities(celebrity?.id || ''),
+    queryFn: () => getOpportunities(),
     enabled: !!celebrity?.id
   })
 
@@ -60,30 +63,50 @@ export default function OutboundPage() {
     await sendMessageMutation.mutateAsync({ opportunity, message })
   }
 
+  if (celebrityLoading) {
+    return <Skeleton className="h-[200px]" />
+  }
+
+  if (!celebrity) {
+    return (
+      <Alert>
+        <AlertDescription>
+          You need to be logged in as a celebrity to view this page.
+        </AlertDescription>
+      </Alert>
+    )
+  }
+
   const readyForOutreach = opportunities?.filter(opp => opp.status === 'approved') || []
   const inConversation = opportunities?.filter(opp => opp.status === 'conversation_started') || []
 
-  const columns = [
-    {
-      id: 'ready',
-      title: 'Ready for Outreach',
-      opportunities: readyForOutreach
-    },
-    {
-      id: 'conversation',
-      title: 'In Conversation', 
-      opportunities: inConversation
-    }
-  ]
-
   return (
-    <div className="container py-6">
-      <h1 className="text-2xl font-semibold mb-6">Outbound Messages</h1>
-      <KanbanBoard 
-        columns={columns} 
-        isLoading={isLoading} 
-        onSendMessage={handleSendMessage}
-      />
+    <div className="grid grid-cols-2 gap-8">
+      <Card>
+        <CardHeader>
+          <CardTitle>Ready for Outreach</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <OpportunityList 
+            opportunities={readyForOutreach} 
+            isLoading={isLoading} 
+            onSendMessage={handleSendMessage}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>In Conversation</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <OpportunityList 
+            opportunities={inConversation} 
+            isLoading={isLoading} 
+            onSendMessage={handleSendMessage}
+          />
+        </CardContent>
+      </Card>
     </div>
   )
 } 
