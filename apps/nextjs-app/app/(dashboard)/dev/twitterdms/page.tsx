@@ -15,6 +15,7 @@ interface TwitterDM {
   sender_id: string
   sender_screen_name: string
   created_at: string
+  [key: string]: unknown
 }
 
 interface TwitterError {
@@ -37,8 +38,11 @@ interface TwitterAuth {
   refresh_token: string
 }
 
+// Type for raw DM response before validation
+type DMResponse = Record<string, unknown>
+
 export default function TwitterDMsPage() {
-  const supabase = createClient()
+  const [supabase] = useState(() => createClient())
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<TwitterError | null>(null)
   const [dms, setDms] = useState<TwitterDM[] | null>(null)
@@ -59,7 +63,7 @@ export default function TwitterDMsPage() {
     }
 
     fetchTwitterAuth()
-  }, [])
+  }, [supabase])
 
   const handleFetchDMs = async () => {
     setIsLoading(true)
@@ -108,7 +112,7 @@ export default function TwitterDMsPage() {
         throw new Error('Invalid response format')
       }
       
-      const isValidDM = (dm: any): dm is TwitterDM => {
+      const isValidDM = (dm: DMResponse): dm is TwitterDM => {
         return typeof dm === 'object' && 
                dm !== null &&
                typeof dm.id === 'string' &&
