@@ -14,10 +14,23 @@ import { useInviteCodeList } from '@/hooks/use-invite-code-list'
 import { useCelebrity } from '@/hooks/use-celebrity'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PreviewInviteDialog } from './preview-invite-dialog'
+import { useToast } from '@/hooks/use-toast'
+import { useEffect } from 'react'
 
 export function InviteCodeTable() {
   const { data: inviteCodes, isLoading, error } = useInviteCodeList()
   const { data: celebrity } = useCelebrity()
+  const { toast } = useToast()
+
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to fetch invite codes',
+        variant: 'destructive',
+      })
+    }
+  }, [error, toast])
 
   const generateInviteMessage = (code: string, role: string) => {
     return `Hi! You've been invited to join the Hyperagent team for ${celebrity?.celebrity_name || 'our celebrity'}.
@@ -92,11 +105,11 @@ This invite code will expire in 7 days. Looking forward to working with you!`
               {formatDistanceToNow(new Date(code.expires_at), { addSuffix: true })}
             </TableCell>
             <TableCell>
-              {code.users ? (
+              {code.user_info ? (
                 <div className="flex flex-col">
-                  <span className="font-medium">{code.users.full_name}</span>
+                  <span className="font-medium">{code.user_info.raw_user_meta_data.full_name}</span>
                   <span className="text-sm text-muted-foreground">
-                    {code.users.email}
+                    {code.user_info.email}
                   </span>
                 </div>
               ) : (

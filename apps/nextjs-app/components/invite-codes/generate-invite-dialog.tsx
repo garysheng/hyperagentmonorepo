@@ -23,7 +23,7 @@ import { generateInviteCode } from '@/lib/actions/invite-codes'
 
 export function GenerateInviteDialog() {
   const [open, setOpen] = useState(false)
-  const [role, setRole] = useState<string>('support')
+  const [role, setRole] = useState<string>('support_agent')
   const { toast } = useToast()
 
   const handleGenerate = async () => {
@@ -65,7 +65,7 @@ export function GenerateInviteDialog() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="support">Support Agent</SelectItem>
+                <SelectItem value="support_agent">Support Agent</SelectItem>
               </SelectContent>
             </Select>
           </div>

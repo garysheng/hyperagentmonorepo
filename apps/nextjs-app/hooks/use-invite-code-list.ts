@@ -11,16 +11,17 @@ interface InviteCodeWithUser {
   expires_at: string
   used_at: string | null
   used_by: string | null
-  users: {
-    full_name: string
+  user_info: {
     email: string
+    raw_user_meta_data: {
+      full_name: string
+    }
   } | null
 }
 
 export function useInviteCodeList() {
   const supabase = createClient()
   const { data: user, isLoading: isLoadingUser, error: userError } = useUserProfile()
-  const { toast } = useToast()
 
   return useQuery({
     queryKey: ['invite-codes', user?.celebrity_id],
@@ -33,37 +34,49 @@ export function useInviteCodeList() {
         throw new Error('Only admins can view invite codes')
       }
 
-      const { data, error } = await supabase
+      // First get the invite codes
+      const { data: inviteCodes, error: inviteError } = await supabase
         .from('invite_codes')
-        .select(`
-          id,
-          code,
-          role,
-          created_at,
-          expires_at,
-          used_at,
-          used_by,
-          users:used_by (
-            full_name,
-            email
-          )
-        `)
+        .select('*')
         .eq('celebrity_id', user.celebrity_id)
         .order('created_at', { ascending: false })
-        .returns<InviteCodeWithUser[]>()
 
-      if (error) {
-        console.error('Error fetching invite codes:', error)
-        toast({
-          title: 'Error',
-          description: 'Failed to fetch invite codes',
-          variant: 'destructive',
-        })
-        throw error
+      if (inviteError) {
+        console.error('Error fetching invite codes:', inviteError)
+        throw new Error(inviteError.message || 'Failed to fetch invite codes')
       }
 
-      return data
+      // Then fetch user details for used codes
+      const usedCodes = inviteCodes.filter(code => code.used_by)
+      const userDetails = await Promise.all(
+        usedCodes.map(async (code) => {
+          const { data: userData, error: userError } = await supabase
+            .from('auth.users')
+            .select('email, raw_user_meta_data')
+            .eq('id', code.used_by)
+            .single()
+
+          if (userError) {
+            console.warn(`Failed to fetch user details for code ${code.id}:`, userError)
+            return null
+          }
+
+          return {
+            codeId: code.id,
+            userInfo: userData
+          }
+        })
+      )
+
+      // Combine the data
+      const codesWithUsers: InviteCodeWithUser[] = inviteCodes.map(code => ({
+        ...code,
+        user_info: userDetails.find(u => u?.codeId === code.id)?.userInfo || null
+      }))
+
+      return codesWithUsers
     },
-    enabled: !!user?.celebrity_id && !isLoadingUser && !userError && user.role === 'admin'
+    enabled: !!user?.celebrity_id && !isLoadingUser && !userError && user.role === 'admin',
+    retry: false
   })
 } 

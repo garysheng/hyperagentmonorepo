@@ -4,7 +4,7 @@ import { Separator } from '@/components/ui/separator'
 
 export default function TeamSettingsPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-8">
       <div>
         <h3 className="text-lg font-medium">Team Management</h3>
         <p className="text-sm text-muted-foreground">

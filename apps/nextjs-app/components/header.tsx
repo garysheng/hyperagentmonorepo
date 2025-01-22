@@ -22,6 +22,7 @@ const navigation = [
   { name: 'Inbound', href: '/inbound' },
   { name: 'Outbound', href: '/outbound' },
   { name: 'Goals', href: '/goals' },
+  { name: 'Team', href: '/settings/team' },
   { name: 'Channels', href: '/channels' },
 ]
 

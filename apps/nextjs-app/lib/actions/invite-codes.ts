@@ -33,8 +33,15 @@ export async function generateInviteCode(role: string) {
     }
   }
 
+  // Validate role
+  if (role !== 'admin' && role !== 'support_agent') {
+    return {
+      error: 'Invalid role specified'
+    }
+  }
+
   // Generate a unique code
-  const code = nanoid(8)
+  const code = nanoid(8).toUpperCase()
   
   // Set expiry to 7 days from now
   const expiresAt = new Date()
@@ -48,15 +55,17 @@ export async function generateInviteCode(role: string) {
         code,
         role,
         celebrity_id: profile.celebrity_id,
+        created_by: user.id,
         expires_at: expiresAt.toISOString(),
       }
     ])
 
   if (createError) {
+    console.error('Error creating invite code:', createError)
     return {
       error: 'Failed to generate invite code'
     }
   }
 
-  return { success: true }
+  return { success: true, code }
 } 
