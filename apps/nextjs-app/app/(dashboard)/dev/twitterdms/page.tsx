@@ -1,12 +1,13 @@
 'use client'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useQuery } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
-import { formatDistanceToNow } from 'date-fns'
+import { formatDistanceToNow, fromUnixTime } from 'date-fns'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { AlertCircle } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { AlertCircle, AlertTriangle } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { useState, useEffect } from 'react'
 
 interface TwitterDM {
   id: string
@@ -16,14 +17,37 @@ interface TwitterDM {
   created_at: string
 }
 
+interface TwitterError {
+  code: number
+  message: string
+  rateLimitInfo?: {
+    limit: number
+    remaining: number
+    reset: number
+  }
+  dailyLimitInfo?: {
+    limit: number
+    remaining: number
+    reset: number
+  }
+}
+
+interface TwitterAuth {
+  access_token: string
+  refresh_token: string
+}
+
 export default function TwitterDMsPage() {
   const supabase = createClient()
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<TwitterError | null>(null)
+  const [dms, setDms] = useState<TwitterDM[] | null>(null)
+  const [twitterAuth, setTwitterAuth] = useState<TwitterAuth | null>(null)
 
-  const { data: twitterAuth } = useQuery({
-    queryKey: ['twitter-auth'],
-    queryFn: async () => {
+  useEffect(() => {
+    async function fetchTwitterAuth() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return null
+      if (!user) return
 
       const { data } = await supabase
         .from('twitter_auth')
@@ -31,21 +55,109 @@ export default function TwitterDMsPage() {
         .eq('user_id', user.id)
         .single()
 
-      return data
+      setTwitterAuth(data)
     }
-  })
 
-  const { data: dms, isLoading, error } = useQuery({
-    queryKey: ['twitter-dms'],
-    enabled: !!twitterAuth,
-    queryFn: async () => {
+    fetchTwitterAuth()
+  }, [])
+
+  const handleFetchDMs = async () => {
+    setIsLoading(true)
+    setError(null)
+    
+    try {
       const response = await fetch('/api/dev/twitter/dms')
       if (!response.ok) {
-        throw new Error('Failed to fetch DMs')
+        const errorData = await response.json()
+        const headers = errorData.headers || {}
+        
+        // Check for daily limit first
+        if (headers['x-user-limit-24hour-remaining'] === '0') {
+          const resetTime = parseInt(headers['x-user-limit-24hour-reset'])
+          throw {
+            code: 429,
+            message: 'Daily DM fetch limit reached',
+            dailyLimitInfo: {
+              limit: parseInt(headers['x-user-limit-24hour-limit']),
+              remaining: 0,
+              reset: resetTime
+            }
+          } as TwitterError
+        }
+        
+        // Then check for regular rate limit
+        if (errorData.rateLimitInfo?.remaining === 0) {
+          throw {
+            code: 429,
+            message: 'Twitter API rate limit reached',
+            rateLimitInfo: errorData.rateLimitInfo
+          } as TwitterError
+        }
+
+        // For other errors
+        throw {
+          code: response.status,
+          message: errorData.error?.detail || errorData.message || 'Failed to fetch DMs'
+        } as TwitterError
       }
-      return response.json() as Promise<TwitterDM[]>
+      
+      const data = await response.json()
+      
+      if (!Array.isArray(data)) {
+        console.error('Invalid DMs response:', data)
+        throw new Error('Invalid response format')
+      }
+      
+      const isValidDM = (dm: any): dm is TwitterDM => {
+        return typeof dm === 'object' && 
+               dm !== null &&
+               typeof dm.id === 'string' &&
+               typeof dm.text === 'string' &&
+               typeof dm.sender_id === 'string' &&
+               typeof dm.sender_screen_name === 'string' &&
+               typeof dm.created_at === 'string'
+      }
+      
+      if (!data.every(isValidDM)) {
+        console.error('Invalid DM object in response:', data)
+        throw new Error('Invalid DM format')
+      }
+      
+      setDms(data)
+    } catch (err) {
+      console.error('Error fetching DMs:', err)
+      setError(err as TwitterError)
+    } finally {
+      setIsLoading(false)
     }
-  })
+  }
+
+  const isRateLimited = error?.code === 429
+  const isDailyLimit = isRateLimited && error?.dailyLimitInfo?.remaining === 0
+  const resetTime = isDailyLimit 
+    ? fromUnixTime(error.dailyLimitInfo!.reset)
+    : error?.rateLimitInfo?.reset 
+      ? fromUnixTime(error.rateLimitInfo.reset)
+      : null
+
+  const renderDMs = () => {
+    if (!Array.isArray(dms)) {
+      console.error('DMs is not an array:', dms)
+      return null
+    }
+
+    return dms.map((dm) => (
+      <div key={dm.id} className="flex flex-col space-y-1 rounded-lg border p-4">
+        <div className="flex items-center justify-between">
+          <span className="font-medium">@{dm.sender_screen_name}</span>
+          <span className="text-sm text-muted-foreground">
+            {formatDistanceToNow(new Date(dm.created_at), { addSuffix: true })}
+          </span>
+        </div>
+        <p className="text-sm text-muted-foreground">{dm.text}</p>
+      </div>
+    ))
+  }
 
   return (
     <div className="container space-y-8 py-8 pl-6">
@@ -58,17 +170,40 @@ export default function TwitterDMsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Recent DM Threads</CardTitle>
-          <CardDescription>
-            Showing the last 10 DM threads from Twitter
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Recent DM Threads</CardTitle>
+              <CardDescription>
+                Showing the last 10 DM threads from Twitter
+              </CardDescription>
+            </div>
+            <Button 
+              onClick={handleFetchDMs} 
+              disabled={isLoading || !twitterAuth || isRateLimited}
+            >
+              {isLoading ? 'Fetching...' : 'Fetch DMs'}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {error ? (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Failed to load DMs. Make sure your Twitter account is connected.
+            <Alert variant={isRateLimited ? "default" : "destructive"}>
+              {isRateLimited ? <AlertTriangle className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+              <AlertTitle>
+                {isDailyLimit ? 'Daily Limit Reached' : isRateLimited ? 'Rate Limited' : 'Error'}
+              </AlertTitle>
+              <AlertDescription className="space-y-2">
+                <p>{isDailyLimit 
+                  ? 'You can only fetch DMs once per day. Please try again tomorrow.' 
+                  : isRateLimited
+                    ? 'Too many requests to Twitter API. Please wait a few minutes and try again.'
+                    : error.message}
+                </p>
+                {resetTime && (
+                  <p className="text-sm text-muted-foreground">
+                    You can try again at {resetTime.toLocaleString()}
+                  </p>
+                )}
               </AlertDescription>
             </Alert>
           ) : isLoading ? (
@@ -77,7 +212,14 @@ export default function TwitterDMsPage() {
               <Skeleton className="h-12 w-full" />
               <Skeleton className="h-12 w-full" />
             </>
-          ) : dms?.length === 0 ? (
+          ) : !dms ? (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Click the Fetch DMs button to load messages.
+              </AlertDescription>
+            </Alert>
+          ) : dms.length === 0 ? (
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
@@ -85,17 +227,7 @@ export default function TwitterDMsPage() {
               </AlertDescription>
             </Alert>
           ) : (
-            dms?.map((dm) => (
-              <div key={dm.id} className="flex flex-col space-y-1 rounded-lg border p-4">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">@{dm.sender_screen_name}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {formatDistanceToNow(new Date(dm.created_at), { addSuffix: true })}
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground">{dm.text}</p>
-              </div>
-            ))
+            renderDMs()
           )}
         </CardContent>
       </Card>

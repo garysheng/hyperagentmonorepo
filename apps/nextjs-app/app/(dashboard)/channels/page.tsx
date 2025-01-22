@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge'
 export default function ChannelsPage() {
   const supabase = createClient()
 
-  const { data: twitterAuth, isLoading } = useQuery({
+  const { data: twitterAuth } = useQuery({
     queryKey: ['twitter-auth'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser()

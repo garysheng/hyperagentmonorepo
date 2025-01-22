@@ -1,19 +1,13 @@
-import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { v5 as uuidv5 } from 'uuid'
-
-// Generate a deterministic UUID based on email
-function generateUserUUID(email: string): string {
-  // Create a UUID v5 using email as the name
-  const NAMESPACE = '6ba7b810-9dad-11d1-80b4-00c04fd430c8'
-  return uuidv5(email, NAMESPACE)
-}
+import { NextResponse } from 'next/server'
+import { createOpportunity } from '@/lib/opportunities'
 
 export async function POST(request: Request) {
   try {
-    const { celebrityId, email, message } = await request.json()
+    const body = await request.json()
+    const { celebrity_id, name, email, phone, message } = body
 
-    if (!celebrityId || !email || !message) {
+    if (!celebrity_id || !message) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -22,32 +16,41 @@ export async function POST(request: Request) {
 
     const supabase = await createClient()
 
-    // Create opportunity
-    const { data: opportunity, error: opportunityError } = await supabase
-      .from('opportunities')
-      .insert({
-        celebrity_id: celebrityId,
-        sender_id: generateUserUUID(email),
-        sender_handle: email,
-        initial_content: message,
-        status: 'pending',
-        relevance_score: -1,
-        needs_discussion: false
-      })
-      .select()
+    // Verify celebrity exists
+    const { data: celebrity, error: celebrityError } = await supabase
+      .from('celebrities')
+      .select('id')
+      .eq('id', celebrity_id)
       .single()
 
-    if (opportunityError) {
-      console.error('Error creating opportunity:', opportunityError)
+    if (celebrityError || !celebrity) {
+      return NextResponse.json(
+        { error: 'Celebrity not found' },
+        { status: 404 }
+      )
+    }
+
+    // Create opportunity
+    try {
+      const opportunity = await createOpportunity(supabase, {
+        celebrity_id,
+        source: 'WIDGET',
+        description: message,
+        name,
+        email,
+        phone
+      })
+
+      return NextResponse.json({ success: true, opportunity })
+    } catch (error) {
+      console.error('Error creating opportunity:', error)
       return NextResponse.json(
         { error: 'Failed to create opportunity' },
         { status: 500 }
       )
     }
-
-    return NextResponse.json({ success: true, opportunityId: opportunity.id })
   } catch (error) {
-    console.error('Error handling widget submission:', error)
+    console.error('Error in widget submit:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

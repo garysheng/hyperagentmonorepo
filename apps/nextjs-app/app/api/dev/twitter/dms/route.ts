@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { getTwitterClient } from '@/lib/twitter/client'
 import { ApiResponseError } from 'twitter-api-v2'
+import { IncomingHttpHeaders } from 'http'
 
 export async function GET() {
   try {
@@ -54,6 +55,25 @@ export async function GET() {
           rateLimitInfo: twitterError.rateLimit,
           headers: twitterError.headers
         })
+
+        // Get headers safely
+        const headers = twitterError.headers as IncomingHttpHeaders
+        const dailyLimit = headers['x-user-limit-24hour-limit']
+        const dailyReset = headers['x-user-limit-24hour-reset']
+        const dailyRemaining = headers['x-user-limit-24hour-remaining']
+
+        // Return rate limit information in the error response
+        return NextResponse.json({
+          error: twitterError.data,
+          message: `You can try again at ${new Date(Number(dailyReset) * 1000).toLocaleString()}`,
+          code: twitterError.code,
+          rateLimitInfo: twitterError.rateLimit,
+          headers: {
+            'x-user-limit-24hour-limit': dailyLimit,
+            'x-user-limit-24hour-reset': dailyReset,
+            'x-user-limit-24hour-remaining': dailyRemaining
+          }
+        }, { status: twitterError.code })
       } else {
         console.error('Unknown Twitter error:', twitterError)
       }
