@@ -49,3 +49,13 @@
   - Implemented OAuth 1.0a flow with temporary token storage
   - Added Supabase table for storing Twitter auth data with RLS
   - Created API routes for Twitter auth flow and callback handling
+
+## March 20, 2024
+
+1. Added email integration with Mailgun:
+   - Created email service implementation with thread tracking
+   - Added email_threads and email_messages tables
+   - Created webhook endpoint for receiving emails
+   - Created API endpoint for sending emails
+   - Updated database schema and migrations
+   - Added email-related types and interfaces

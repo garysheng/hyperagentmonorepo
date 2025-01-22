@@ -1,87 +1,67 @@
-import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
-import { Resend } from 'resend'
-import { TableName } from '@/types'
+import { emailService } from '@/lib/email/mailgun';
+import { createClient } from '@/lib/supabase/server';
+import { TableName } from '@/types';
+import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
-    const { opportunityId, message } = await request.json()
-
-    if (!opportunityId || !message) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      )
-    }
+    const { opportunityId, message, threadId, messageId } = await request.json();
 
     // Get opportunity details
-    const { data: opportunity, error: oppError } = await supabase
+    const supabase = await createClient();
+    const { data: opportunity, error: opportunityError } = await supabase
       .from(TableName.OPPORTUNITIES)
-      .select(`
-        id,
-        sender_id,
-        sender_handle,
-        initial_content
-      `)
+      .select('email_from')
       .eq('id', opportunityId)
-      .single()
+      .single();
 
-    if (oppError || !opportunity) {
-      return NextResponse.json(
-        { error: 'Could not find opportunity' },
-        { status: 404 }
-      )
+    if (opportunityError || !opportunity) {
+      throw new Error('Opportunity not found');
     }
 
-    // Send email using Resend
-    const resend = new Resend(process.env.RESEND_API_KEY)
-    const { data: emailResponse } = await resend.emails.send({
-      from: 'noreply@gauntlet.ai',
-      to: opportunity.sender_id, // Using sender_id as email address
-      subject: 'Response to your message',
-      text: message
-    })
-
-    if (!emailResponse?.id) {
-      throw new Error('Failed to send email')
-    }
-
-    // Update opportunity status
-    const { error: updateError } = await supabase
-      .from(TableName.OPPORTUNITIES)
-      .update({
-        status: 'conversation_started',
-        status_updated_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', opportunityId)
-
-    if (updateError) {
-      throw updateError
-    }
+    // Send email
+    const emailResponse = await emailService.sendEmail({
+      to: opportunity.email_from,
+      from: `reply+${opportunityId}@${process.env.MAILGUN_DOMAIN}`,
+      subject: 'Re: Your Opportunity',
+      text: message,
+      threadId,
+      messageId
+    });
 
     // Create message record
     const { error: messageError } = await supabase
-      .from(TableName.OPPORTUNITY_MESSAGES)
+      .from(TableName.EMAIL_MESSAGES)
       .insert({
-        opportunity_id: opportunityId,
+        thread_id: threadId,
+        from: `reply+${opportunityId}@${process.env.MAILGUN_DOMAIN}`,
+        to: [opportunity.email_from],
+        subject: 'Re: Your Opportunity',
         content: message,
-        platform_message_id: emailResponse.id,
-        direction: 'outbound',
-        created_at: new Date().toISOString()
-      })
+        mailgun_message_id: emailResponse.id,
+        direction: 'outbound'
+      });
 
     if (messageError) {
-      throw messageError
+      throw messageError;
     }
 
-    return NextResponse.json({ success: true })
+    // Update thread last_message_at
+    const { error: threadError } = await supabase
+      .from(TableName.EMAIL_THREADS)
+      .update({ last_message_at: new Date().toISOString() })
+      .eq('id', threadId);
+
+    if (threadError) {
+      throw threadError;
+    }
+
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error sending email:', error)
+    console.error('Error sending email:', error);
     return NextResponse.json(
       { error: 'Failed to send message' },
       { status: 500 }
-    )
+    );
   }
 } 
