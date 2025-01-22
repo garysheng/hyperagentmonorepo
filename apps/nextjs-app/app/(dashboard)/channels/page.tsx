@@ -50,7 +50,7 @@ export default function ChannelsPage() {
 ></script>`
 
   return (
-    <div className="container space-y-8 py-8">
+    <div className="container space-y-8 py-8 pl-6">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">Channels</h1>
         <p className="text-muted-foreground">
