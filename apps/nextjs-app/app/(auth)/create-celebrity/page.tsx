@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
 import { createCelebrity } from './actions'
 
+
 export default function CreateCelebrityPage() {
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -16,7 +17,7 @@ export default function CreateCelebrityPage() {
     setIsSubmitting(true)
     try {
       const result = await createCelebrity(formData)
-      
+
       if ('error' in result) {
         toast({
           title: 'Error',
@@ -29,7 +30,7 @@ export default function CreateCelebrityPage() {
       if (result.success && result.redirect) {
         window.location.href = result.redirect
       }
-    } catch (error) {
+    } catch {
       toast({
         title: 'Error',
         description: 'An unexpected error occurred',
@@ -77,11 +78,11 @@ export default function CreateCelebrityPage() {
           <form action={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="celebrityName">Celebrity Name</Label>
-              <Input 
-                id="celebrityName" 
-                name="celebrityName" 
-                placeholder="e.g. MrBeast, Gary Sheng" 
-                required 
+              <Input
+                id="celebrityName"
+                name="celebrityName"
+                placeholder="e.g. MrBeast, Gary Sheng"
+                required
               />
             </div>
             <Button type="submit" className="w-full" disabled={isSubmitting}>

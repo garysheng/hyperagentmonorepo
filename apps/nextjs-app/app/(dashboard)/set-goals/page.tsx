@@ -121,7 +121,7 @@ export default function SetGoalsPage() {
             <CardHeader>
               <CardTitle>Goal {index + 1}</CardTitle>
               <CardDescription>
-                Define what the celebrity wants to achieve or the types of opportunities they're looking for
+                Define what the celebrity wants to achieve or the types of opportunities they&apos;re looking for
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

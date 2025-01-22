@@ -30,7 +30,7 @@ function LoginForm() {
       if (result.success && result.redirect) {
         window.location.href = result.redirect
       }
-    } catch (error) {
+    } catch {
       toast({
         title: 'Error',
         description: 'An unexpected error occurred',
