@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge'
 export default function ChannelsPage() {
   const supabase = createClient()
 
-  const { data: twitterAuth } = useQuery({
+  const { data: twitterAuth, isLoading } = useQuery({
     queryKey: ['twitter-auth'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -20,7 +20,7 @@ export default function ChannelsPage() {
 
       const { data } = await supabase
         .from('twitter_auth')
-        .select('screen_name, twitter_id, updated_at')
+        .select('*')
         .eq('user_id', user.id)
         .single()
 
@@ -79,13 +79,19 @@ export default function ChannelsPage() {
           </CardHeader>
           <CardContent>
             {twitterAuth ? (
-              <Alert>
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                <AlertTitle>Twitter Connected</AlertTitle>
-                <AlertDescription>
-                  Your Twitter account @{twitterAuth.screen_name} is connected and ready to receive DMs.
-                </AlertDescription>
-              </Alert>
+              <>
+                <Alert className="mb-4">
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  <AlertTitle>Twitter Connected</AlertTitle>
+                  <AlertDescription>
+                    Your Twitter account @{twitterAuth.screen_name} is connected and ready to receive DMs.
+                  </AlertDescription>
+                </Alert>
+                <ConnectTwitterButton 
+                  isConnected={true} 
+                  screenName={twitterAuth.screen_name} 
+                />
+              </>
             ) : (
               <ConnectTwitterButton />
             )}
