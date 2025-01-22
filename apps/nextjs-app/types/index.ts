@@ -46,6 +46,7 @@ export interface User {
   full_name: string;
   email: string;
   role: 'admin' | 'support_agent' | 'celebrity';
+  celebrity_id: string | null;
   created_at: string;
   updated_at: string;
 }
