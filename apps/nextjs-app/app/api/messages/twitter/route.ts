@@ -75,21 +75,10 @@ export async function POST(request: Request) {
     
     let dmResponse
     try {
-      if (opportunity.twitter_dm_conversation_id) {
-        // Send message in existing conversation
-        dmResponse = await client.createDmConversation({
-          participant_ids: [opportunity.twitter_sender_id],
-          message: { text: message },
-          conversation_type: 'Group'
-        })
-      } else {
-        // Create new conversation with participant
-        dmResponse = await client.createDmConversation({
-          participant_ids: [opportunity.twitter_sender_id],
-          message: { text: message },
-          conversation_type: 'Group'
-        })
-      }
+      dmResponse = await client.sendDmToParticipant(
+        opportunity.twitter_sender_id,
+        { text: message }
+      )
     } catch (error) {
       if (error instanceof ApiResponseError) {
         console.error('Twitter API Error Details:', {
@@ -121,19 +110,10 @@ export async function POST(request: Request) {
             client = getReadWriteClient(newTokens.access_token)
             
             // Retry sending the message
-            if (opportunity.twitter_dm_conversation_id) {
-              dmResponse = await client.createDmConversation({
-                participant_ids: [opportunity.twitter_sender_id],
-                message: { text: message },
-                conversation_type: 'Group'
-              })
-            } else {
-              dmResponse = await client.createDmConversation({
-                participant_ids: [opportunity.twitter_sender_id],
-                message: { text: message },
-                conversation_type: 'Group'
-              })
-            }
+            dmResponse = await client.sendDmToParticipant(
+              opportunity.twitter_sender_id,
+              { text: message }
+            )
           } catch (refreshError) {
             console.error('Error refreshing token:', refreshError)
             return NextResponse.json(
