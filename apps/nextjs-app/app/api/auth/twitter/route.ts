@@ -18,16 +18,29 @@ export async function GET() {
 
     // Get Twitter auth link and temporary tokens
     const { url, tokens } = await getAuthLink();
+    console.log('Generated tokens:', tokens);
 
-    // Store temporary tokens in session
-    await supabase
-      .from('user_twitter_auth')
+    // Store tokens in twitter_auth table
+    const { error: upsertError } = await supabase
+      .from('twitter_auth')
       .upsert({
         user_id: user.id,
-        temp_oauth_token: tokens.oauth_token,
-        temp_oauth_token_secret: tokens.oauth_token_secret,
+        access_token: tokens.oauth_token,
+        refresh_token: tokens.oauth_token_secret,
         created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id',
+        ignoreDuplicates: false
       });
+
+    if (upsertError) {
+      console.error('Error storing tokens:', upsertError);
+      return NextResponse.json(
+        { error: 'Failed to store tokens' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ url });
   } catch (error) {

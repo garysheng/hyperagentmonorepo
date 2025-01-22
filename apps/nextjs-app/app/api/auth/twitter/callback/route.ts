@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const oauth_token = searchParams.get('oauth_token');
     const oauth_verifier = searchParams.get('oauth_verifier');
+    console.log('Received tokens:', { oauth_token, oauth_verifier });
 
     if (!oauth_token || !oauth_verifier) {
       return NextResponse.redirect(
@@ -18,52 +19,64 @@ export async function GET(request: NextRequest) {
     const { data: { user }, error } = await supabase.auth.getUser();
 
     if (error || !user) {
+      console.error('Auth error:', error);
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_APP_URL}/login`
       );
     }
 
-    // Get the temporary tokens we stored
-    const { data: tempTokens } = await supabase
-      .from('user_twitter_auth')
-      .select('temp_oauth_token_secret')
+    console.log('Looking up tokens for user:', user.id);
+
+    // Get the stored tokens
+    const { data: storedTokens, error: lookupError } = await supabase
+      .from('twitter_auth')
+      .select('refresh_token')
       .eq('user_id', user.id)
-      .eq('temp_oauth_token', oauth_token)
       .single();
 
-    if (!tempTokens?.temp_oauth_token_secret) {
+    if (lookupError) {
+      console.error('Error looking up tokens:', lookupError);
+      return NextResponse.redirect(
+        `${process.env.NEXT_PUBLIC_APP_URL}/channels?error=Failed to retrieve stored tokens`
+      );
+    }
+
+    if (!storedTokens?.refresh_token) {
+      console.log('No matching tokens found:', { storedTokens });
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_APP_URL}/channels?error=Invalid OAuth state`
       );
     }
 
+    console.log('Found stored tokens:', storedTokens);
+
     // Exchange the verifier for access tokens
     const { user: twitterUser, tokens } = await validateCallback(
       oauth_token,
       oauth_verifier,
-      tempTokens.temp_oauth_token_secret
+      storedTokens.refresh_token
     );
 
-    // Store the Twitter tokens and user info
-    await supabase
-      .from('user_twitter_auth')
-      .upsert({
-        user_id: user.id,
-        twitter_id: twitterUser.id_str,
-        oauth_token: tokens.oauth_token,
-        oauth_token_secret: tokens.oauth_token_secret,
-        screen_name: twitterUser.screen_name,
-        updated_at: new Date().toISOString(),
-      });
+    console.log('Validated Twitter tokens:', { tokens, screenName: twitterUser.screen_name });
 
-    // Clear temporary tokens
-    await supabase
-      .from('user_twitter_auth')
+    // Update the Twitter tokens
+    const { error: updateError } = await supabase
+      .from('twitter_auth')
       .update({
-        temp_oauth_token: null,
-        temp_oauth_token_secret: null,
+        access_token: tokens.oauth_token,
+        refresh_token: tokens.oauth_token_secret,
+        screen_name: twitterUser.screen_name,
+        twitter_id: twitterUser.id_str,
+        updated_at: new Date().toISOString(),
       })
       .eq('user_id', user.id);
+
+    if (updateError) {
+      console.error('Error updating tokens:', updateError);
+      return NextResponse.redirect(
+        `${process.env.NEXT_PUBLIC_APP_URL}/channels?error=Failed to store Twitter credentials`
+      );
+    }
 
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_APP_URL}/channels?success=Twitter connected successfully`
