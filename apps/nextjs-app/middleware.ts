@@ -1,75 +1,114 @@
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function updateSession(request: NextRequest) {
-  // Don't run middleware for POST requests to /login
-  if (request.method === 'POST' && request.nextUrl.pathname === '/login') {
+// Define routes that don't require authentication or celebrity association
+const PUBLIC_ROUTES = ['/', '/login', '/signup', '/auth/confirm']
+const CREATE_CELEBRITY_ROUTE = '/create-celebrity'
+const AUTH_ROUTES = ['/auth', '/api/auth']
+const STATIC_ROUTES = ['/_next', '/favicon.ico']
+
+export async function middleware(request: NextRequest) {
+  console.log('🚀 Middleware running for path:', request.nextUrl.pathname)
+
+  // Skip middleware for static routes
+  if (STATIC_ROUTES.some(route => request.nextUrl.pathname.startsWith(route))) {
+    console.log('⏩ Skipping middleware for static route')
     return NextResponse.next()
   }
 
-  let supabaseResponse = NextResponse.next({
-    request,
+  // Check route type
+  const pathname = request.nextUrl.pathname
+  const isPublicRoute = PUBLIC_ROUTES.some(route => pathname === route)
+  const isAuthRoute = AUTH_ROUTES.some(route => pathname.startsWith(route))
+
+  console.log('📍 Route checks:', {
+    isPublicRoute,
+    isAuthRoute,
+    pathname
   })
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({
-            request,
-          })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
-
-  // IMPORTANT: Avoid writing any logic between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  // Define public routes that don't require authentication
-  const publicRoutes = ['/', '/login', '/create-celebrity', '/join-team', '/auth', '/api']
-  const isPublicRoute = publicRoutes.some(route => request.nextUrl.pathname.startsWith(route))
-
-  // Don't redirect if:
-  // 1. It's a public route
-  // 2. User exists
-  // 3. It's the login page (to avoid redirect loops)
-  if (!user && !isPublicRoute && request.nextUrl.pathname !== '/login') {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
+  // Allow public and auth routes without any checks
+  if (isPublicRoute || isAuthRoute) {
+    console.log('✅ Allowing public/auth route access')
+    return NextResponse.next()
   }
 
-  return supabaseResponse
-}
+  // For protected routes, create a new response
+  const response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  })
 
-export async function middleware(request: NextRequest) {
-  return await updateSession(request)
+  try {
+    // Create Supabase client
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              response.cookies.set({ name, value, ...options })
+            )
+          },
+        },
+      }
+    )
+
+    // Refresh session, if it exists
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+    console.log('👤 Auth check result:', {
+      hasUser: !!user,
+      error: userError?.message
+    })
+
+    // If no user or error, redirect to login
+    if (!user || userError) {
+      console.log('❌ No authenticated user - redirecting to login')
+      const redirectUrl = new URL('/login', request.url)
+      redirectUrl.searchParams.set('redirect', request.nextUrl.pathname)
+      return NextResponse.redirect(redirectUrl)
+    }
+
+    // For all routes except create-celebrity, check if user has a celebrity_id
+    if (pathname !== CREATE_CELEBRITY_ROUTE) {
+      const { data: userData, error: dbError } = await supabase
+        .from('users')
+        .select('celebrity_id')
+        .eq('id', user.id)
+        .single()
+
+      console.log('🎭 Celebrity check result:', {
+        hasCelebrityId: !!userData?.celebrity_id,
+        error: dbError?.message
+      })
+
+      if (!userData?.celebrity_id) {
+        console.log('⚠️ No celebrity_id - redirecting to create-celebrity')
+        return NextResponse.redirect(new URL('/create-celebrity', request.url))
+      }
+    }
+
+    // User is authenticated and has required data - allow access
+    console.log('✅ All checks passed - allowing access')
+    return response
+
+  } catch (error) {
+    console.error('🔥 Auth error:', error)
+    // On error, redirect to login
+    const redirectUrl = new URL('/login', request.url)
+    redirectUrl.searchParams.set('redirect', request.nextUrl.pathname)
+    return NextResponse.redirect(redirectUrl)
+  }
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
-     */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/auth).*)',
   ],
 } 
