@@ -11,7 +11,7 @@ interface BaseOpportunityData {
   updated_at?: string
 }
 
-interface TwitterDMOpportunityData extends BaseOpportunityData {
+export interface TwitterDMOpportunityData extends BaseOpportunityData {
   source: 'TWITTER_DM'
   twitter_dm_conversation_id: string
   twitter_dm_event_id: string
