@@ -1,5 +1,4 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { validateCallback } from '@/lib/twitter/auth';
 
@@ -11,14 +10,14 @@ export async function GET(request: NextRequest) {
 
     if (!oauth_token || !oauth_verifier) {
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL}/settings?error=Missing Twitter OAuth parameters`
+        `${process.env.NEXT_PUBLIC_APP_URL}/channels?error=Missing Twitter OAuth parameters`
       );
     }
 
-    const supabase = createRouteHandlerClient({ cookies });
-    const { data: { session } } = await supabase.auth.getSession();
+    const supabase = await createClient();
+    const { data: { user }, error } = await supabase.auth.getUser();
 
-    if (!session) {
+    if (error || !user) {
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_APP_URL}/login`
       );
@@ -28,18 +27,18 @@ export async function GET(request: NextRequest) {
     const { data: tempTokens } = await supabase
       .from('user_twitter_auth')
       .select('temp_oauth_token_secret')
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .eq('temp_oauth_token', oauth_token)
       .single();
 
     if (!tempTokens?.temp_oauth_token_secret) {
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL}/settings?error=Invalid OAuth state`
+        `${process.env.NEXT_PUBLIC_APP_URL}/channels?error=Invalid OAuth state`
       );
     }
 
     // Exchange the verifier for access tokens
-    const { user, tokens } = await validateCallback(
+    const { user: twitterUser, tokens } = await validateCallback(
       oauth_token,
       oauth_verifier,
       tempTokens.temp_oauth_token_secret
@@ -49,11 +48,11 @@ export async function GET(request: NextRequest) {
     await supabase
       .from('user_twitter_auth')
       .upsert({
-        user_id: session.user.id,
-        twitter_id: user.id_str,
+        user_id: user.id,
+        twitter_id: twitterUser.id_str,
         oauth_token: tokens.oauth_token,
         oauth_token_secret: tokens.oauth_token_secret,
-        screen_name: user.screen_name,
+        screen_name: twitterUser.screen_name,
         updated_at: new Date().toISOString(),
       });
 
@@ -64,15 +63,15 @@ export async function GET(request: NextRequest) {
         temp_oauth_token: null,
         temp_oauth_token_secret: null,
       })
-      .eq('user_id', session.user.id);
+      .eq('user_id', user.id);
 
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/settings?success=Twitter connected successfully`
+      `${process.env.NEXT_PUBLIC_APP_URL}/channels?success=Twitter connected successfully`
     );
   } catch (error) {
     console.error('Twitter callback error:', error);
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/settings?error=Failed to connect Twitter`
+      `${process.env.NEXT_PUBLIC_APP_URL}/channels?error=Failed to connect Twitter`
     );
   }
 } 

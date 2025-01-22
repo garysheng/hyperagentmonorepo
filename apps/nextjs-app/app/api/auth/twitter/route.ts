@@ -7,9 +7,9 @@ import { getAuthLink } from '@/lib/twitter/auth';
 export async function GET() {
   try {
     const supabase = await createClient();
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { user }, error } = await supabase.auth.getUser();
 
-    if (!session) {
+    if (error || !user) {
       return NextResponse.json(
         { error: 'Not authenticated' },
         { status: 401 }
@@ -23,7 +23,7 @@ export async function GET() {
     await supabase
       .from('user_twitter_auth')
       .upsert({
-        user_id: session.user.id,
+        user_id: user.id,
         temp_oauth_token: tokens.oauth_token,
         temp_oauth_token_secret: tokens.oauth_token_secret,
         created_at: new Date().toISOString(),
