@@ -26,8 +26,31 @@ export async function POST(
     const { type, payload } = (await request.json()) as OpportunityAction
     const now = new Date().toISOString()
 
+    // Helper function to record action
+    const recordAction = async (actionType: string, oldValue: any, newValue: any) => {
+      const { error } = await supabase
+        .from('opportunity_actions')
+        .insert({
+          opportunity_id: id,
+          user_id: user.id,
+          action_type: actionType,
+          old_value: oldValue,
+          new_value: newValue,
+        })
+
+      if (error) {
+        console.error('Error recording action:', error)
+      }
+    }
+
     switch (type) {
       case 'upgrade_relevance': {
+        const { data: currentOpp } = await supabase
+          .from('opportunities')
+          .select('relevance_score')
+          .eq('id', id)
+          .single()
+
         const { data, error } = await supabase
           .from('opportunities')
           .update({
@@ -41,10 +64,22 @@ export async function POST(
           .single()
 
         if (error) throw error
+
+        await recordAction('upgrade_relevance', 
+          { score: currentOpp?.relevance_score }, 
+          { score: payload.relevance_score, explanation: payload.explanation }
+        )
+
         return NextResponse.json(data)
       }
 
       case 'downgrade_relevance': {
+        const { data: currentOpp } = await supabase
+          .from('opportunities')
+          .select('relevance_score, status')
+          .eq('id', id)
+          .single()
+
         const { data, error } = await supabase
           .from('opportunities')
           .update({
@@ -61,10 +96,22 @@ export async function POST(
           .single()
 
         if (error) throw error
+
+        await recordAction('downgrade_relevance', 
+          { score: currentOpp?.relevance_score, status: currentOpp?.status }, 
+          { score: 1, status: 'rejected', explanation: payload.explanation }
+        )
+
         return NextResponse.json(data)
       }
 
       case 'assign_goal': {
+        const { data: currentOpp } = await supabase
+          .from('opportunities')
+          .select('goal_id')
+          .eq('id', id)
+          .single()
+
         const { data, error } = await supabase
           .from('opportunities')
           .update({
@@ -77,10 +124,22 @@ export async function POST(
           .single()
 
         if (error) throw error
+
+        await recordAction('assign_goal',
+          { goal_id: currentOpp?.goal_id },
+          { goal_id: payload.goal_id }
+        )
+
         return NextResponse.json(data)
       }
 
       case 'assign_user': {
+        const { data: currentOpp } = await supabase
+          .from('opportunities')
+          .select('assigned_to')
+          .eq('id', id)
+          .single()
+
         const { data, error } = await supabase
           .from('opportunities')
           .update({
@@ -93,10 +152,22 @@ export async function POST(
           .single()
 
         if (error) throw error
+
+        await recordAction('assign_user',
+          { user_id: currentOpp?.assigned_to },
+          { user_id: payload.user_id }
+        )
+
         return NextResponse.json(data)
       }
 
       case 'flag_discussion': {
+        const { data: currentOpp } = await supabase
+          .from('opportunities')
+          .select('needs_discussion')
+          .eq('id', id)
+          .single()
+
         const { data, error } = await supabase
           .from('opportunities')
           .update({
@@ -109,10 +180,22 @@ export async function POST(
           .single()
 
         if (error) throw error
+
+        await recordAction('flag_discussion',
+          { needs_discussion: currentOpp?.needs_discussion },
+          { needs_discussion: payload.needs_discussion }
+        )
+
         return NextResponse.json(data)
       }
 
       case 'update_status': {
+        const { data: currentOpp } = await supabase
+          .from('opportunities')
+          .select('status')
+          .eq('id', id)
+          .single()
+
         const { data, error } = await supabase
           .from('opportunities')
           .update({
@@ -125,6 +208,12 @@ export async function POST(
           .single()
 
         if (error) throw error
+
+        await recordAction('update_status',
+          { status: currentOpp?.status },
+          { status: payload.status }
+        )
+
         return NextResponse.json(data)
       }
 
@@ -140,10 +229,22 @@ export async function POST(
           .single()
 
         if (error) throw error
+
+        await recordAction('add_comment',
+          null,
+          { content: payload.content }
+        )
+
         return NextResponse.json(data)
       }
 
       case 'update_tags': {
+        const { data: currentOpp } = await supabase
+          .from('opportunities')
+          .select('tags')
+          .eq('id', id)
+          .single()
+
         const { data, error } = await supabase
           .from('opportunities')
           .update({
@@ -156,6 +257,12 @@ export async function POST(
           .single()
 
         if (error) throw error
+
+        await recordAction('update_tags',
+          { tags: currentOpp?.tags },
+          { tags: payload.tags }
+        )
+
         return NextResponse.json(data)
       }
 
@@ -165,6 +272,12 @@ export async function POST(
           .single()
 
         if (error) throw error
+
+        await recordAction('trigger_classification',
+          null,
+          null
+        )
+
         return NextResponse.json(data)
       }
 

@@ -50,21 +50,25 @@ export function RecentActivity() {
           id,
           action_type,
           created_at,
-          user:users!inner(full_name)
+          users!opportunity_actions_user_id_fkey(full_name),
+          opportunity:opportunities!inner(celebrity_id)
         `)
-        .eq('celebrity_id', userProfile.celebrity_id)
+        .eq('opportunity.celebrity_id', userProfile.celebrity_id)
         .order('created_at', { ascending: false })
         .limit(5)
       console.log('Recent Actions - Raw data:', data)
 
-      const mappedData = (data || []).map(item => ({
-        id: item.id,
-        type: item.action_type,
-        created_at: item.created_at,
-        user: {
-          full_name: item.user[0].full_name
+      const mappedData = (data || []).map(item => {
+        console.log('Mapping item:', item)
+        return {
+          id: item.id,
+          type: item.action_type,
+          created_at: item.created_at,
+          user: {
+            full_name: item.users[0].full_name
+          }
         }
-      }))
+      })
       console.log('Recent Actions - Mapped data:', mappedData)
 
       return mappedData as ActionWithRelations[]
@@ -167,17 +171,22 @@ export function RecentActivity() {
               </div>
             </>
           ) : (
-            recentActions?.map((action) => (
-              <div key={action.id} className="flex flex-col space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{action.user.full_name}</span>
-                  <Badge variant="outline" className="capitalize">{action.type.replace('_', ' ')}</Badge>
+            recentActions?.map((action) => {
+              console.log('Rendering action:', action)
+              return (
+                <div key={action.id} className="flex flex-col space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{action.user.full_name}</span>
+                    <Badge variant="outline" className="capitalize">
+                      {action.type.split('_').join(' ')}
+                    </Badge>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {formatDistanceToNow(new Date(action.created_at), { addSuffix: true })}
+                  </span>
                 </div>
-                <span className="text-xs text-muted-foreground">
-                  {formatDistanceToNow(new Date(action.created_at), { addSuffix: true })}
-                </span>
-              </div>
-            ))
+              )
+            })
           )}
         </CardContent>
       </Card>
