@@ -1,3 +1,5 @@
+'use client'
+
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
@@ -16,17 +18,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useInviteCodes } from '@/hooks/use-invite-codes'
-import { Label } from '@/components/ui/label'
+import { useToast } from '@/hooks/use-toast'
+import { generateInviteCode } from '@/lib/actions/invite-codes'
 
 export function GenerateInviteDialog() {
   const [open, setOpen] = useState(false)
-  const [role, setRole] = useState<'admin' | 'support_agent'>('support_agent')
-  const { generateCode, isLoading } = useInviteCodes()
+  const [role, setRole] = useState<string>('support')
+  const { toast } = useToast()
 
   const handleGenerate = async () => {
-    const result = await generateCode(role)
-    if (result) {
+    const result = await generateInviteCode(role)
+    
+    if (result?.error) {
+      toast({
+        title: 'Error',
+        description: result.error,
+        variant: 'destructive'
+      })
+    } else {
+      toast({
+        title: 'Success',
+        description: 'Invite code generated successfully'
+      })
       setOpen(false)
     }
   }
@@ -36,28 +49,23 @@ export function GenerateInviteDialog() {
       <DialogTrigger asChild>
         <Button>Generate Invite Code</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Generate Invite Code</DialogTitle>
           <DialogDescription>
-            Create an invite code for a new team member. The code will expire in 7 days.
+            Create a new invite code for a team member. The code will expire in 7 days.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="role" className="text-right">
-              Role
-            </Label>
-            <Select
-              value={role}
-              onValueChange={(value: 'admin' | 'support_agent') => setRole(value)}
-            >
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select a role" />
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Role</label>
+            <Select value={role} onValueChange={setRole}>
+              <SelectTrigger>
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="support_agent">Support Agent</SelectItem>
                 <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="support">Support Agent</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -66,8 +74,8 @@ export function GenerateInviteDialog() {
           <Button variant="outline" onClick={() => setOpen(false)}>
             Cancel
           </Button>
-          <Button onClick={handleGenerate} disabled={isLoading}>
-            {isLoading ? 'Generating...' : 'Generate'}
+          <Button onClick={handleGenerate}>
+            Generate
           </Button>
         </DialogFooter>
       </DialogContent>
