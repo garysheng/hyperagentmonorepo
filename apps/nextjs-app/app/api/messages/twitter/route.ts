@@ -132,6 +132,21 @@ export async function POST(request: Request) {
             { error: errorMessage },
             { status: 403 }
           )
+        } else if (error.code === 429) {
+          const resetTime = error.rateLimit?.day?.reset
+            ? new Date(error.rateLimit.day.reset * 1000).toLocaleString()
+            : 'tomorrow'
+          
+          return NextResponse.json(
+            { 
+              error: `Twitter DM daily limit reached. Please try again ${resetTime}.`,
+              details: {
+                limit: error.rateLimit?.day?.limit,
+                reset: resetTime
+              }
+            },
+            { status: 429 }
+          )
         } else {
           throw error
         }

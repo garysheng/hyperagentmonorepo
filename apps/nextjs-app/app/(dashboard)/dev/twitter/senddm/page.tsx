@@ -72,6 +72,23 @@ export default function SendDMPage() {
             description: data.error || 'Twitter authentication expired. Please reconnect your account.',
             variant: 'destructive',
           })
+        } else if (response.status === 429) {
+          toast({
+            title: 'Rate Limit Reached',
+            description: data.error || 'Twitter DM daily limit reached.',
+            variant: 'destructive',
+          })
+          
+          // Display rate limit info in the UI
+          const rateLimitInfo = data.details
+          if (rateLimitInfo) {
+            toast({
+              title: 'Rate Limit Details',
+              description: `Daily limit: ${rateLimitInfo.limit || 'Unknown'}\nResets at: ${rateLimitInfo.reset || 'Unknown'}`,
+              variant: 'default',
+              duration: 10000, // Show for 10 seconds
+            })
+          }
         } else {
           toast({
             title: 'Error',
