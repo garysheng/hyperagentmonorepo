@@ -10,6 +10,13 @@ interface ClassificationResult {
   senderBio: string;
 }
 
+interface ClassifyOpportunityParams {
+  content: string;
+  goals: { id: string; name: string; description: string | null }[];
+  email?: string;
+  twitterUsername?: string;
+}
+
 export class PerplexityAI {
   private apiKey: string;
 
@@ -17,16 +24,28 @@ export class PerplexityAI {
     this.apiKey = apiKey;
   }
 
-  async classifyOpportunity(content: string, goals: { id: string; name: string; description: string | null }[]): Promise<ClassificationResult> {
+  async classifyOpportunity({
+    content,
+    goals,
+    email,
+    twitterUsername
+  }: ClassifyOpportunityParams): Promise<ClassificationResult> {
     const goalsText = goals.map(g => 
       `- ${g.name}${g.description ? `: ${g.description}` : ''} (ID: ${g.id})`
     ).join('\n');
 
+    const senderInfo = [
+      email && `Email: ${email}`,
+      twitterUsername && `Twitter Username: ${twitterUsername}`
+    ].filter(Boolean).join('\n');
+
     const prompt = `
-      Given the following message and list of goals, analyze both the message and the sender to provide a classification in JSON format.
+      Given the following message, sender information, and list of goals, analyze both the message and the sender to provide a classification in JSON format.
       
       Goals:
       ${goalsText}
+
+      ${senderInfo ? `\nSender Information:\n${senderInfo}\n` : ''}
 
       Message: "${content}"
 

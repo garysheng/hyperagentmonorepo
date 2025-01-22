@@ -49,7 +49,8 @@ export async function createOpportunity(
     ...data,
     status: data.status || getDefaultStatus(data.source),
     created_at: data.created_at || now,
-    updated_at: data.updated_at || now
+    updated_at: data.updated_at || now,
+    relevance_score: -1 // Set initial relevance score to -1 for classification
   }
 
   const { data: opportunity, error } = await supabase

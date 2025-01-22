@@ -58,10 +58,12 @@ export async function GET() {
                     const celebrityGoals = goalsByCelebrity[opp.celebrity_id] || [];
 
                     // Get the classification from Perplexity
-                    const classification = await perplexity.classifyOpportunity(
-                        opp.initial_content,
-                        celebrityGoals
-                    );
+                    const classification = await perplexity.classifyOpportunity({
+                        content: opp.initial_content,
+                        goals: celebrityGoals,
+                        email: opp.source === 'WIDGET' ? opp.sender_handle : undefined,
+                        twitterUsername: opp.source === 'TWITTER_DM' ? opp.sender_handle : undefined
+                    });
 
                     // Update the opportunity with the classification results
                     const { error: updateError } = await supabase
