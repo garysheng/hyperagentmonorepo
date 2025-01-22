@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getTwitterClient } from '@/lib/twitter/client'
 import { NextResponse } from 'next/server'
 import { ApiResponseError } from 'twitter-api-v2'
-import { createOpportunity } from '@/lib/opportunities'
+import { createTwitterDMOpportunity } from '@/lib/twitter/opportunities'
 
 // Only allow this endpoint to be called by cron jobs
 const CRON_SECRET = process.env.CRON_SECRET
@@ -98,15 +98,13 @@ export async function GET(request: Request) {
           const sender = await client.v2.user(dm.sender_id)
 
           try {
-            await createOpportunity(supabase, {
+            await createTwitterDMOpportunity(supabase, {
               celebrity_id: auth.celebrity_id,
-              source: 'TWITTER_DM',
-              twitter_dm_conversation_id: dm.dm_conversation_id,
-              twitter_dm_event_id: dm.id,
-              twitter_sender_id: dm.sender_id,
-              twitter_sender_username: sender.data.username,
-              description: dm.text,
-              created_at: new Date(dm.created_at).toISOString()
+              conversation_id: dm.dm_conversation_id,
+              event_id: dm.id,
+              sender_id: dm.sender_id,
+              sender_username: sender.data.username,
+              message_content: dm.text,
             })
           } catch (err) {
             console.error('Error creating opportunity:', err)

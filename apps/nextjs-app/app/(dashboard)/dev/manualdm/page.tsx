@@ -10,17 +10,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/components/providers/auth-provider'
-import { createOpportunity } from '@/lib/opportunities'
 import { useCelebrity } from '@/hooks/use-celebrity'
-
-// Helper function to generate UUID v4
-function uuidv4() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
-}
+import { createTwitterDMOpportunity } from '@/lib/twitter/opportunities'
 
 export default function ManualDMPage() {
   const { user, loading: authLoading } = useAuth()
@@ -79,20 +70,13 @@ export default function ManualDMPage() {
 
     try {
       const supabase = createClient()
-      const senderId = uuidv4()
-      const eventId = uuidv4()
 
-      // Create opportunity using helper
-      const opportunity = await createOpportunity(supabase, {
+      // Create opportunity using Twitter-specific helper
+      const opportunity = await createTwitterDMOpportunity(supabase, {
         celebrity_id: celebrity.id,
-        source: 'TWITTER_DM',
-        twitter_dm_conversation_id: conversationId,
-        twitter_dm_event_id: eventId,
-        twitter_sender_id: senderId,
-        twitter_sender_username: senderUsername,
-        initial_content: messageText,
-        sender_id: senderId,
-        sender_handle: senderUsername
+        conversation_id: conversationId,
+        sender_username: senderUsername,
+        message_content: messageText
       })
 
       console.log('Created opportunity:', opportunity)
