@@ -1,59 +1,58 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useAuth } from '@/components/providers'
 import { login, signup } from './actions'
 import { Suspense } from 'react'
 import { Card } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
 
 function LoginForm() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const { user, loading } = useAuth()
-  const message = searchParams.get('message')
   const [isSignup, setIsSignup] = useState(false)
   const { toast } = useToast()
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  useEffect(() => {
-    if (!loading && user) {
-      router.replace('/dashboard')
-      router.refresh()
-    }
-  }, [loading, user, router])
+  async function handleSubmit(formData: FormData) {
+    setIsSubmitting(true)
+    try {
+      const result = await (isSignup ? signup(formData) : login(formData))
+      
+      if ('error' in result) {
+        toast({
+          title: isSignup ? 'Sign Up Error' : 'Sign In Error',
+          description: result.error,
+          variant: 'destructive'
+        })
+        return
+      }
 
-  useEffect(() => {
-    if (message) {
+      if (result.success && result.redirect) {
+        window.location.href = result.redirect
+      }
+    } catch (error) {
       toast({
-        title: isSignup ? 'Sign Up' : 'Sign In',
-        description: message
+        title: 'Error',
+        description: 'An unexpected error occurred',
+        variant: 'destructive'
       })
+    } finally {
+      setIsSubmitting(false)
     }
-  }, [message, toast, isSignup])
-
-  if (loading) {
-    return (
-      <Card className="p-6 space-y-4 w-full max-w-sm">
-        <div className="text-center">Loading...</div>
-      </Card>
-    )
   }
 
   return (
     <Card className="p-6 space-y-4 w-full max-w-sm">
       <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-bold">{isSignup ? 'Join Your Celebrity\'s Team' : 'Welcome Back'}</h1>
+        <h1 className="text-2xl font-bold">{isSignup ? 'Join Your Celebrity&apos;s Team' : 'Welcome Back'}</h1>
         <p className="text-muted-foreground">
           {isSignup 
             ? 'Create your account to manage celebrity opportunities' 
-            : 'Sign in to manage your celebrity\'s opportunities'}
+            : 'Sign in to manage your celebrity&apos;s opportunities'}
         </p>
       </div>
-      <form action={isSignup ? signup : login} className="space-y-4">
+      <form action={handleSubmit} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input id="email" name="email" type="email" required />
@@ -62,8 +61,8 @@ function LoginForm() {
           <Label htmlFor="password">Password</Label>
           <Input id="password" name="password" type="password" required />
         </div>
-        <Button type="submit" className="w-full">
-          {isSignup ? 'Sign Up' : 'Sign In'}
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? 'Loading...' : (isSignup ? 'Sign Up' : 'Sign In')}
         </Button>
       </form>
       <div className="relative">
@@ -79,6 +78,7 @@ function LoginForm() {
         variant="outline" 
         className="w-full"
         onClick={() => setIsSignup(!isSignup)}
+        disabled={isSubmitting}
       >
         {isSignup ? 'Already have an account?' : 'Create an account'}
       </Button>

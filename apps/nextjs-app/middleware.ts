@@ -2,6 +2,11 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
+  // Don't run middleware for POST requests to /login
+  if (request.method === 'POST' && request.nextUrl.pathname === '/login') {
+    return NextResponse.next()
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -39,8 +44,11 @@ export async function updateSession(request: NextRequest) {
   const publicRoutes = ['/', '/login', '/create-celebrity', '/join-team', '/auth', '/api']
   const isPublicRoute = publicRoutes.some(route => request.nextUrl.pathname.startsWith(route))
 
-  if (!user && !isPublicRoute) {
-    // no user and not a public route, redirect to login page
+  // Don't redirect if:
+  // 1. It's a public route
+  // 2. User exists
+  // 3. It's the login page (to avoid redirect loops)
+  if (!user && !isPublicRoute && request.nextUrl.pathname !== '/login') {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)

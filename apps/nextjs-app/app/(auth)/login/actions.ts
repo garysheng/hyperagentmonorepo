@@ -1,7 +1,6 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
 export async function login(formData: FormData) {
@@ -14,44 +13,43 @@ export async function login(formData: FormData) {
     password: formData.get('password') as string,
   }
 
-  const { error } = await supabase.auth.signInWithPassword(data)
+  const { data: { session }, error } = await supabase.auth.signInWithPassword(data)
 
   if (error) {
     console.error('Login error:', error)
     if (error.message === 'Email not confirmed') {
-      redirect('/login?message=Please check your email to confirm your account before logging in')
+      return { error: 'Please check your email to confirm your account before logging in' }
     }
-    redirect('/login?message=' + encodeURIComponent(error.message))
+    return { error: error.message }
   }
 
-  // Check if user has a celebrity assigned
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  if (!user) {
-    redirect('/login?message=Authentication failed')
+  if (!session?.user) {
+    console.error('No session after login')
+    return { error: 'Authentication failed' }
   }
 
-  const { data: userData } = await supabase
+  const { data: userData, error: profileError } = await supabase
     .from('users')
     .select('celebrity_id')
-    .eq('id', user.id)
+    .eq('id', session.user.id)
     .single()
+
+  if (profileError) {
+    console.error('Profile fetch error:', profileError)
+    return { error: 'Failed to fetch user profile' }
+  }
 
   revalidatePath('/', 'layout')
   
-  // If no celebrity is assigned, redirect to create-celebrity page
-  if (!userData?.celebrity_id) {
-    redirect('/create-celebrity')
+  return {
+    success: true,
+    redirect: userData?.celebrity_id ? '/dashboard' : '/create-celebrity'
   }
-
-  redirect('/dashboard')
 }
 
 export async function signup(formData: FormData) {
   const supabase = await createClient()
 
-  // type-casting here for convenience
-  // in practice, you should validate your inputs
   const data = {
     email: formData.get('email') as string,
     password: formData.get('password') as string,
@@ -68,8 +66,12 @@ export async function signup(formData: FormData) {
 
   if (error) {
     console.error('Signup error:', error)
-    redirect('/login?message=' + encodeURIComponent(error.message))
+    return { error: error.message }
   }
 
-  redirect('/login?message=Check your email to confirm your account before logging in')
+  return { 
+    success: true, 
+    redirect: '/login',
+    message: 'Check your email to confirm your account before logging in'
+  }
 } 
