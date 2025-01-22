@@ -1,6 +1,80 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import type { OpportunityAction } from '@/types/actions'
+import { PostgrestError } from '@supabase/supabase-js'
+
+type ActionValue = {
+  score?: number
+  status?: string
+  explanation?: string
+  goal_id?: string
+  user_id?: string
+  needs_discussion?: boolean
+  tags?: string[]
+  content?: string
+} | null
+
+type ActionWithUser = {
+  id: string
+  type: string
+  metadata: Record<string, unknown>
+  user_id: string
+  created_at: string
+  users: {
+    id: string
+    full_name: string
+    email: string
+  } | null
+}
+
+export async function GET(
+  _request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await context.params
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from('opportunity_actions')
+      .select(`
+        id,
+        type,
+        metadata,
+        user_id,
+        created_at,
+        users!opportunity_actions_user_id_fkey (
+          id,
+          full_name,
+          email
+        )
+      `)
+      .eq('opportunity_id', id)
+      .order('created_at', { ascending: true })
+      .returns<ActionWithUser[]>()
+
+    if (error) throw error
+
+    // Transform the response to match our type
+    const actionsWithUser = data.map(action => ({
+      ...action,
+      user_id: action.users?.id || action.user_id,
+      user: action.users ? {
+        id: action.users.id,
+        full_name: action.users.full_name,
+        email: action.users.email
+      } : null
+    }))
+
+    return NextResponse.json(actionsWithUser)
+  } catch (error) {
+    console.error('Error fetching opportunity actions:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
 
 export async function POST(
   request: Request,
@@ -27,7 +101,7 @@ export async function POST(
     const now = new Date().toISOString()
 
     // Helper function to record action
-    const recordAction = async (actionType: string, oldValue: any, newValue: any) => {
+    const recordAction = async (actionType: string, oldValue: ActionValue, newValue: ActionValue) => {
       const { error } = await supabase
         .from('opportunity_actions')
         .insert({

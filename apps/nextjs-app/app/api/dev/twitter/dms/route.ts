@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { getTwitterClient } from '@/lib/twitter/client'
+import { ApiResponseError } from 'twitter-api-v2'
 
 export async function GET() {
   try {
@@ -43,18 +44,22 @@ export async function GET() {
         "dm_event.fields": ["id", "text", "created_at", "sender_id", "dm_conversation_id"]
       })
       return NextResponse.json(dms)
-    } catch (twitterError: any) {
-      console.error('Twitter API error details:', {
-        error: twitterError,
-        message: twitterError.message,
-        data: twitterError.data,
-        code: twitterError.code,
-        rateLimitInfo: twitterError.rateLimit,
-        headers: twitterError.headers
-      })
+    } catch (twitterError) {
+      if (twitterError instanceof ApiResponseError) {
+        console.error('Twitter API error details:', {
+          error: twitterError,
+          message: twitterError.message,
+          data: twitterError.data,
+          code: twitterError.code,
+          rateLimitInfo: twitterError.rateLimit,
+          headers: twitterError.headers
+        })
+      } else {
+        console.error('Unknown Twitter error:', twitterError)
+      }
       
       return NextResponse.json(
-        { error: 'Failed to fetch Twitter DMs', details: twitterError.message },
+        { error: 'Failed to fetch Twitter DMs', details: twitterError instanceof Error ? twitterError.message : 'Unknown error' },
         { status: 500 }
       )
     }

@@ -3,7 +3,6 @@ export const dynamic = 'force-dynamic';
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { getAuthLink } from '@/lib/twitter/auth';
-import { cookies } from 'next/headers';
 
 export async function GET() {
   try {
