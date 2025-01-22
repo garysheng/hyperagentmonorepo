@@ -5,11 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { toast } from '@/hooks/use-toast'
 import { Loader2 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useCelebrity } from '@/hooks/use-celebrity'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useToast } from '@/hooks/use-toast'
 
 export default function SendDMPage() {
   const [opportunityId, setOpportunityId] = useState('')
@@ -17,6 +17,7 @@ export default function SendDMPage() {
   const [isSending, setIsSending] = useState(false)
   const { data: celebrity } = useCelebrity()
   const supabase = createClientComponentClient()
+  const { toast } = useToast()
 
   // Fetch approved opportunities for testing
   const { data: opportunities, isLoading } = useQuery({
@@ -62,14 +63,28 @@ export default function SendDMPage() {
         })
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to send DM')
+        if (response.status === 401) {
+          toast({
+            title: 'Authentication Error',
+            description: data.error || 'Twitter authentication expired. Please reconnect your account.',
+            variant: 'destructive',
+          })
+        } else {
+          toast({
+            title: 'Error',
+            description: data.error || 'Failed to send message',
+            variant: 'destructive',
+          })
+        }
+        return
       }
 
       toast({
-        title: 'DM sent successfully',
-        description: 'The message has been sent and the opportunity updated.'
+        title: 'Success',
+        description: 'Message sent successfully',
       })
 
       // Clear form
@@ -78,9 +93,9 @@ export default function SendDMPage() {
     } catch (error) {
       console.error('Error sending DM:', error)
       toast({
-        title: 'Error sending DM',
-        description: error instanceof Error ? error.message : 'An unexpected error occurred',
-        variant: 'destructive'
+        title: 'Error',
+        description: 'Failed to send message',
+        variant: 'destructive',
       })
     } finally {
       setIsSending(false)
