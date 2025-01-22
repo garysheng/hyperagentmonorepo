@@ -19,17 +19,23 @@ describe('Opportunity Classification', () => {
     {
       initial_content: 'I want to collaborate on a charity event for children\'s education',
       expected_score_range: [3, 5], // High relevance
-      expected_tags: ['charity', 'education']
+      expected_tags: ['charity', 'education'],
+      expected_bio_keywords: ['social', 'influence', 'reach', 'align'],
+      expected_explanation_keywords: ['goal', 'relevance', 'charity']
     },
     {
       initial_content: 'hey sup just wanted to say hi',
       expected_score_range: [0, 2], // Low relevance
-      expected_tags: ['greeting']
+      expected_tags: ['greeting'],
+      expected_bio_keywords: ['social', 'presence'],
+      expected_explanation_keywords: ['irrelevant', 'generic']
     },
     {
       initial_content: 'Let\'s create a new podcast series about technology',
       expected_score_range: [2, 4], // Medium relevance
-      expected_tags: ['podcast', 'technology']
+      expected_tags: ['podcast', 'technology'],
+      expected_bio_keywords: ['social', 'media', 'background'],
+      expected_explanation_keywords: ['podcast', 'technology', 'goal']
     }
   ]
 
@@ -41,7 +47,13 @@ describe('Opportunity Classification', () => {
   })
 
   // Test opportunity classification
-  it.each(testOpportunities)('should classify opportunity correctly: $initial_content', async ({ initial_content, expected_score_range, expected_tags }) => {
+  it.each(testOpportunities)('should classify opportunity correctly: $initial_content', async ({ 
+    initial_content, 
+    expected_score_range, 
+    expected_tags,
+    expected_bio_keywords,
+    expected_explanation_keywords
+  }) => {
     // Create opportunity
     const { data: opp, error: createError } = await supabase
       .from('opportunities')
@@ -81,6 +93,22 @@ describe('Opportunity Classification', () => {
     expect(classifiedOpp.relevance_score).toBeGreaterThanOrEqual(expected_score_range[0])
     expect(classifiedOpp.relevance_score).toBeLessThanOrEqual(expected_score_range[1])
     expect(classifiedOpp.tags).toEqual(expect.arrayContaining(expected_tags))
+    
+    // Verify sender bio
+    expect(classifiedOpp.sender_bio).toBeDefined()
+    expect(typeof classifiedOpp.sender_bio).toBe('string')
+    expect(classifiedOpp.sender_bio.length).toBeGreaterThan(10)
+    expected_bio_keywords.forEach(keyword => {
+      expect(classifiedOpp.sender_bio.toLowerCase()).toContain(keyword)
+    })
+
+    // Verify classification explanation
+    expect(classifiedOpp.classification_explanation).toBeDefined()
+    expect(typeof classifiedOpp.classification_explanation).toBe('string')
+    expect(classifiedOpp.classification_explanation.length).toBeGreaterThan(10)
+    expected_explanation_keywords.forEach(keyword => {
+      expect(classifiedOpp.classification_explanation.toLowerCase()).toContain(keyword)
+    })
   })
 
   // Test manual classification trigger
@@ -128,5 +156,11 @@ describe('Opportunity Classification', () => {
     expect(classifiedOpp).toBeDefined()
     expect(classifiedOpp.relevance_score).toBeGreaterThanOrEqual(0)
     expect(classifiedOpp.relevance_score).toBeLessThanOrEqual(5)
+    expect(classifiedOpp.sender_bio).toBeDefined()
+    expect(typeof classifiedOpp.sender_bio).toBe('string')
+    expect(classifiedOpp.sender_bio.length).toBeGreaterThan(10)
+    expect(classifiedOpp.classification_explanation).toBeDefined()
+    expect(typeof classifiedOpp.classification_explanation).toBe('string')
+    expect(classifiedOpp.classification_explanation.length).toBeGreaterThan(10)
   })
 }) 

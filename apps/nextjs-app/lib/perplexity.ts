@@ -7,6 +7,7 @@ interface ClassificationResult {
   needsDiscussion: boolean;
   goalId?: string;
   explanation: string;
+  senderBio: string;
 }
 
 export class PerplexityAI {
@@ -22,7 +23,7 @@ export class PerplexityAI {
     ).join('\n');
 
     const prompt = `
-      Given the following message and list of goals, analyze the message and provide a classification in JSON format.
+      Given the following message and list of goals, analyze both the message and the sender to provide a classification in JSON format.
       
       Goals:
       ${goalsText}
@@ -36,10 +37,15 @@ export class PerplexityAI {
       - needsDiscussion: boolean indicating if this needs team discussion
       - goalId: string ID of the most relevant goal from the list above, or null if none are relevant
       - explanation: a detailed explanation (2-3 sentences) of why you assigned these ratings and classifications, specifically mentioning how the message relates to any matched goal
+      - senderBio: a 2-3 sentence overview of the sender that includes:
+        * Their estimated social media presence and influence, particularly on Twitter/X if available
+        * How their background and reach aligns with or could help achieve the celebrity's goals
+        * Any red flags or notable positive indicators about their authenticity
 
       Consider the goals when determining relevance and status. If the message aligns well with any goal, it should have a higher relevance score.
       Remember: Only use "pending" or "rejected" for status - never use "approved".
       Use 0 for relevanceScore if the message is completely irrelevant or spam.
+
       Respond only with the JSON object, no other text.
     `.trim();
 
@@ -93,7 +99,9 @@ export class PerplexityAI {
         !['pending', 'rejected'].includes(result.status) ||
         typeof result.needsDiscussion !== 'boolean' ||
         typeof result.explanation !== 'string' ||
-        result.explanation.length < 10
+        result.explanation.length < 10 ||
+        typeof result.senderBio !== 'string' ||
+        result.senderBio.length < 10
       ) {
         console.error('Invalid result structure:', result);
         throw new Error('Invalid classification result from Perplexity');

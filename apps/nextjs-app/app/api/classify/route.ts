@@ -72,6 +72,7 @@ export async function GET() {
                             status: classification.status,
                             needs_discussion: classification.needsDiscussion,
                             goal_id: classification.goalId,
+                            sender_bio: classification.senderBio,
                             classification_explanation: classification.explanation,
                             classified_at: new Date().toISOString()
                         })

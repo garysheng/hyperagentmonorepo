@@ -100,6 +100,22 @@ export function DMDetail({ dm }: DMDetailProps) {
             </h4>
             <p className="text-sm">{dm.initial_content}</p>
           </div>
+          {dm.sender_bio && (
+            <div>
+              <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                Sender Analysis
+              </h4>
+              <p className="text-sm">{dm.sender_bio}</p>
+            </div>
+          )}
+          {dm.classification_explanation && (
+            <div>
+              <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                Classification Reasoning
+              </h4>
+              <p className="text-sm">{dm.classification_explanation}</p>
+            </div>
+          )}
           <div>
             <h4 className="text-sm font-medium text-muted-foreground mb-2">
               Tags

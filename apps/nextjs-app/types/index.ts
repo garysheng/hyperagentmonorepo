@@ -31,6 +31,8 @@ export interface Opportunity {
   goal?: Goal;
   assigned_to?: string;
   needs_discussion: boolean;
+  sender_bio?: string;
+  classification_explanation?: string;
   relevance_override_explanation?: string;
   relevance_override_by?: string;
   relevance_override_at?: string;
