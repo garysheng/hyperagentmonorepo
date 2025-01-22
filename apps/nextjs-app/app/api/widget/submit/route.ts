@@ -4,19 +4,17 @@ import { createOpportunity } from '@/lib/opportunities'
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
-    const { celebrity_id, name, email, phone, message } = body
+    const supabase = await createClient()
+    const { celebrity_id, name, email, phone, message } = await request.json()
 
-    if (!celebrity_id || !message) {
+    if (!celebrity_id) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing celebrity_id' },
         { status: 400 }
       )
     }
 
-    const supabase = await createClient()
-
-    // Verify celebrity exists
+    // Check if celebrity exists
     const { data: celebrity, error: celebrityError } = await supabase
       .from('celebrities')
       .select('id')
@@ -25,30 +23,25 @@ export async function POST(request: Request) {
 
     if (celebrityError || !celebrity) {
       return NextResponse.json(
-        { error: 'Celebrity not found' },
-        { status: 404 }
+        { error: 'Invalid celebrity_id' },
+        { status: 400 }
       )
     }
 
     // Create opportunity
-    try {
-      const opportunity = await createOpportunity(supabase, {
-        celebrity_id,
-        source: 'WIDGET',
-        description: message,
-        name,
-        email,
-        phone
-      })
+    const opportunity = await createOpportunity(supabase, {
+      celebrity_id,
+      source: 'WIDGET',
+      initial_content: message,
+      name,
+      email,
+      phone,
+      // Generate a unique sender ID and handle for widget submissions
+      sender_id: `widget_${Date.now()}`,
+      sender_handle: name || 'Anonymous Widget User'
+    })
 
-      return NextResponse.json({ success: true, opportunity })
-    } catch (error) {
-      console.error('Error creating opportunity:', error)
-      return NextResponse.json(
-        { error: 'Failed to create opportunity' },
-        { status: 500 }
-      )
-    }
+    return NextResponse.json({ success: true, opportunity })
   } catch (error) {
     console.error('Error in widget submit:', error)
     return NextResponse.json(
