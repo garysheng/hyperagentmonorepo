@@ -20,7 +20,7 @@ export async function GET() {
     // Get the user's data
     const { data: userData, error: userError } = await supabase
       .from('users')
-      .select('id, role')
+      .select('id, role, celebrity_id')
       .eq('id', user.id)
       .single()
 
@@ -33,11 +33,11 @@ export async function GET() {
     }
 
     // If no user data found, return empty goals
-    if (!userData) {
+    if (!userData || !userData.celebrity_id) {
       return NextResponse.json([])
     }
 
-    // Get goals based on role
+    // Get goals based on role and celebrity_id
     const { data: goals, error: goalsError } = await supabase
       .from('goals')
       .select(`
@@ -48,6 +48,7 @@ export async function GET() {
         priority,
         created_at
       `)
+      .eq('celebrity_id', userData.celebrity_id)
       .order('priority', { ascending: true })
 
     if (goalsError) throw goalsError
@@ -79,9 +80,29 @@ export async function POST(request: Request) {
       )
     }
 
+    // Get the user's celebrity_id
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('celebrity_id')
+      .eq('id', user.id)
+      .single()
+
+    if (userError || !userData?.celebrity_id) {
+      return NextResponse.json(
+        { error: 'User not associated with a celebrity' },
+        { status: 403 }
+      )
+    }
+
+    // Ensure the goal is created for the user's celebrity
+    const goalWithCelebrity = {
+      ...goal,
+      celebrity_id: userData.celebrity_id
+    }
+
     const { data, error } = await supabase
       .from('goals')
-      .insert([goal])
+      .insert([goalWithCelebrity])
       .select()
       .single()
 

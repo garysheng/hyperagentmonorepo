@@ -1,7 +1,6 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
 
 export async function createCelebrity(formData: FormData) {
   const supabase = await createClient()
@@ -19,13 +18,13 @@ export async function createCelebrity(formData: FormData) {
     .insert([
       {
         celebrity_name: celebrityName,
-        twitter_username: null,
       }
     ])
     .select()
     .single()
 
   if (celebrityError) {
+    console.error('Celebrity creation error:', celebrityError)
     return {
       error: 'Failed to create celebrity'
     }
@@ -35,9 +34,10 @@ export async function createCelebrity(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   
   if (!user) {
-    // Redirect to sign up with state containing celebrity ID
-    const signUpPath = `/signup?celebrity_id=${celebrity.id}`
-    redirect(signUpPath)
+    return {
+      success: true,
+      redirect: `/signup?celebrity_id=${celebrity.id}`
+    }
   }
 
   // Update the user's role and celebrity_id
@@ -50,10 +50,14 @@ export async function createCelebrity(formData: FormData) {
     .eq('id', user.id)
 
   if (updateError) {
+    console.error('User update error:', updateError)
     return {
       error: 'Failed to update user'
     }
   }
 
-  redirect('/dashboard')
+  return {
+    success: true,
+    redirect: '/dashboard'
+  }
 } 

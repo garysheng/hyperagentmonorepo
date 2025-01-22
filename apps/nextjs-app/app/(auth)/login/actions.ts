@@ -55,18 +55,43 @@ export async function signup(formData: FormData) {
     password: formData.get('password') as string,
   }
 
+  const celebrityId = formData.get('celebrity_id') as string
   const origin = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
-  const { error } = await supabase.auth.signUp({
+  const { data: { user }, error } = await supabase.auth.signUp({
     ...data,
     options: {
       emailRedirectTo: `${origin}/auth/confirm`,
+      data: {
+        celebrity_id: celebrityId,
+        role: 'admin'
+      }
     },
   })
 
   if (error) {
     console.error('Signup error:', error)
     return { error: error.message }
+  }
+
+  if (!user) {
+    return { error: 'Failed to create user' }
+  }
+
+  // Create user profile with celebrity_id if provided
+  if (celebrityId) {
+    const { error: profileError } = await supabase
+      .from('users')
+      .update({
+        role: 'admin',
+        celebrity_id: celebrityId
+      })
+      .eq('id', user.id)
+
+    if (profileError) {
+      console.error('Profile creation error:', profileError)
+      return { error: 'Failed to set up user profile' }
+    }
   }
 
   return { 

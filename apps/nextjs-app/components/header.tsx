@@ -1,10 +1,21 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/components/providers'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { useQuery } from '@tanstack/react-query'
+import { createClient } from '@/lib/supabase/client'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard' },
@@ -17,6 +28,36 @@ const navigation = [
 export function Header() {
   const pathname = usePathname()
   const { user, signOut } = useAuth()
+  const [isSigningOut, setIsSigningOut] = useState(false)
+
+  // Fetch user profile and celebrity info
+  const { data: profile } = useQuery({
+    queryKey: ['profile'],
+    queryFn: async () => {
+      if (!user) return null
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('users')
+        .select('role, celebrities!inner(celebrity_name)')
+        .eq('id', user.id)
+        .single()
+      return {
+        role: data?.role,
+        celebrity_name: data?.celebrities?.[0]?.celebrity_name
+      }
+    },
+    enabled: !!user
+  })
+
+  const handleSignOut = async () => {
+    setIsSigningOut(true)
+    try {
+      await signOut()
+    } catch (error) {
+      console.error('Sign out error:', error)
+      setIsSigningOut(false)
+    }
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -44,9 +85,36 @@ export function Header() {
         </div>
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
           {user ? (
-            <Button variant="ghost" size="sm" onClick={signOut}>
-              Sign out
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  Profile
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="flex flex-col items-start">
+                  <span className="font-medium">{user.email}</span>
+                  <span className="text-xs text-muted-foreground capitalize">{profile?.role || 'Loading...'}</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="flex flex-col items-start">
+                  <span className="text-sm font-medium">Managing</span>
+                  <span className="text-xs text-muted-foreground">
+                    {profile?.celebrity_name || 'Loading...'}
+                  </span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  disabled={isSigningOut}
+                  onClick={handleSignOut}
+                >
+                  {isSigningOut ? 'Signing out...' : 'Sign out'}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <Button asChild variant="ghost" size="sm">
               <Link href="/login">Sign in</Link>
