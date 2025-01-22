@@ -1,6 +1,15 @@
 import { TwitterApi } from 'twitter-api-v2';
 import { TwitterTokens } from '@/types/twitter';
 
+export const REQUIRED_SCOPES = [
+  'tweet.read',
+  'users.read',
+  'dm.read',
+  'offline.access',
+  'dm.write',
+  'tweet.write'
+]
+
 // Initialize the client for OAuth 2.0
 const client = new TwitterApi({
   clientId: process.env.TWITTER_CLIENT_ID!,
@@ -10,13 +19,8 @@ const client = new TwitterApi({
 export async function getAuthLink() {
   const { url, state, codeVerifier } = client.generateOAuth2AuthLink(
     process.env.TWITTER_CALLBACK_URL!,
-    { 
-      scope: [
-        'tweet.read',
-        'users.read',
-        'dm.read',
-        'offline.access'
-      ] 
+    {
+      scope: REQUIRED_SCOPES
     }
   );
 

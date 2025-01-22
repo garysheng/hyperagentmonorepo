@@ -1,13 +1,5 @@
 import { TwitterApi } from 'twitter-api-v2';
-
-// Required scopes for DM functionality
-const REQUIRED_SCOPES = [
-  'tweet.read',
-  'users.read',
-  'dm.read',
-  'dm.write',
-  'offline.access'
-];
+import { REQUIRED_SCOPES } from './auth';
 
 // Create a client for application-only auth (no user context)
 export const appOnlyClient = new TwitterApi(process.env.TWITTER_BEARER_TOKEN!);
