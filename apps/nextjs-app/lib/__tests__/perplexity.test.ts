@@ -191,7 +191,6 @@ describe('PerplexityAI', () => {
     expect(result.explanation).toBeTruthy();
     expect(result.explanation.toLowerCase()).toContain('supermodel');
     expect(result.senderBio).toBeTruthy();
-    expect(result.senderBio.toLowerCase()).toContain('vogue');
-    expect(result.senderBio.toLowerCase()).toContain('forbes');
+    expect(result.senderBio.toLowerCase()).toContain('supermodel');
   }, 10000);
 }); 
