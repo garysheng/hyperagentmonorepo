@@ -1,10 +1,10 @@
-"use strict";(()=>{(()=>{let r="/api/widget/bundle.js",s="/api/widget/styles.css",d=document.currentScript,l=d.getAttribute("data-celebrity-id"),c=d.getAttribute("data-primary-color"),t=document.createElement("div");t.id="hyperagent-chat-widget",t.style.cssText="position: fixed; z-index: 9999; bottom: 20px; right: 0;",document.body.appendChild(t);let e=t.attachShadow({mode:"closed"}),n=document.createElement("div");n.innerHTML="Loading chat...",n.className="loading",e.appendChild(n);let i=document.createElement("link");i.rel="stylesheet",i.href=s,e.appendChild(i);let a=document.createElement("style");a.textContent=`
+"use strict";(()=>{(()=>{let l="/api/widget/bundle.js",s="/api/widget/styles.css",t=document.currentScript,r=t.getAttribute("data-celebrity-id"),o=t.getAttribute("data-primary-color");if(console.log("Widget initialization:",{celebrityId:r,primaryColor:o,scriptAttributes:{"data-celebrity-id":t.getAttribute("data-celebrity-id"),"data-primary-color":t.getAttribute("data-primary-color")}}),!r){console.error("Widget Error: Missing data-celebrity-id attribute");return}let e=document.createElement("div");e.id="hyperagent-chat-widget",e.style.cssText="position: fixed; z-index: 9999; bottom: 20px; right: 0;",document.body.appendChild(e);let i=e.attachShadow({mode:"closed"}),n=document.createElement("div");n.innerHTML="Loading chat...",n.className="loading",i.appendChild(n);let d=document.createElement("link");d.rel="stylesheet",d.href=s,i.appendChild(d);let c=document.createElement("style");c.textContent=`
     :host {
-      --primary-color: ${c||"#0F172A"};
+      --primary-color: ${o||"#0F172A"};
       display: block;
       width: auto;
       height: auto;
       margin: 0;
       padding: 0;
     }
-  `,e.appendChild(a);let o=document.createElement("script");o.src=r,o.onload=()=>{window.HyperAgentWidget.init({container:e,celebrityId:l||"",theme:{primaryColor:c||"#0F172A"}})},document.body.appendChild(o)})();})();
+  `,i.appendChild(c);let a=document.createElement("script");a.src=l,a.onload=()=>{window.HyperAgentWidget.init({container:i,celebrityId:r||"",theme:{primaryColor:o||"#0F172A"}})},document.body.appendChild(a)})();})();

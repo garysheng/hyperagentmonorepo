@@ -20,6 +20,8 @@ class HyperAgentWidget {
     this.root = document.createElement('div')
     this.config.container.appendChild(this.root)
 
+    console.log('Widget config:', config)
+
     render(
       <ChatWidget 
         celebrityId={this.config.celebrityId}

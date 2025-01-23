@@ -1,15 +1,20 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { createOpportunity } from '@/lib/opportunities'
+import { randomUUID } from 'crypto'
 
 export async function POST(request: Request) {
   try {
     const supabase = await createClient()
-    const { celebrity_id, name, email, phone, message } = await request.json()
+    const body = await request.json()
+    console.log('Widget submit request body:', body)
+    
+    const { celebrityId, email, message } = body
 
-    if (!celebrity_id) {
+    if (!celebrityId) {
+      console.log('Missing celebrityId in request')
       return NextResponse.json(
-        { error: 'Missing celebrity_id' },
+        { error: 'Missing celebrityId' },
         { status: 400 }
       )
     }
@@ -18,27 +23,24 @@ export async function POST(request: Request) {
     const { data: celebrity, error: celebrityError } = await supabase
       .from('celebrities')
       .select('id')
-      .eq('id', celebrity_id)
+      .eq('id', celebrityId)
       .single()
 
     if (celebrityError || !celebrity) {
+      console.log('Invalid celebrityId:', celebrityId, 'Error:', celebrityError)
       return NextResponse.json(
-        { error: 'Invalid celebrity_id' },
+        { error: 'Invalid celebrityId' },
         { status: 400 }
       )
     }
 
-    // Create opportunity
+    // Create opportunity using the proper function
     const opportunity = await createOpportunity(supabase, {
-      celebrity_id,
+      celebrity_id: celebrityId,
       source: 'WIDGET',
       initial_content: message,
-      name,
-      email,
-      phone,
-      // Generate a unique sender ID and handle for widget submissions
-      sender_id: `widget_${Date.now()}`,
-      sender_handle: name || 'Anonymous Widget User'
+      sender_id: randomUUID(),
+      sender_handle: email || 'Anonymous Widget User'
     })
 
     return NextResponse.json({ success: true, opportunity })

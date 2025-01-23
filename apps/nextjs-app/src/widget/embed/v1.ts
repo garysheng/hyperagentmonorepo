@@ -8,6 +8,20 @@
   const celebrityId = currentScript.getAttribute('data-celebrity-id');
   const primaryColor = currentScript.getAttribute('data-primary-color');
   
+  console.log('Widget initialization:', {
+    celebrityId,
+    primaryColor,
+    scriptAttributes: {
+      'data-celebrity-id': currentScript.getAttribute('data-celebrity-id'),
+      'data-primary-color': currentScript.getAttribute('data-primary-color')
+    }
+  });
+
+  if (!celebrityId) {
+    console.error('Widget Error: Missing data-celebrity-id attribute');
+    return;
+  }
+  
   // Create isolated container
   const container = document.createElement('div');
   container.id = 'hyperagent-chat-widget';

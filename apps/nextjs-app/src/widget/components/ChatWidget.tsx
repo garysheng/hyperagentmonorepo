@@ -35,17 +35,28 @@ export function ChatWidget({ celebrityId, theme }: ChatWidgetProps) {
     setCurrentMessage('')
 
     try {
+      const payload = {
+        celebrityId,
+        email,
+        message: currentMessage
+      };
+      console.log('Sending request with payload:', payload);
+      
       const response = await fetch('/api/widget/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          celebrityId,
-          email,
-          message: currentMessage
-        })
+        body: JSON.stringify(payload, null, 2)
       })
 
-      if (!response.ok) throw new Error('Failed to send message')
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Request failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        });
+        throw new Error(`Failed to send message: ${errorData.error}`);
+      }
 
       setMessages(prev => [
         ...prev,

@@ -7,10 +7,13 @@ export default function ContactPage() {
   useEffect(() => {
     // Load widget script
     const script = document.createElement('script')
-    script.src = '/api/widget/v1.js'
-    script.dataset.celebrityId = '0ca0f921-7ccd-4975-9afb-3bed98367403'
-    script.dataset.primaryColor = '#0F172A'
+    
+    // Set all attributes before setting src to prevent race condition
+    script.setAttribute('data-celebrity-id', '0ca0f921-7ccd-4975-9afb-3bed98367403')
+    script.setAttribute('data-primary-color', '#0F172A')
     script.async = true
+    script.src = '/api/widget/v1.js'
+    
     document.body.appendChild(script)
 
     return () => {
