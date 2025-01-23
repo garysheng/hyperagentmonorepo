@@ -6,6 +6,7 @@ import { EmailThreadDetail } from '@/components/email/email-thread-detail'
 import { createClient } from '@/lib/supabase/client'
 import { EmailThread, EmailMessage, TableName } from '@/types'
 import { useToast } from '@/hooks/use-toast'
+import { RealtimeChannel } from '@supabase/supabase-js'
 
 interface EmailThreadPageClientProps {
     initialThreads: EmailThread[]
@@ -77,6 +78,66 @@ export default function EmailThreadPageClient({
             setIsLoading(false)
         }
     }, [toast, supabase])
+
+    // Set up real-time subscriptions
+    useEffect(() => {
+        let threadsSubscription: RealtimeChannel
+        let messagesSubscription: RealtimeChannel
+
+        const setupSubscriptions = async () => {
+            // Subscribe to thread updates
+            threadsSubscription = supabase
+                .channel('email_threads')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: TableName.EMAIL_THREADS,
+                        filter: `opportunity_id=eq.${opportunityId}`
+                    },
+                    async (payload) => {
+                        console.log('Thread change received:', payload)
+                        // Refresh threads to get the latest data
+                        await fetchThreads()
+                    }
+                )
+                .subscribe()
+
+            // Subscribe to message updates for the selected thread
+            if (selectedThread) {
+                messagesSubscription = supabase
+                    .channel('email_messages')
+                    .on(
+                        'postgres_changes',
+                        {
+                            event: '*',
+                            schema: 'public',
+                            table: TableName.EMAIL_MESSAGES,
+                            filter: `thread_id=eq.${selectedThread.id}`
+                        },
+                        async (payload) => {
+                            console.log('Message change received:', payload)
+                            // Refresh messages to get the latest data
+                            await fetchMessages(selectedThread.id)
+                        }
+                    )
+                    .subscribe()
+            }
+        }
+
+        setupSubscriptions()
+
+        // Cleanup subscriptions on unmount or when dependencies change
+        return () => {
+            if (threadsSubscription) {
+                supabase.removeChannel(threadsSubscription)
+            }
+            if (messagesSubscription) {
+                supabase.removeChannel(messagesSubscription)
+            }
+        }
+    }, [opportunityId, selectedThread?.id, supabase, fetchThreads, fetchMessages])
 
     useEffect(() => {
         fetchThreads()
