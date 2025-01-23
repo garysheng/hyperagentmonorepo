@@ -14,7 +14,7 @@ export class EmailService {
       username: 'api',
       key: process.env.MAILGUN_API_KEY!,
     });
-    this.domain = process.env.MAILGUN_PRIMARY_DOMAIN!;
+    this.domain = process.env.MAILGUN_DOMAIN!;
   }
 
   // Get Supabase client for each request
@@ -25,8 +25,8 @@ export class EmailService {
   // Format the email address for a celebrity
   public formatEmailAddress(celebrityId: string, celebrityName: string) {
     return {
-      email: `team+${celebrityId}@${this.domain}`,
-      formatted: `${celebrityName} Team <team+${celebrityId}@${this.domain}>`
+      email: `postmaster+team+${celebrityId}@${this.domain}`,
+      formatted: `${celebrityName} Team <postmaster+team+${celebrityId}@${this.domain}>`
     };
   }
 
@@ -55,8 +55,8 @@ export class EmailService {
 
   private getCelebrityIdFromEmail(email: string): string {
     // Extract celebrityId from email address
-    // Format: team+celebrityId@domain.com
-    const match = email.match(/team\+([^@]+)@/);
+    // Format: team+celebrityId@domain.com or postmaster+team+celebrityId@domain.com
+    const match = email.match(/(?:postmaster\+)?team\+([^@]+)@/);
     if (!match) {
       throw new Error('Invalid email format');
     }
