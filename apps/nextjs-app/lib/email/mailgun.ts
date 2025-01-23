@@ -40,7 +40,13 @@ export class EmailService {
     messageId
   }: SendEmailParams) {
     if (!to) {
+      console.error('Missing recipient email address');
       throw new Error('Recipient email address (to) is required');
+    }
+
+    if (!celebrityId || !celebrityName) {
+      console.error('Missing celebrity information:', { celebrityId, celebrityName });
+      throw new Error('Celebrity ID and name are required');
     }
 
     const { formatted: from } = this.formatEmailAddress(celebrityId, celebrityName);
@@ -50,19 +56,37 @@ export class EmailService {
       from,
       subject,
       threadId,
-      messageId
+      messageId,
+      textLength: text?.length
     });
 
-    const response = await this.mailgun.messages.create(this.domain, {
-      to,
-      from,
-      subject,
-      text,
-      'h:In-Reply-To': messageId,
-      'h:References': threadId,
-    });
+    try {
+      const response = await this.mailgun.messages.create(this.domain, {
+        to,
+        from,
+        subject,
+        text,
+        'h:In-Reply-To': messageId,
+        'h:References': threadId,
+      });
 
-    return response;
+      console.log('Email sent successfully:', { 
+        id: response.id, 
+        message: response.message,
+        to,
+        from 
+      });
+
+      return response;
+    } catch (error) {
+      console.error('Failed to send email:', { 
+        error, 
+        to, 
+        from, 
+        subject 
+      });
+      throw error;
+    }
   }
 
   private getCelebrityIdFromEmail(email: string): string {

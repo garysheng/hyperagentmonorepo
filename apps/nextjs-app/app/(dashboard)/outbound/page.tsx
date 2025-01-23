@@ -21,7 +21,12 @@ export default function OutboundPage() {
   })
 
   const sendMessageMutation = useMutation({
-    mutationFn: async ({ opportunity, message }: { opportunity: Opportunity; message: string }) => {
+    mutationFn: async ({ opportunityId, message }: { opportunityId: string; message: string }) => {
+      const opportunity = opportunities?.find(opp => opp.id === opportunityId);
+      if (!opportunity) {
+        throw new Error('Opportunity not found');
+      }
+
       const endpoint = opportunity.source === 'TWITTER_DM' 
         ? '/api/messages/twitter'
         : '/api/messages/email'
@@ -32,7 +37,7 @@ export default function OutboundPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          opportunityId: opportunity.id,
+          opportunityId,
           message
         }),
       })
@@ -59,8 +64,8 @@ export default function OutboundPage() {
     }
   })
 
-  const handleSendMessage = async (opportunity: Opportunity, message: string) => {
-    await sendMessageMutation.mutateAsync({ opportunity, message })
+  const handleSendMessage = async (opportunityId: string, message: string) => {
+    await sendMessageMutation.mutateAsync({ opportunityId, message })
   }
 
   if (celebrityLoading) {

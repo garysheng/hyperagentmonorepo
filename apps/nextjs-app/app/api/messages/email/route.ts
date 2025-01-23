@@ -2,11 +2,16 @@ import { EmailService } from '@/lib/email/mailgun';
 import { createClient } from '@/lib/supabase/server';
 import { TableName } from '@/types';
 import { NextResponse } from 'next/server';
+import { randomUUID } from 'crypto';
 
 const emailService = new EmailService();
 
 interface OpportunityWithCelebrity {
   sender_handle: string;
+  initial_content: string;
+  created_at: string;
+  email_from: string | null;
+  email_to: string[] | null;
   celebrity: {
     id: string;
     celebrity_name: string;
@@ -15,7 +20,25 @@ interface OpportunityWithCelebrity {
 
 export async function POST(request: Request) {
   try {
-    const { opportunityId, message, threadId, messageId } = await request.json();
+    const body = await request.json();
+    const { opportunityId, message, threadId, messageId } = body;
+
+    // Validate required fields
+    if (!opportunityId) {
+      console.error('Missing opportunityId in request:', body);
+      return NextResponse.json(
+        { error: 'opportunityId is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!message) {
+      console.error('Missing message in request:', body);
+      return NextResponse.json(
+        { error: 'message is required' },
+        { status: 400 }
+      );
+    }
 
     // Get opportunity and celebrity details
     const supabase = await createClient();
@@ -23,6 +46,10 @@ export async function POST(request: Request) {
       .from(TableName.OPPORTUNITIES)
       .select(`
         sender_handle,
+        initial_content,
+        created_at,
+        email_from,
+        email_to,
         celebrity:celebrities(
           id,
           celebrity_name
@@ -31,27 +58,36 @@ export async function POST(request: Request) {
       .eq('id', opportunityId)
       .single<OpportunityWithCelebrity>();
 
-    if (opportunityError || !opportunity || !opportunity.celebrity) {
-      throw new Error('Opportunity or celebrity not found');
+    console.log('Opportunity lookup:', { opportunity, error: opportunityError, opportunityId });
+
+    if (opportunityError) {
+      console.error('Error fetching opportunity:', opportunityError);
+      throw new Error(`Failed to fetch opportunity: ${opportunityError.message}`);
     }
 
-    // Validate sender_handle exists and is an email
-    if (!opportunity.sender_handle || !opportunity.sender_handle.includes('@')) {
+    if (!opportunity) {
+      throw new Error(`Opportunity not found with ID: ${opportunityId}`);
+    }
+
+    if (!opportunity.celebrity) {
+      console.error('Celebrity data missing for opportunity:', { opportunityId, opportunity });
+      throw new Error(`Celebrity data not found for opportunity: ${opportunityId}`);
+    }
+
+    // Try email_from first, then fall back to sender_handle
+    const recipientEmail = opportunity.email_from || opportunity.sender_handle;
+
+    // Validate we have a valid email to send to
+    if (!recipientEmail || !recipientEmail.includes('@')) {
+      console.error('Invalid recipient email:', { 
+        opportunityId, 
+        email_from: opportunity.email_from,
+        sender_handle: opportunity.sender_handle 
+      });
       throw new Error('Valid recipient email address is missing');
     }
 
-    console.log('Sending email to:', opportunity.sender_handle);
-
-    // Send email
-    const emailResponse = await emailService.sendEmail({
-      to: opportunity.sender_handle,
-      celebrityId: opportunity.celebrity.id,
-      celebrityName: opportunity.celebrity.celebrity_name,
-      subject: threadId ? 'Re: Your Message' : 'Response from Team',
-      text: message,
-      threadId,
-      messageId
-    });
+    console.log('Sending email to:', recipientEmail);
 
     // Get formatted email address
     const { email: fromEmail } = emailService.formatEmailAddress(
@@ -59,17 +95,66 @@ export async function POST(request: Request) {
       opportunity.celebrity.celebrity_name
     );
 
-    // Create message record
+    // Create or get thread ID
+    const currentThreadId = threadId || randomUUID();
+
+    // Create thread if this is first response
+    if (!threadId) {
+      const { error: threadError } = await supabase
+        .from(TableName.EMAIL_THREADS)
+        .insert({
+          id: currentThreadId,
+          opportunity_id: opportunityId,
+          subject: 'Response from Team',
+          last_message_at: new Date().toISOString(),
+          status: 'active'
+        });
+
+      if (threadError) {
+        throw threadError;
+      }
+
+      // Store initial message from proposer
+      const { error: initialMessageError } = await supabase
+        .from(TableName.EMAIL_MESSAGES)
+        .insert({
+          thread_id: currentThreadId,
+          from_address: opportunity.sender_handle,
+          to_addresses: [fromEmail],
+          subject: 'Initial Message',
+          content: opportunity.initial_content,
+          direction: 'inbound',
+          created_at: opportunity.created_at
+        });
+
+      if (initialMessageError) {
+        throw initialMessageError;
+      }
+    }
+
+    // Send email
+    const emailResponse = await emailService.sendEmail({
+      to: recipientEmail,
+      celebrityId: opportunity.celebrity.id,
+      celebrityName: opportunity.celebrity.celebrity_name,
+      subject: threadId ? 'Re: Your Message' : 'Response from Team',
+      text: message,
+      threadId: currentThreadId,
+      messageId
+    });
+
+    // Create outbound message record
     const { error: messageError } = await supabase
       .from(TableName.EMAIL_MESSAGES)
       .insert({
-        thread_id: threadId,
+        thread_id: currentThreadId,
         from_address: fromEmail,
-        to_addresses: [opportunity.sender_handle],
+        to_addresses: [recipientEmail],
         subject: threadId ? 'Re: Your Message' : 'Response from Team',
         content: message,
         mailgun_message_id: emailResponse.id,
-        direction: 'outbound'
+        direction: 'outbound',
+        created_at: new Date().toISOString()
       });
 
     if (messageError) {
@@ -77,15 +162,13 @@ export async function POST(request: Request) {
     }
 
     // Update thread last_message_at
-    if (threadId) {
-      const { error: threadError } = await supabase
-        .from(TableName.EMAIL_THREADS)
-        .update({ last_message_at: new Date().toISOString() })
-        .eq('id', threadId);
+    const { error: threadError } = await supabase
+      .from(TableName.EMAIL_THREADS)
+      .update({ last_message_at: new Date().toISOString() })
+      .eq('id', currentThreadId);
 
-      if (threadError) {
-        throw threadError;
-      }
+    if (threadError) {
+      throw threadError;
     }
 
     // Update opportunity status to conversation_started
@@ -102,7 +185,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Error sending email:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to send message' },
+      { error: error instanceof Error ? error.message : 'Failed to send email' },
       { status: 500 }
     );
   }
