@@ -121,5 +121,45 @@ export enum TableName {
   TEAM_MEMBERS = 'team_members',
   TWITTER_AUTH = 'twitter_auth',
   EMAIL_THREADS = 'email_threads',
-  EMAIL_MESSAGES = 'email_messages'
+  EMAIL_MESSAGES = 'email_messages',
+  WRITING_STYLES = 'writing_styles'
+}
+
+export type VoiceExampleContext = 'professional' | 'fan' | 'business' | 'casual';
+
+export interface VoiceExample {
+  context: VoiceExampleContext;
+  content: string;
+}
+
+export interface WritingStyle {
+  id: string;
+  celebrity_id: string;
+  
+  // Tone Settings (0-100 scale)
+  formality_level: number;
+  enthusiasm_level: number;
+  directness_level: number;
+  humor_level: number;
+  
+  // Writing Style Settings (0-100 scale)
+  sentence_length_preference: number;
+  vocabulary_complexity: number;
+  technical_language_level: number;
+  emoji_usage_level: number;
+  
+  // Custom Rules
+  preferred_phrases: string[];
+  avoided_phrases: string[];
+  preferred_greetings: string[];
+  preferred_signoffs: string[];
+  
+  // Voice Examples
+  voice_examples: VoiceExample[];
+  
+  // Metadata
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  last_updated_by: string;
 } 

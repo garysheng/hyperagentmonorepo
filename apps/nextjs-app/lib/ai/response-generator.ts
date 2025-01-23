@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { TableName } from '@/types';
+import { TableName, WritingStyle } from '@/types';
 
 interface GenerateResponseOptions {
   messageType: 'email' | 'tweet';
@@ -57,9 +57,21 @@ export class ResponseGenerator {
       throw new Error(`Failed to fetch celebrity goals: ${goalsError.message}`);
     }
 
+    // Get writing style
+    const { data: writingStyle, error: styleError } = await supabase
+      .from(TableName.WRITING_STYLES)
+      .select('*')
+      .eq('celebrity_id', celebrityId)
+      .single();
+
+    if (styleError && styleError.code !== 'PGRST116') {
+      throw new Error(`Failed to fetch writing style: ${styleError.message}`);
+    }
+
     return {
       celebrityName: celebrity?.celebrity_name,
       goals: goals || [],
+      writingStyle
     };
   }
 
@@ -68,8 +80,9 @@ export class ResponseGenerator {
     content,
     celebrityName,
     goals = [],
-    previousMessages = []
-  }: Omit<GenerateResponseOptions, 'celebrityId'> & { celebrityName: string }): Message[] {
+    previousMessages = [],
+    writingStyle
+  }: Omit<GenerateResponseOptions, 'celebrityId'> & { celebrityName: string, writingStyle?: WritingStyle }): Message[] {
     const messageContext = messageType === 'email' 
       ? 'This is an email conversation'
       : 'This is a Twitter DM conversation';
@@ -86,10 +99,33 @@ export class ResponseGenerator {
         }).filter(Boolean).join('\n')}`
       : '';
 
+    // Build writing style context
+    let writingStyleContext = '';
+    if (writingStyle) {
+      writingStyleContext = `
+Writing Style Guidelines:
+1. Formality: ${writingStyle.formality_level}/100 (higher means more formal)
+2. Enthusiasm: ${writingStyle.enthusiasm_level}/100 (higher means more enthusiastic)
+3. Directness: ${writingStyle.directness_level}/100 (higher means more direct)
+4. Humor: ${writingStyle.humor_level}/100 (higher means more humorous)
+5. Sentence Length: ${writingStyle.sentence_length_preference}/100 (higher means longer sentences)
+6. Vocabulary: ${writingStyle.vocabulary_complexity}/100 (higher means more complex vocabulary)
+7. Technical Language: ${writingStyle.technical_language_level}/100 (higher means more technical)
+8. Emoji Usage: ${writingStyle.emoji_usage_level}/100 (higher means more emojis)
+
+${writingStyle.preferred_phrases.length > 0 ? `Preferred Phrases:\n${writingStyle.preferred_phrases.map(p => `- "${p}"`).join('\n')}\n` : ''}
+${writingStyle.avoided_phrases.length > 0 ? `Phrases to Avoid:\n${writingStyle.avoided_phrases.map(p => `- "${p}"`).join('\n')}\n` : ''}
+${writingStyle.preferred_greetings.length > 0 ? `Preferred Greetings:\n${writingStyle.preferred_greetings.map(p => `- "${p}"`).join('\n')}\n` : ''}
+${writingStyle.preferred_signoffs.length > 0 ? `Preferred Sign-offs:\n${writingStyle.preferred_signoffs.map(p => `- "${p}"`).join('\n')}\n` : ''}
+
+${writingStyle.voice_examples.length > 0 ? `Voice Examples:\n${writingStyle.voice_examples.map(ex => `Context: ${ex.context}\nExample: "${ex.content}"`).join('\n\n')}\n` : ''}`;
+    }
+
     const systemPrompt = `You are an AI assistant helping ${celebrityName}'s team respond to messages.
 ${messageContext}.
 ${goalsContext}
 ${conversationSummary}
+${writingStyleContext}
 
 Your responses should:
 1. Align with the celebrity's goals if applicable
@@ -97,6 +133,7 @@ Your responses should:
 3. Be concise and clear
 4. Reference and acknowledge relevant topics from previous messages in the conversation
 5. Encourage further constructive dialogue if appropriate
+6. Strictly follow the writing style guidelines provided
 
 IMPORTANT: Always maintain context from previous messages in your responses, especially when discussing topics like industry focus, event themes, or areas of expertise. When quoting fees or discussing logistics, relate them back to the specific context of the event or project.
 
@@ -121,7 +158,7 @@ Remember to stay professional while being friendly and engaging.`;
   }
 
   async generateResponse(options: GenerateResponseOptions): Promise<string> {
-    const { celebrityName, goals } = await this.getCelebrityContext(options.celebrityId);
+    const { celebrityName, goals, writingStyle } = await this.getCelebrityContext(options.celebrityId);
     
     if (!celebrityName) {
       throw new Error('Celebrity not found');
@@ -130,7 +167,8 @@ Remember to stay professional while being friendly and engaging.`;
     const messages = this.buildMessages({
       ...options,
       celebrityName,
-      goals
+      goals,
+      writingStyle
     });
 
     try {

@@ -5,6 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from '@/components/ui/textarea'
 import { useState } from 'react'
 import { Twitter, Mail } from 'lucide-react'
+import { ResponseGenerator } from '@/components/ui/response-generator'
+import { useCelebrity } from '@/hooks/use-celebrity'
 
 interface OpportunityListProps {
   opportunities: Opportunity[]
@@ -14,6 +16,7 @@ interface OpportunityListProps {
 
 export function OpportunityList({ opportunities, isLoading, onSendMessage }: OpportunityListProps) {
   const [messageStates, setMessageStates] = useState<Record<string, { isOpen: boolean; message: string; isSending: boolean }>>({})
+  const { data: celebrity } = useCelebrity()
 
   const handleOpenDialog = (opportunity: Opportunity) => {
     setMessageStates(prev => ({
@@ -138,7 +141,7 @@ export function OpportunityList({ opportunities, isLoading, onSendMessage }: Opp
                       Send Message
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="max-w-2xl">
                     <DialogHeader>
                       <DialogTitle className="flex items-center gap-2">
                         {getMessageIcon(opportunity.source)}
@@ -152,27 +155,42 @@ export function OpportunityList({ opportunities, isLoading, onSendMessage }: Opp
                           {opportunity.initial_content}
                         </p>
                       </div>
-                      <Textarea
-                        placeholder="Type your message here..."
-                        value={state.message}
-                        onChange={(e) => handleMessageChange(opportunity.id, e.target.value)}
-                        rows={4}
-                      />
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          onClick={() => handleCloseDialog(opportunity.id)}
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          onClick={() => handleSend(opportunity)}
-                          disabled={state.isSending || !state.message.trim()}
-                          className="flex items-center gap-2"
-                        >
-                          {getMessageIcon(opportunity.source)}
-                          {state.isSending ? 'Sending...' : 'Send'}
-                        </Button>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Textarea
+                            placeholder="Type your message here..."
+                            value={state.message}
+                            onChange={(e) => handleMessageChange(opportunity.id, e.target.value)}
+                            rows={4}
+                            className="min-h-[200px]"
+                          />
+                          <div className="flex justify-end gap-2 mt-4">
+                            <Button
+                              variant="outline"
+                              onClick={() => handleCloseDialog(opportunity.id)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              onClick={() => handleSend(opportunity)}
+                              disabled={state.isSending || !state.message.trim()}
+                              className="flex items-center gap-2"
+                            >
+                              {getMessageIcon(opportunity.source)}
+                              {state.isSending ? 'Sending...' : 'Send'}
+                            </Button>
+                          </div>
+                        </div>
+                        <div>
+                          {celebrity && (
+                            <ResponseGenerator
+                              type={opportunity.source === 'TWITTER_DM' ? 'tweet' : 'email'}
+                              content={opportunity.initial_content}
+                              celebrityId={celebrity.id}
+                              onResponseGenerated={(response) => handleMessageChange(opportunity.id, response)}
+                            />
+                          )}
+                        </div>
                       </div>
                     </div>
                   </DialogContent>

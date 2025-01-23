@@ -24,6 +24,7 @@ const navigation = [
   { name: 'Outbound', href: '/outbound' },
   { name: 'Goals', href: '/goals' },
   { name: 'Team', href: '/settings/team' },
+  { name: 'Writing Style', href: '/settings/writing-style' },
   { name: 'Channels', href: '/channels' },
 ]
 
