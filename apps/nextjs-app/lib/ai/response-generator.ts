@@ -85,7 +85,7 @@ export class ResponseGenerator {
   }: Omit<GenerateResponseOptions, 'celebrityId'> & { celebrityName: string, writingStyle?: WritingStyle }): Message[] {
     const messageContext = messageType === 'email' 
       ? 'This is an email conversation'
-      : 'This is a Twitter DM conversation';
+      : 'This is a Twitter DM conversation. IMPORTANT: Your response MUST be under 280 characters total.';
 
     const goalsContext = goals.length > 0
       ? `\nThe celebrity's goals are:\n${goals.map(g => `- ${g.name}: ${g.description}`).join('\n')}`
@@ -134,8 +134,13 @@ Your responses should:
 4. Reference and acknowledge relevant topics from previous messages in the conversation
 5. Encourage further constructive dialogue if appropriate
 6. Strictly follow the writing style guidelines provided
+7. When multiple topics or questions are presented, address EACH ONE specifically
 
-IMPORTANT: Always maintain context from previous messages in your responses, especially when discussing topics like industry focus, event themes, or areas of expertise. When quoting fees or discussing logistics, relate them back to the specific context of the event or project.
+IMPORTANT: 
+- Always maintain context from previous messages in your responses, especially when discussing topics like industry focus, event themes, or areas of expertise.
+- When quoting fees or discussing logistics, relate them back to the specific context of the event or project.
+- If the user asks about multiple topics, make sure to acknowledge and respond to each topic separately.
+${messageType === 'email' ? '- For multi-topic inquiries, consider using a structured format to address each point.' : ''}
 
 Remember to stay professional while being friendly and engaging.`;
 
