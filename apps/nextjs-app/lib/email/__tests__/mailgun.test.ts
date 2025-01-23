@@ -36,7 +36,7 @@ describe('EmailService', () => {
 
     validTestCases.forEach(({ email, expected, description }) => {
       it(`should extract celebrity ID from ${description}`, () => {
-        // @ts-ignore - accessing private method for testing
+        // @ts-expect-error - accessing private method for testing
         const result = emailService.getCelebrityIdFromEmail(email);
         expect(result).toBe(expected);
       });
@@ -52,7 +52,7 @@ describe('EmailService', () => {
     invalidEmails.forEach(email => {
       it(`should throw error for invalid format: ${email}`, () => {
         expect(() => {
-          // @ts-ignore - accessing private method for testing
+          // @ts-expect-error - accessing private method for testing
           emailService.getCelebrityIdFromEmail(email);
         }).toThrow('Invalid email format');
       });

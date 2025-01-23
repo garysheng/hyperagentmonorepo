@@ -92,7 +92,8 @@ export function ChatWidget({ celebrityId, theme }: ChatWidgetProps) {
         className="chat-button"
         onClick={() => setIsOpen(!isOpen)}
         style={{ 
-          backgroundColor: theme.primaryColor 
+          backgroundColor: theme.primaryColor,
+          transform: 'scaleX(-1)'
         }}
       >
         💬

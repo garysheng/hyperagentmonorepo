@@ -1,7 +1,7 @@
 (() => {
   // Configuration
-  const WIDGET_URL = '/api/widget/bundle.js';
-  const STYLES_URL = '/api/widget/styles.css';
+  const WIDGET_URL = '/widget/bundle.js';
+  const STYLES_URL = '/widget/styles.css';
   
   // Get configuration from script tag
   const currentScript = document.currentScript as HTMLScriptElement;
@@ -25,50 +25,30 @@
   // Create isolated container
   const container = document.createElement('div');
   container.id = 'hyperagent-chat-widget';
-  container.style.cssText = 'position: fixed; z-index: 9999; bottom: 20px; right: 0;';
+  container.style.cssText = 'position: fixed; z-index: 9999; bottom: 20px; right: 20px;';
   document.body.appendChild(container);
   
   // Create shadow DOM for style isolation
   const shadow = container.attachShadow({ mode: 'closed' });
   
-  // Add loading state
-  const loadingDiv = document.createElement('div');
-  loadingDiv.innerHTML = 'Loading chat...';
-  loadingDiv.className = 'loading';
-  shadow.appendChild(loadingDiv);
-  
   // Load styles
-  const styleLink = document.createElement('link');
-  styleLink.rel = 'stylesheet';
-  styleLink.href = STYLES_URL;
-  shadow.appendChild(styleLink);
+  const styles = document.createElement('link');
+  styles.rel = 'stylesheet';
+  styles.href = STYLES_URL;
+  shadow.appendChild(styles);
   
-  // Set CSS variables and base styles
-  const style = document.createElement('style');
-  style.textContent = `
-    :host {
-      --primary-color: ${primaryColor || '#0F172A'};
-      display: block;
-      width: auto;
-      height: auto;
-      margin: 0;
-      padding: 0;
-    }
-  `;
-  shadow.appendChild(style);
-  
-  // Load main bundle in the main document
+  // Load main bundle
   const script = document.createElement('script');
   script.src = WIDGET_URL;
   script.onload = () => {
     // Initialize widget with config
-    (window).HyperAgentWidget.init({
+    window.HyperAgentWidget.init({
       container: shadow,
-      celebrityId: celebrityId || '',
+      celebrityId,
       theme: {
         primaryColor: primaryColor || '#0F172A'
-      } 
+      }
     });
   };
-  document.body.appendChild(script);
+  shadow.appendChild(script);
 })(); 
