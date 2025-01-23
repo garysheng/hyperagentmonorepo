@@ -49,6 +49,12 @@ export class PerplexityAI {
 
       Message: "${content}"
 
+      If an email address is provided, analyze it carefully to determine:
+      - If it's a company email, what company they work for and their potential role
+      - If it's a personal email, what it might suggest about their identity
+      - Look for any professional indicators in the email format (e.g., firstname.lastname@company.com suggests a corporate role)
+      - Check the email domain for insights about their affiliation
+
       Provide a JSON object with the following fields:
       - relevanceScore: number from 0-5 indicating how relevant this opportunity is (0 being completely irrelevant, 5 being highly relevant)
       - tags: array of strings describing the key topics or themes
@@ -57,6 +63,7 @@ export class PerplexityAI {
       - goalId: string ID of the most relevant goal from the list above, or null if none are relevant
       - explanation: a detailed explanation (2-3 sentences) of why you assigned these ratings and classifications, specifically mentioning how the message relates to any matched goal
       - senderBio: a 2-3 sentence overview of the sender that includes:
+        * Their likely role and company/organization based on email analysis (if email provided)
         * Their estimated social media presence and influence, particularly on Twitter/X if available
         * How their background and reach aligns with or could help achieve the celebrity's goals
         * Any red flags or notable positive indicators about their authenticity
