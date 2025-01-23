@@ -2,7 +2,7 @@ import formData from 'form-data';
 import Mailgun from 'mailgun.js';
 import { createClient } from '@/lib/supabase/server';
 import { EmailMessage, EmailThread, MailgunWebhookPayload, SendEmailParams, TableName } from '@/types';
-import { SupabaseClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 
 export class EmailService {
   private mailgun: ReturnType<Mailgun['client']>;
@@ -14,7 +14,7 @@ export class EmailService {
       username: 'api',
       key: process.env.MAILGUN_API_KEY!,
     });
-    this.domain = process.env.MAILGUN_DOMAIN!;
+    this.domain = process.env.MAILGUN_PRIMARY_DOMAIN!;
   }
 
   // Get Supabase client for each request
@@ -22,14 +22,25 @@ export class EmailService {
     return createClient();
   }
 
+  // Format the email address for a celebrity
+  public formatEmailAddress(celebrityId: string, celebrityName: string) {
+    return {
+      email: `team+${celebrityId}@${this.domain}`,
+      formatted: `${celebrityName} Team <team+${celebrityId}@${this.domain}>`
+    };
+  }
+
   async sendEmail({
     to,
-    from,
+    celebrityId,
+    celebrityName,
     subject,
     text,
     threadId,
     messageId
   }: SendEmailParams) {
+    const { formatted: from } = this.formatEmailAddress(celebrityId, celebrityName);
+
     const response = await this.mailgun.messages.create(this.domain, {
       to,
       from,
@@ -42,14 +53,66 @@ export class EmailService {
     return response;
   }
 
+  private getCelebrityIdFromEmail(email: string): string {
+    // Extract celebrityId from email address
+    // Format: team+celebrityId@domain.com
+    const match = email.match(/team\+([^@]+)@/);
+    if (!match) {
+      throw new Error('Invalid email format');
+    }
+    return match[1];
+  }
+
+  async receiveWebhook(payload: MailgunWebhookPayload) {
+    const { 
+      sender,
+      recipient,
+      subject,
+      'body-plain': content,
+      'Message-Id': messageId,
+      'In-Reply-To': inReplyTo,
+      References: references
+    } = payload;
+
+    // Verify webhook signature
+    this.verifyWebhookSignature(payload.signature);
+
+    // Find or create thread
+    const threadId = inReplyTo || references?.[0] || messageId;
+    
+    // Store message
+    const thread = await this.findOrCreateThread({
+      threadId,
+      subject,
+      celebrityId: this.getCelebrityIdFromEmail(recipient)
+    });
+
+    await this.createMessage({
+      thread_id: thread.id,
+      from: sender,
+      to: [recipient],
+      subject,
+      content,
+      mailgun_message_id: messageId,
+      direction: 'inbound'
+    });
+
+    // Update thread's last message timestamp
+    const supabase = await this.getSupabase();
+    await supabase
+      .from(TableName.EMAIL_THREADS)
+      .update({ last_message_at: new Date().toISOString() })
+      .eq('id', thread.id);
+  }
+
   private async findOrCreateThread({
     threadId,
     subject,
-    opportunityId,
+    celebrityId,
   }: {
     threadId: string;
     subject: string;
-    opportunityId: string;
+    celebrityId: string;
   }): Promise<EmailThread> {
     const supabase = await this.getSupabase();
 
@@ -69,7 +132,7 @@ export class EmailService {
       .from(TableName.EMAIL_THREADS)
       .insert({
         id: threadId,
-        opportunity_id: opportunityId,
+        celebrity_id: celebrityId,
         subject,
         last_message_at: new Date().toISOString(),
         status: 'active',
@@ -112,70 +175,14 @@ export class EmailService {
     }
   }
 
-  private getOpportunityFromEmail(email: string): string {
-    // Extract opportunity ID from email address
-    // Format: reply+opportunity_id@domain.com
-    const match = email.match(/reply\+([^@]+)@/);
-    if (!match) {
-      throw new Error('Invalid email format');
-    }
-    return match[1];
-  }
-
-  async receiveWebhook(payload: MailgunWebhookPayload) {
-    const { 
-      sender,
-      recipient,
-      subject,
-      'body-plain': content,
-      'Message-Id': messageId,
-      'In-Reply-To': inReplyTo,
-      References: references
-    } = payload;
-
-    // Verify webhook signature
-    this.verifyWebhookSignature(payload.signature);
-
-    // Find or create thread
-    const threadId = inReplyTo || references?.[0] || messageId;
-    
-    // Store message
-    const thread = await this.findOrCreateThread({
-      threadId,
-      subject,
-      opportunityId: this.getOpportunityFromEmail(recipient)
-    });
-
-    await this.createMessage({
-      thread_id: thread.id,
-      from: sender,
-      to: [recipient],
-      subject,
-      content,
-      mailgun_message_id: messageId,
-      direction: 'inbound'
-    });
-
-    // Update thread last_message_at
-    const supabase = await this.getSupabase();
-    await supabase
-      .from(TableName.EMAIL_THREADS)
-      .update({ last_message_at: new Date().toISOString() })
-      .eq('id', thread.id);
-  }
-
   private verifyWebhookSignature(signature: MailgunWebhookPayload['signature']) {
-    const crypto = require('crypto');
-    
     const encodedToken = crypto
       .createHmac('sha256', process.env.MAILGUN_WEBHOOK_SIGNING_KEY!)
-      .update(signature.timestamp.concat(signature.token))
+      .update(signature.timestamp + signature.token)
       .digest('hex');
 
     if (encodedToken !== signature.signature) {
       throw new Error('Invalid webhook signature');
     }
   }
-}
-
-export const emailService = new EmailService(); 
+} 

@@ -86,7 +86,8 @@ export interface EmailMessage {
 
 export interface SendEmailParams {
   to: string;
-  from: string;
+  celebrityId: string;
+  celebrityName: string;
   subject: string;
   text: string;
   threadId?: string;
