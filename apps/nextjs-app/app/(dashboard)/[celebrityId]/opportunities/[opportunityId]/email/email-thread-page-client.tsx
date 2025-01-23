@@ -137,7 +137,7 @@ export default function EmailThreadPageClient({
                 supabase.removeChannel(messagesSubscription)
             }
         }
-    }, [opportunityId, selectedThread?.id, supabase, fetchThreads, fetchMessages])
+    }, [opportunityId, selectedThread, supabase, fetchThreads, fetchMessages])
 
     useEffect(() => {
         fetchThreads()

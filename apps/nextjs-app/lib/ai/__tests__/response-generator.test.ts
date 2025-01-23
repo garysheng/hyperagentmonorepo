@@ -1,12 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ResponseGenerator } from '../response-generator';
 import { createClient } from '@/lib/supabase/server';
-import { Client as LangSmithClient } from 'langsmith';
 import { SupabaseClient } from '@supabase/supabase-js';
 
 // Mock dependencies
 vi.mock('@/lib/supabase/server');
-vi.mock('langsmith');
 
 // Mock fetch globally
 const mockFetch = vi.fn();
@@ -15,7 +13,6 @@ global.fetch = mockFetch;
 describe('ResponseGenerator', () => {
   let responseGenerator: ResponseGenerator;
   let mockSupabase: SupabaseClient;
-  let mockLangSmith: LangSmithClient;
 
   beforeEach(() => {
     // Reset mocks
@@ -45,12 +42,6 @@ describe('ResponseGenerator', () => {
         choices: [{ message: { content: 'Test response' } }]
       })
     });
-
-    // Setup LangSmith mock
-    mockLangSmith = {
-      createRun: vi.fn().mockResolvedValue({ id: 'test-run-id' })
-    } as any;
-    (LangSmithClient as any).mockImplementation(() => mockLangSmith);
 
     responseGenerator = new ResponseGenerator();
   });
@@ -83,16 +74,6 @@ describe('ResponseGenerator', () => {
         body: expect.stringContaining('You are an AI assistant')
       })
     );
-
-    // Verify LangSmith call
-    expect(mockLangSmith.createRun).toHaveBeenCalledWith(expect.objectContaining({
-      name: 'generate_response',
-      run_type: 'chain',
-      inputs: expect.objectContaining({
-        messageType: 'email',
-        content: 'Test message'
-      })
-    }));
 
     expect(response).toBe('Test response');
   });

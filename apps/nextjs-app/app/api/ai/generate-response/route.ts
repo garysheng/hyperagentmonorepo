@@ -1,32 +1,38 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { responseGenerator } from '@/lib/ai/response-generator';
 import { createClient } from '@/lib/supabase/server';
 import { TableName } from '@/types';
+import { z } from 'zod';
+
+const generateResponseSchema = z.object({
+  messageType: z.enum(['email', 'tweet']),
+  content: z.string(),
+  celebrityId: z.string(),
+  threadId: z.string().optional(),
+  previousMessages: z.array(z.object({
+    role: z.enum(['user', 'assistant']),
+    content: z.string()
+  })).optional()
+});
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
 }
 
-export async function POST(req: Request) {
-  try {
-    const {
-      messageType,
-      content,
-      celebrityId,
-      threadId
-    } = await req.json();
+interface DatabaseMessage {
+  content: string;
+  direction: 'inbound' | 'outbound';
+}
 
-    // Validate required fields
-    if (!messageType || !content || !celebrityId) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
-    }
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const validatedData = generateResponseSchema.parse(body);
+    const { messageType, content, celebrityId, threadId, previousMessages: existingMessages } = validatedData;
 
     // Get previous messages if threadId is provided
-    let previousMessages: Message[] = [];
+    let previousMessages: Message[] = existingMessages || [];
     if (threadId) {
       const supabase = await createClient();
       const { data: messages } = await supabase
@@ -37,10 +43,12 @@ export async function POST(req: Request) {
         .limit(5);
 
       if (messages) {
-        previousMessages = messages.map(msg => ({
-          role: msg.direction === 'inbound' ? 'user' : 'assistant',
+        // If we have both thread messages and existing messages, combine them
+        const threadMessages = (messages as DatabaseMessage[]).map(msg => ({
+          role: msg.direction === 'inbound' ? 'user' as const : 'assistant' as const,
           content: msg.content
         }));
+        previousMessages = [...threadMessages, ...previousMessages];
       }
     }
 
@@ -55,6 +63,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ response });
   } catch (error) {
     console.error('Error generating response:', error);
+    
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid request data', details: error.errors },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
       { error: 'Failed to generate response' },
       { status: 500 }

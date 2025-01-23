@@ -10,7 +10,7 @@ config({ path: envPath });
 // Mock the Supabase client
 vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({
-    from: (table: string) => ({
+    from: () => ({
       select: () => ({
         eq: () => ({
           single: async () => ({
