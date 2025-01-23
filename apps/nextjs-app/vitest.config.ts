@@ -1,14 +1,31 @@
 import { defineConfig } from 'vitest/config';
-import { config } from 'dotenv';
+import path from 'path';
+import fs from 'fs';
 
-// Load test environment variables
-config({ path: '.env.test' });
+// Load environment variables from .env.local
+const envPath = path.resolve(__dirname, '.env.local');
+const envContent = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf8') : '';
+
+// Parse environment variables
+const env: Record<string, string> = {};
+if (envContent) {
+  envContent.split('\n').forEach(line => {
+    if (!line || line.startsWith('#')) return;
+    const [key, ...valueParts] = line.split('=');
+    if (key) {
+      env[key.trim()] = valueParts.join('=').trim();
+    }
+  });
+}
 
 export default defineConfig({
   test: {
     environment: 'node',
-    globals: true,
-    setupFiles: ['./lib/__tests__/setup.ts'],
-    testTimeout: 20000, // 20 seconds since we're making real API calls
+    env,
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname),
+    },
   },
 }); 
