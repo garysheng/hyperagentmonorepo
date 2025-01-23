@@ -111,12 +111,25 @@
   padding: 16px;
 }
 
+/* Email input animation */
+.email-input-container {
+  height: 40px;
+  margin-bottom: 8px;
+  opacity: 1;
+  transition: all 0.3s ease-out;
+}
+
+.email-input-container.hidden {
+  height: 0;
+  margin-bottom: 0;
+  opacity: 0;
+}
+
 .chat-form input[type="email"] {
   width: 100%;
   padding: 8px 12px;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 6px;
-  margin-bottom: 8px;
 }
 
 .message-input {
@@ -141,6 +154,11 @@
   padding: 0 16px;
   cursor: pointer;
   font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  min-height: 48px;
 }
 
 .message-input button:disabled {

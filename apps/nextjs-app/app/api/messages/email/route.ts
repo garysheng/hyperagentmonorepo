@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server';
 const emailService = new EmailService();
 
 interface OpportunityWithCelebrity {
-  email_from: string;
+  sender_handle: string;
   celebrity: {
     id: string;
     celebrity_name: string;
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     const { data: opportunity, error: opportunityError } = await supabase
       .from(TableName.OPPORTUNITIES)
       .select(`
-        email_from,
+        sender_handle,
         celebrity:celebrities(
           id,
           celebrity_name
@@ -35,9 +35,16 @@ export async function POST(request: Request) {
       throw new Error('Opportunity or celebrity not found');
     }
 
+    // Validate sender_handle exists and is an email
+    if (!opportunity.sender_handle || !opportunity.sender_handle.includes('@')) {
+      throw new Error('Valid recipient email address is missing');
+    }
+
+    console.log('Sending email to:', opportunity.sender_handle);
+
     // Send email
     const emailResponse = await emailService.sendEmail({
-      to: opportunity.email_from,
+      to: opportunity.sender_handle,
       celebrityId: opportunity.celebrity.id,
       celebrityName: opportunity.celebrity.celebrity_name,
       subject: threadId ? 'Re: Your Message' : 'Response from Team',
@@ -47,7 +54,7 @@ export async function POST(request: Request) {
     });
 
     // Get formatted email address
-    const { email: fromEmail } = await emailService.formatEmailAddress(
+    const { email: fromEmail } = emailService.formatEmailAddress(
       opportunity.celebrity.id,
       opportunity.celebrity.celebrity_name
     );
@@ -57,8 +64,8 @@ export async function POST(request: Request) {
       .from(TableName.EMAIL_MESSAGES)
       .insert({
         thread_id: threadId,
-        from: fromEmail,
-        to: [opportunity.email_from],
+        from_address: fromEmail,
+        to_addresses: [opportunity.sender_handle],
         subject: threadId ? 'Re: Your Message' : 'Response from Team',
         content: message,
         mailgun_message_id: emailResponse.id,
@@ -81,11 +88,21 @@ export async function POST(request: Request) {
       }
     }
 
+    // Update opportunity status to conversation_started
+    const { error: statusError } = await supabase
+      .from(TableName.OPPORTUNITIES)
+      .update({ status: 'conversation_started' })
+      .eq('id', opportunityId);
+
+    if (statusError) {
+      throw statusError;
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error sending email:', error);
     return NextResponse.json(
-      { error: 'Failed to send message' },
+      { error: error instanceof Error ? error.message : 'Failed to send message' },
       { status: 500 }
     );
   }

@@ -200,7 +200,7 @@ export function DMActions({ dm }: DMActionsProps) {
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                    {dm.status === 'pending' && (
+                    {dm.status !== 'approved' && dm.status !== 'conversation_started' && (
                         <>
                             <DropdownMenuItem
                                 onClick={() => handleUpdateStatus('approved')}

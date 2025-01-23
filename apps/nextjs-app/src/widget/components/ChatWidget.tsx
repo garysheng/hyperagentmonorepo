@@ -45,17 +45,21 @@ export function ChatWidget({ celebrityId, theme }: ChatWidgetProps) {
       const response = await fetch('/api/widget/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload, null, 2)
+        body: JSON.stringify(payload)
       })
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Request failed:', {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorData
-        });
-        throw new Error(`Failed to send message: ${errorData.error}`);
+        const contentType = response.headers.get('content-type');
+        let errorMessage;
+        
+        if (contentType?.includes('application/json')) {
+          const errorData = await response.json();
+          errorMessage = errorData.error || `Request failed with status ${response.status}`;
+        } else {
+          // Don't include HTML content in error message
+          errorMessage = `Request failed with status ${response.status}`;
+        }
+        throw new Error(errorMessage);
       }
 
       setMessages(prev => [
@@ -66,11 +70,12 @@ export function ChatWidget({ celebrityId, theme }: ChatWidgetProps) {
         }
       ])
     } catch (error) {
+      console.error('Error sending message:', error);
       setMessages(prev => [
         ...prev,
         {
           type: 'system',
-          content: 'Sorry, there was an error sending your message. Please try again: ' + error
+          content: error instanceof Error ? error.message : 'Sorry, there was an error sending your message. Please try again.'
         }
       ])
     } finally {
@@ -115,15 +120,15 @@ export function ChatWidget({ celebrityId, theme }: ChatWidgetProps) {
           </div>
 
           <form onSubmit={handleSubmit} className="chat-form">
-            {!email && (
+            <div className={`email-input-container ${email ? 'hidden' : ''}`}>
               <input
                 type="email"
                 placeholder="Your email"
                 value={email}
                 onChange={handleEmailChange}
-                required
+                required={!email}
               />
-            )}
+            </div>
             <div className="message-input">
               <textarea
                 placeholder="Type your message..."

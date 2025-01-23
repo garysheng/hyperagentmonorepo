@@ -39,7 +39,19 @@ export class EmailService {
     threadId,
     messageId
   }: SendEmailParams) {
+    if (!to) {
+      throw new Error('Recipient email address (to) is required');
+    }
+
     const { formatted: from } = this.formatEmailAddress(celebrityId, celebrityName);
+
+    console.log('Sending email with params:', {
+      to,
+      from,
+      subject,
+      threadId,
+      messageId
+    });
 
     const response = await this.mailgun.messages.create(this.domain, {
       to,
