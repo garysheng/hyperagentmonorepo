@@ -82,3 +82,42 @@ ALTER TABLE email_messages
   REFERENCES email_threads(id)
   ON DELETE CASCADE;
 ``` 
+
+# Email Tables
+
+## email_threads
+- `id` uuid PK
+- `opportunity_id` uuid FK -> opportunities.id
+- `subject` text
+- `last_message_at` timestamp with time zone
+- `message_count` integer default 0
+- `status` text check (status in ('active', 'archived'))
+- `created_at` timestamp with time zone default now()
+- `updated_at` timestamp with time zone default now()
+
+## email_messages
+- `id` uuid PK
+- `thread_id` uuid FK -> email_threads.id
+- `opportunity_id` uuid FK -> opportunities.id
+- `sender_email` text
+- `sender_name` text
+- `recipient_email` text
+- `subject` text
+- `content` text
+- `content_html` text null
+- `raw_content` text
+- `headers` jsonb default '{}'
+- `external_id` text unique
+- `direction` text check (direction in ('inbound', 'outbound'))
+- `timestamp` timestamp with time zone
+- `created_at` timestamp with time zone default now()
+
+Indexes:
+- `email_messages_thread_id_idx` on thread_id
+- `email_messages_opportunity_id_idx` on opportunity_id
+- `email_messages_external_id_idx` unique on external_id
+- `email_messages_timestamp_idx` on timestamp
+
+Triggers:
+- Update `last_message_at` and `message_count` on email_threads when messages are inserted/deleted
+- Update `updated_at` on email_threads when modified

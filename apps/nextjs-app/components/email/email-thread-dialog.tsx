@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Mail, Twitter, User, Calendar, Tag, Star, Wand2 } from 'lucide-react';
+import { Send, Mail, Twitter, User, Calendar, Tag, Star } from 'lucide-react';
 import { format } from 'date-fns';
 import { Opportunity } from '@/types';
 import { Badge } from '@/components/ui/badge';

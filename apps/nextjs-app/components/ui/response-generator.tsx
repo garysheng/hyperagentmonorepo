@@ -18,7 +18,7 @@ export function ResponseGenerator({
   celebrityId,
   onResponseGenerated
 }: ResponseGeneratorProps) {
-  const { generateResponse, isGenerating, error } = useGenerateResponse();
+  const { generateResponse, isGenerating } = useGenerateResponse();
   const { toast } = useToast();
 
   const handleGenerate = async () => {
