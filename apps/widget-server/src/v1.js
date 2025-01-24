@@ -3,11 +3,10 @@
   const currentScript = document.currentScript;
   const scriptSrc = currentScript?.src || '';
   const baseUrl = scriptSrc.substring(0, scriptSrc.lastIndexOf('/'));
-  const assetsBaseUrl = baseUrl.replace('/widget', '');
 
-  // Configuration with absolute URLs
-  const WIDGET_URL = `${assetsBaseUrl}/widget/bundle.js`;
-  const STYLES_URL = `${assetsBaseUrl}/widget/styles.css`;
+  // Configuration with absolute URLs - don't modify the path
+  const WIDGET_URL = `${baseUrl}/bundle.js`;
+  const STYLES_URL = `${baseUrl}/styles.css`;
   
   // Get configuration from script tag
   const celebrityId = currentScript.getAttribute('data-celebrity-id');

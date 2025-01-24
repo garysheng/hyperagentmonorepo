@@ -10,18 +10,49 @@ export default function ContactPage() {
   useEffect(() => {
     const loadWidget = async () => {
       try {
+        // Remove any existing widget instances first
+        const existingScripts = document.querySelectorAll('script[src*="widget/v1.js"]')
+        existingScripts.forEach(script => script.remove())
+        
+        const existingContainer = document.getElementById('hyperagent-chat-widget')
+        if (existingContainer) {
+          existingContainer.remove()
+        }
+
         // Load widget script
         const script = document.createElement('script')
         
         // Set all attributes before setting src to prevent race condition
         script.setAttribute('data-celebrity-id', '0ca0f921-7ccd-4975-9afb-3bed98367403')
         script.setAttribute('data-primary-color', '#0F172A')
+        script.setAttribute('data-position', 'bottom-right')
+        script.crossOrigin = 'anonymous'
         script.async = true
         
         // Add error handling and debugging
         script.onerror = (error) => {
           console.error('Failed to load widget script. Error:', error)
           console.error('Script src was:', script.src)
+          // Try to show a fallback contact method
+          const container = document.createElement('div')
+          container.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #0F172A;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: system-ui, -apple-system, sans-serif;
+            z-index: 9999;
+          `
+          container.innerHTML = `
+            <div style="text-align: center;">
+              <h3 style="margin: 0 0 10px;">Contact Us</h3>
+              <p style="margin: 0;">Please email us at contact@hyperagent.so</p>
+            </div>
+          `
+          document.body.appendChild(container)
         }
 
         script.onload = () => {

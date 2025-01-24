@@ -3,7 +3,7 @@ const nextConfig = {
   images: {
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
-    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    contentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://widget.hyperagent.so; style-src 'self' 'unsafe-inline' https://widget.hyperagent.so; connect-src 'self' https://widget.hyperagent.so",
     remotePatterns: [
       {
         protocol: 'https',
@@ -14,27 +14,18 @@ const nextConfig = {
   },
   serverExternalPackages: ['twitter-api-v2'],
   
-  // Add headers for widget files
+  // Add headers for security and CORS
   async headers() {
     return [
       {
-        source: '/widget/:path*',
+        source: '/:path*',
         headers: [
           {
-            key: 'Content-Type',
-            value: 'application/javascript',
-          },
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-          {
-            // Allow script to be loaded from any origin
-            key: 'Access-Control-Allow-Origin',
-            value: '*',
-          },
-        ],
-      },
+            key: 'Content-Security-Policy',
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://widget.hyperagent.so; style-src 'self' 'unsafe-inline' https://widget.hyperagent.so; connect-src 'self' https://widget.hyperagent.so"
+          }
+        ]
+      }
     ]
   },
 
