@@ -13,6 +13,25 @@ const nextConfig = {
     ],
   },
   serverExternalPackages: ['twitter-api-v2'],
+  
+  // Add headers for widget files
+  async headers() {
+    return [
+      {
+        source: '/widget/:path*',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/javascript',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+    ]
+  },
 };
 
 export default nextConfig; 

@@ -1,3 +1,4 @@
+"use strict";
 (() => {
     // Get the script's source URL to determine the base URL for assets
     const currentScript = document.currentScript;

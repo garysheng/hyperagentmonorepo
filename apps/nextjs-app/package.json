@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbo",
-    "build": "next build",
+    "dev": "next dev",
+    "build": "pnpm build:widget && next build",
+    "build:widget": "tsc -p widget.tsconfig.json",
     "start": "next start",
     "lint": "next lint",
-    "build:widget": "tsx widget.config.ts",
     "dev:widget": "tsx watch widget.config.ts",
     "test": "NODE_ENV=test vitest"
   },
