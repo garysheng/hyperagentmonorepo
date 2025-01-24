@@ -85,32 +85,23 @@ export default function OutboundPage() {
   const inConversation = opportunities?.filter(opp => opp.status === 'conversation_started') || []
 
   return (
-    <div className="grid grid-cols-2 gap-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>Ready for Outreach</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <OpportunityList 
-            opportunities={readyForOutreach} 
-            isLoading={isLoading} 
-            onSendMessage={handleSendMessage}
-          />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>In Conversation</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <OpportunityList 
-            opportunities={inConversation} 
-            isLoading={isLoading} 
-            onSendMessage={handleSendMessage}
-          />
-        </CardContent>
-      </Card>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-4">
+      <div>
+        <h2 className="text-lg font-semibold mb-4">1. Ready for Outreach ({readyForOutreach.length})</h2>
+        <OpportunityList
+          opportunities={readyForOutreach}
+          isLoading={isLoading}
+          onSendMessage={handleSendMessage}
+        />
+      </div>
+      <div>
+        <h2 className="text-lg font-semibold mb-4">2. In Conversation ({inConversation.length})</h2>
+        <OpportunityList
+          opportunities={inConversation}
+          isLoading={isLoading}
+          onSendMessage={handleSendMessage}
+        />
+      </div>
     </div>
   )
 } 

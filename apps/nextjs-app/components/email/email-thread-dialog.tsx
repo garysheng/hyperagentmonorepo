@@ -46,8 +46,8 @@ export function EmailThreadDialog({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[100vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Message Thread</DialogTitle>
+        <DialogHeader className="border-b pb-4">
+          <DialogTitle className="text-xl bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">Message Thread</DialogTitle>
         </DialogHeader>
         <div className="grid grid-cols-[2fr,1fr] gap-4 flex-1 min-h-0">
           {/* Left side: Messages and Input */}
@@ -62,15 +62,19 @@ export function EmailThreadDialog({
                 >
                   <div className="max-w-[80%]">
                     {message.direction === 'inbound' ? (
-                      <div className="text-xs mb-1 text-white">
+                      <div className="text-xs mb-1 text-blue-400">
                         {opportunity.sender_handle}
                       </div>
                     ) : (
-                      <div className="text-xs mb-1 text-white">
+                      <div className="text-xs mb-1 text-purple-400">
                         Team {celebrity?.celebrity_name}
                       </div>
                     )}
-                    <div className="bg-muted rounded-lg p-3">
+                    <div className={`rounded-lg p-3 ${
+                      message.direction === 'inbound' 
+                        ? 'bg-blue-500/10 border border-blue-500/20' 
+                        : 'bg-purple-500/10 border border-purple-500/20'
+                    }`}>
                       <p className="whitespace-pre-wrap">{message.content}</p>
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
@@ -86,7 +90,7 @@ export function EmailThreadDialog({
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="Type your message..."
-                  className="min-h-[100px]"
+                  className="min-h-[150px] border-blue-500/20 focus:border-blue-500 transition-colors"
                 />
                 <div className="flex justify-end gap-2">
                   <ResponseGenerator
@@ -96,7 +100,7 @@ export function EmailThreadDialog({
                     threadId={messages[0]?.thread_id}
                     onResponseGenerated={setNewMessage}
                   />
-                  <Button onClick={handleSendMessage}>
+                  <Button onClick={handleSendMessage} className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">
                     <Send className="h-4 w-4 mr-2" />
                     Send Message
                   </Button>
@@ -106,13 +110,13 @@ export function EmailThreadDialog({
           </div>
 
           {/* Right side: Opportunity Details */}
-          <Card className="overflow-y-auto">
+          <Card className="overflow-y-auto border-blue-500/20">
             <div className="p-4 space-y-4">
-              <h3 className="text-lg font-semibold">Opportunity Details</h3>
+              <h3 className="text-lg font-semibold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">Opportunity Details</h3>
               
               {/* Sender Info */}
               <div>
-                <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <div className="flex items-center gap-2 text-blue-400 mb-2">
                   <User className="h-4 w-4" />
                   <span>Sender</span>
                 </div>
@@ -124,11 +128,11 @@ export function EmailThreadDialog({
                 )}
               </div>
 
-              <Separator />
+              <Separator className="bg-blue-500/20" />
 
               {/* Source */}
               <div>
-                <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <div className="flex items-center gap-2 text-blue-400 mb-2">
                   {opportunity.source === 'TWITTER_DM' ? (
                     <Twitter className="h-4 w-4" />
                   ) : (
@@ -139,24 +143,24 @@ export function EmailThreadDialog({
                 <div>{opportunity.source === 'TWITTER_DM' ? 'Twitter DM' : 'Email'}</div>
               </div>
 
-              <Separator />
+              <Separator className="bg-blue-500/20" />
 
               {/* Date */}
               <div>
-                <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <div className="flex items-center gap-2 text-blue-400 mb-2">
                   <Calendar className="h-4 w-4" />
                   <span>Received</span>
                 </div>
                 <div>{format(new Date(opportunity.created_at), 'MMM d, yyyy h:mm a')}</div>
               </div>
 
-              <Separator />
+              <Separator className="bg-blue-500/20" />
 
               {/* Tags */}
               {opportunity.tags.length > 0 && (
                 <>
                   <div>
-                    <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                    <div className="flex items-center gap-2 text-blue-400 mb-2">
                       <Tag className="h-4 w-4" />
                       <span>Tags</span>
                     </div>
@@ -168,13 +172,13 @@ export function EmailThreadDialog({
                       ))}
                     </div>
                   </div>
-                  <Separator />
+                  <Separator className="bg-blue-500/20" />
                 </>
               )}
 
               {/* Relevance Score */}
               <div>
-                <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <div className="flex items-center gap-2 text-blue-400 mb-2">
                   <Star className="h-4 w-4" />
                   <span>Relevance Score</span>
                 </div>
@@ -195,9 +199,9 @@ export function EmailThreadDialog({
               </div>
 
               {/* Initial Message */}
-              <Separator />
+              <Separator className="bg-blue-500/20" />
               <div>
-                <div className="text-muted-foreground mb-2">Initial Message</div>
+                <div className="text-blue-400 mb-2">Initial Message</div>
                 <div className="text-sm whitespace-pre-wrap">{opportunity.initial_content}</div>
               </div>
             </div>

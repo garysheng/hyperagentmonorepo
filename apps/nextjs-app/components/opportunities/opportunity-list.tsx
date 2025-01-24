@@ -3,13 +3,15 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
-import { useState } from 'react'
-import { Twitter, Mail } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Twitter, Mail, AlertCircle } from 'lucide-react'
 import { ResponseGenerator } from '@/components/ui/response-generator'
 import { useCelebrity } from '@/hooks/use-celebrity'
 import { EmailThreadDialog } from '@/components/email/email-thread-dialog'
 import { createClient } from '@/lib/supabase/client'
 import { TableName } from '@/types'
+import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
 
 interface OpportunityListProps {
   opportunities: Opportunity[]
@@ -29,6 +31,44 @@ export function OpportunityList({ opportunities, isLoading, onSendMessage }: Opp
   }>>([])
   const { data: celebrity } = useCelebrity()
   const [isThreadDialogOpen, setIsThreadDialogOpen] = useState(false)
+  const [lastMessageDirections, setLastMessageDirections] = useState<Record<string, 'inbound' | 'outbound'>>({})
+  const [lastMessages, setLastMessages] = useState<Record<string, { content: string; created_at: string }>>({})
+
+  useEffect(() => {
+    // Only fetch for conversation_started opportunities
+    const conversationOpportunities = opportunities.filter(opp => opp.status === 'conversation_started')
+    
+    async function fetchLastMessageDirections() {
+      const directions: Record<string, 'inbound' | 'outbound'> = {}
+      const messages: Record<string, { content: string; created_at: string }> = {}
+      
+      for (const opportunity of conversationOpportunities) {
+        try {
+          const response = await fetch(`/api/messages/thread?opportunityId=${opportunity.id}`)
+          if (!response.ok) continue
+          
+          const { messages: threadMessages } = await response.json()
+          if (threadMessages && threadMessages.length > 0) {
+            const lastMessage = threadMessages[threadMessages.length - 1]
+            directions[opportunity.id] = lastMessage.direction
+            messages[opportunity.id] = {
+              content: lastMessage.content,
+              created_at: lastMessage.created_at
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching thread for opportunity:', opportunity.id, error)
+        }
+      }
+      
+      setLastMessageDirections(directions)
+      setLastMessages(messages)
+    }
+
+    if (conversationOpportunities.length > 0) {
+      fetchLastMessageDirections()
+    }
+  }, [opportunities])
 
   const handleCardClick = async (opportunity: Opportunity) => {
     console.log('Card clicked:', opportunity.status);
@@ -44,10 +84,17 @@ export function OpportunityList({ opportunities, isLoading, onSendMessage }: Opp
         const { thread, messages } = await response.json()
         console.log('Thread data:', { thread, messages })
 
-        if (messages) {
+        if (messages && messages.length > 0) {
           setMessages(messages)
           setSelectedOpportunity(opportunity)
           setIsThreadDialogOpen(true)
+          
+          // Update last message direction
+          const lastMessage = messages[messages.length - 1]
+          setLastMessageDirections(prev => ({
+            ...prev,
+            [opportunity.id]: lastMessage.direction
+          }))
         }
       } catch (error) {
         console.error('Error fetching thread data:', error)
@@ -177,23 +224,46 @@ export function OpportunityList({ opportunities, isLoading, onSendMessage }: Opp
       <div className="space-y-4">
         {opportunities.map((opportunity) => {
           const state = messageStates[opportunity.id] || { isOpen: false, message: '', isSending: false }
+          const lastMessageDirection = lastMessageDirections[opportunity.id]
+          const lastMessage = lastMessages[opportunity.id]
+          const needsResponse = lastMessageDirection === 'inbound'
           
           return (
             <div
               key={opportunity.id}
-              className="p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+              className={cn(
+                "p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer",
+                needsResponse && "border-yellow-500 dark:border-yellow-400"
+              )}
               onClick={() => handleCardClick(opportunity)}
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="font-medium">From: {opportunity.sender_handle}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium">From: {opportunity.sender_handle}</p>
+                    {needsResponse && (
+                      <Badge variant="destructive" className="animate-pulse">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        Response Needed
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {opportunity.initial_content}
+                    {opportunity.status === 'conversation_started' && lastMessage ? (
+                      <>
+                        <span className="block text-xs text-muted-foreground mb-1">
+                          Last message {lastMessageDirection === 'inbound' ? 'from them' : 'from us'} • {new Date(lastMessage.created_at).toLocaleString()}
+                        </span>
+                        {lastMessage.content}
+                      </>
+                    ) : (
+                      opportunity.initial_content
+                    )}
                   </p>
                 </div>
                 <div className="flex flex-col items-end gap-2">
-                  <div className="text-sm text-muted-foreground">
-                    {new Date(opportunity.created_at).toLocaleDateString()}
+                  <div className="text-xs text-muted-foreground">
+                    Started {new Date(opportunity.created_at).toLocaleDateString()}
                   </div>
                   {opportunity.status !== 'conversation_started' && (
                     <Dialog open={state.isOpen} onOpenChange={(open) => {

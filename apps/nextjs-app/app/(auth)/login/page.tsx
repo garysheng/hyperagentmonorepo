@@ -1,125 +1,138 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { login } from './actions'
-import { Suspense } from 'react'
 import { Card } from '@/components/ui/card'
-import { useToast } from '@/hooks/use-toast'
+import { ArrowRight, Lock } from 'lucide-react'
+import { Logo } from '@/components/ui/logo'
+import Link from 'next/link'
+import { cn } from '@/lib/utils'
+import { login } from './actions'
 
-function LoginForm() {
+export default function LoginPage() {
+  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
   const { toast } = useToast()
-  const [isSubmitting, setIsSubmitting] = useState(false)
 
   async function handleSubmit(formData: FormData) {
-    setIsSubmitting(true)
+    setIsLoading(true)
     try {
       const result = await login(formData)
       
       if ('error' in result) {
         toast({
-          title: 'Sign In Error',
+          title: 'Error',
           description: result.error,
-          variant: 'destructive'
+          variant: 'destructive',
         })
         return
       }
 
-      if (result.success && result.redirect) {
-        window.location.href = result.redirect
+      if (result.success) {
+        // Force a hard navigation to the dashboard
+        window.location.href = result.redirect || '/dashboard'
+        return
       }
-    } catch {
+    } catch (error) {
+      console.error('Login error:', error)
       toast({
         title: 'Error',
         description: 'An unexpected error occurred',
-        variant: 'destructive'
+        variant: 'destructive',
       })
     } finally {
-      setIsSubmitting(false)
+      setIsLoading(false)
     }
   }
 
   return (
-    <Card className="p-6 space-y-4 w-full max-w-sm">
-      <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-bold">Welcome Back</h1>
-        <p className="text-muted-foreground">
-          Sign in to manage your celebrity&apos;s opportunities
-        </p>
-      </div>
-      <form action={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" name="email" type="email" required />
+    <div className="container relative min-h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
+      <div className="relative hidden h-full flex-col bg-muted p-10 text-white lg:flex dark:border-r">
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/20 via-primary/10 to-background" />
+        <div className="relative z-20 flex items-center gap-2">
+          <Logo size={32} />
+          <h1 className="text-2xl font-bold">HyperAgent</h1>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <Input id="password" name="password" type="password" required />
-        </div>
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? 'Loading...' : 'Sign In'}
-        </Button>
-      </form>
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">Or</span>
+        <div className="relative z-20 mt-auto">
+          <blockquote className="space-y-2">
+            <p className="text-lg">
+              "HyperAgent has transformed how we handle opportunities. The AI scoring is incredibly accurate, 
+              and we're able to focus on the partnerships that truly matter."
+            </p>
+            <footer className="text-sm">Social Media Manager at MrBeast</footer>
+          </blockquote>
         </div>
       </div>
-      <Button 
-        type="button" 
-        variant="outline" 
-        className="w-full"
-        onClick={() => window.location.href = '/'}
-        disabled={isSubmitting}
-      >
-        Create an account
-      </Button>
-    </Card>
-  )
-}
-
-export default function LoginPage() {
-  return (
-    <div className="flex min-h-screen">
-      <div className="hidden lg:flex w-1/2 bg-muted items-center justify-center p-8">
-        <div className="max-w-lg space-y-8">
-          <div className="space-y-2">
-            <h1 className="text-4xl font-bold tracking-tight">HyperAgent.so</h1>
-            <p className="text-muted-foreground text-lg">
-              The AI-powered platform for celebrity teams to manage inbound opportunities
+      <div className="lg:p-8">
+        <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+          <div className="flex flex-col space-y-2 text-center">
+            <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
+            <p className="text-sm text-muted-foreground">
+              Enter your credentials to access your account
             </p>
           </div>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <h2 className="text-xl font-semibold">For Celebrity Teams</h2>
-              <p className="text-muted-foreground">
-                Whether you&apos;re a manager, agent, or support staff - streamline how you handle opportunities for your public figure.
-              </p>
+          <Card className={cn(
+            "p-6 backdrop-blur-sm",
+            "bg-gradient-to-b from-muted/50 via-muted/30 to-background/50"
+          )}>
+            <form action={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="you@company.com"
+                  required
+                  disabled={isLoading}
+                  className="bg-background/50"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  disabled={isLoading}
+                  className="bg-background/50"
+                />
+              </div>
+              <Button className="w-full" type="submit" disabled={isLoading}>
+                {isLoading ? (
+                  'Signing in...'
+                ) : (
+                  <>
+                    Sign in
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </>
+                )}
+              </Button>
+            </form>
+          </Card>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
             </div>
-            <div className="space-y-2">
-              <h2 className="text-xl font-semibold">Smart Opportunity Management</h2>
-              <p className="text-muted-foreground">
-                Collect and classify opportunities from Twitter DMs and chat widgets, all in one place for your team.
-              </p>
-            </div>
-            <div className="space-y-2">
-              <h2 className="text-xl font-semibold">AI-Powered Triage</h2>
-              <p className="text-muted-foreground">
-                Let AI score and categorize thousands of opportunities, so your team can focus on the most promising ones.
-              </p>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                New to HyperAgent?
+              </span>
             </div>
           </div>
+          <Button variant="outline" className="w-full" asChild disabled={isLoading}>
+            <Link href="/signup">Create an account</Link>
+          </Button>
+          <p className="px-8 text-center text-sm text-muted-foreground">
+            <Lock className="inline h-3 w-3 mr-1" />
+            Enterprise-grade security for your team's data
+          </p>
         </div>
-      </div>
-      <div className="flex w-full lg:w-1/2 items-center justify-center p-4">
-        <Suspense fallback={<div>Loading...</div>}>
-          <LoginForm />
-        </Suspense>
       </div>
     </div>
   )

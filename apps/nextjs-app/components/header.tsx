@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useAuth } from '@/components/providers'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { Logo } from '@/components/ui/logo'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -91,6 +92,7 @@ export function Header() {
       <div className="container flex h-14 items-center">
         <div className="mr-4 flex">
           <Link href="/" className="ml-6 mr-6 flex items-center space-x-2">
+            <Logo size={24} />
             <span className="font-bold">HyperAgent</span>
           </Link>
           {!!user && !!profile?.hasGoals && (

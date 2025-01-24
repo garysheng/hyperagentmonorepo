@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { User, AuthChangeEvent, Session } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
-
+import { useRouter } from 'next/navigation'
 interface AuthContextType {
   user: User | null
   loading: boolean
@@ -20,7 +20,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [supabase] = useState(() => createClient())
-
+  const router = useRouter()
+  
   useEffect(() => {
     console.log('🔄 AuthProvider useEffect starting...')
     let mounted = true
@@ -89,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(true)
       await supabase.auth.signOut()
       setUser(null)
-      window.location.href = '/login'
+      router.push('/login')
     } catch (error) {
       console.error('❌ Error signing out:', error)
     } finally {
