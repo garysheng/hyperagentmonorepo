@@ -4,12 +4,9 @@ class HyperAgentWidget {
     this.userEmail = null;
     this.celebrityId = null;
     this.goals = [];
-    // API calls go to the main app server
-    this.apiBaseUrl = window.location.hostname === 'localhost' 
+    this.baseUrl = window.location.hostname === 'localhost' 
       ? 'http://localhost:3000' 
       : 'https://hyperagent.so';
-    // Static assets (styles, etc) come from the widget server
-    this.widgetServerUrl = 'https://widget.hyperagent.so/widget';
     this.init();
   }
 
@@ -26,7 +23,7 @@ class HyperAgentWidget {
     // Create and append styles
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = `${this.widgetServerUrl}/styles.css`;
+    link.href = '/widget-dev/styles.css';
     document.head.appendChild(link);
 
     // Create chat bubble
@@ -192,7 +189,7 @@ class HyperAgentWidget {
 
     try {
       // Fetch goals from API
-      const response = await fetch(`${this.apiBaseUrl}/api/widget/goals?celebrityId=${this.celebrityId}`);
+      const response = await fetch(`${this.baseUrl}/api/widget/goals?celebrityId=${this.celebrityId}`);
       if (!response.ok) throw new Error('Failed to fetch goals');
       
       const { goals } = await response.json();
@@ -295,7 +292,7 @@ class HyperAgentWidget {
 
     try {
       // Send message to API
-      const response = await fetch(`${this.apiBaseUrl}/api/widget/submit`, {
+      const response = await fetch(`${this.baseUrl}/api/widget/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -343,6 +340,44 @@ class HyperAgentWidget {
   toggleChat() {
     this.isOpen = !this.isOpen;
     this.window.style.display = this.isOpen ? 'flex' : 'none';
+  }
+
+  async fetchGoals() {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/widget/goals?celebrityId=${this.celebrityId}`);
+      if (!response.ok) throw new Error('Failed to fetch goals');
+      const data = await response.json();
+      if (!data.success) throw new Error(data.error || 'Failed to load goals');
+      this.goals = data.goals;
+      return true;
+    } catch (error) {
+      console.error('Error fetching goals:', error);
+      return false;
+    }
+  }
+
+  async sendMessage(message) {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/widget/submit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: this.userEmail,
+          message: message,
+          celebrityId: this.celebrityId
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to send message');
+      const data = await response.json();
+      if (!data.success) throw new Error(data.error || 'Failed to send message');
+      return true;
+    } catch (error) {
+      console.error('Error sending message:', error);
+      return false;
+    }
   }
 }
 

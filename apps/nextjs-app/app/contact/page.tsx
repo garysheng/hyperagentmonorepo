@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card'
 
 // Widget server URL is now fixed since we have a dedicated domain
 const WIDGET_SERVER_URL = 'https://widget.hyperagent.so'
+const WIDGET_VERSION = `1.0.2-${new Date().toISOString().split('T')[0].replace(/-/g, '.')}-${Math.floor(Date.now() / 1000)}` // Increment this to see the new changes
 
 export default function ContactPage() {
   useEffect(() => {
@@ -59,8 +60,8 @@ export default function ContactPage() {
           console.log('Widget script loaded successfully')
         }
         
-        // Use the dedicated widget server URL
-        const widgetUrl = `${WIDGET_SERVER_URL}/widget/v1.js`
+        // Use the dedicated widget server URL with version for cache busting
+        const widgetUrl = `${WIDGET_SERVER_URL}/widget/v1.js?v=${WIDGET_VERSION}`
         console.log('Loading widget from:', widgetUrl)
         
         script.src = widgetUrl

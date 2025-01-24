@@ -127,6 +127,28 @@ export async function middleware(request: NextRequest) {
 
     // User is authenticated and has required data - allow access
     console.log('✅ All checks passed - allowing access')
+
+    // Add CORS headers for widget API endpoints
+    if (request.nextUrl.pathname.startsWith('/api/widget')) {
+      response.headers.set('Access-Control-Allow-Origin', '*')
+      response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+      response.headers.set('Access-Control-Allow-Headers', 'Content-Type')
+    }
+
+    // Add CSP header
+    const cspHeader = `
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://widget.hyperagent.so;
+      style-src 'self' 'unsafe-inline' https://widget.hyperagent.so;
+      img-src 'self' data: https:;
+      font-src 'self';
+      connect-src 'self' https://widget.hyperagent.so https://hyperagent.so;
+      frame-src 'self';
+      frame-ancestors 'self';
+    `.replace(/\s+/g, ' ').trim()
+
+    response.headers.set('Content-Security-Policy', cspHeader)
+
     return response
 
   } catch (error) {

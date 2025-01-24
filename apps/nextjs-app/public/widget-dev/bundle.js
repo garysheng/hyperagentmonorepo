@@ -2,9 +2,11 @@
   class HyperAgentWidget {
     constructor() {
       this.isOpen = false;
+      console.log('[Dev Widget] Widget class instantiated');
     }
 
     init(config) {
+      console.log('[Dev Widget] Initializing with config:', config);
       const { container, celebrityId, theme } = config;
       
       // Create widget container
@@ -115,6 +117,7 @@
         this.isOpen = !this.isOpen;
         chatWindow.style.display = this.isOpen ? 'flex' : 'none';
         bubble.style.transform = this.isOpen ? 'scale(0.9)' : 'scale(1)';
+        console.log('[Dev Widget] Chat window toggled:', this.isOpen);
       });
 
       // Add click handler for send button
@@ -123,7 +126,7 @@
       sendButton.addEventListener('click', () => {
         const message = textarea.value.trim();
         if (message) {
-          console.log('Message sent:', { message, celebrityId });
+          console.log('[Dev Widget] Message sent:', { message, celebrityId });
           // Add your message sending logic here
           textarea.value = '';
           
@@ -149,10 +152,11 @@
       // Add everything to the container
       container.appendChild(bubble);
       container.appendChild(chatWindow);
+      console.log('[Dev Widget] Widget mounted to DOM');
     }
 
     destroy() {
-      // Cleanup code here
+      console.log('[Dev Widget] Widget destroyed');
     }
   }
 

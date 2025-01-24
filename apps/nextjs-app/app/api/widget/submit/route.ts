@@ -3,21 +3,28 @@ import { NextResponse } from 'next/server'
 import { createOpportunity } from '@/lib/opportunities'
 import { randomUUID } from 'crypto'
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const supabase = await createClient()
-    const body = await request.json()
-    console.log('Widget submit request body:', body)
-    
-    const { celebrityId, email, message } = body
+    const { email, message, celebrityId } = await req.json()
 
-    if (!celebrityId) {
-      console.log('Missing celebrityId in request')
+    // Validate input
+    if (!email || !message || !celebrityId) {
       return NextResponse.json(
-        { error: 'Missing celebrityId' },
+        { error: 'Email, message, and celebrityId are required' },
         { status: 400 }
       )
     }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: 'Invalid email format' },
+        { status: 400 }
+      )
+    }
+
+    const supabase = await createClient()
 
     // Check if celebrity exists
     const { data: celebrity, error: celebrityError } = await supabase
@@ -27,25 +34,29 @@ export async function POST(request: Request) {
       .single()
 
     if (celebrityError || !celebrity) {
-      console.log('Invalid celebrityId:', celebrityId, 'Error:', celebrityError)
+      console.error('Invalid celebrityId:', celebrityId, 'Error:', celebrityError)
       return NextResponse.json(
         { error: 'Invalid celebrityId' },
         { status: 400 }
       )
     }
 
-    // Create opportunity using the proper function
+    // Create opportunity
     const opportunity = await createOpportunity(supabase, {
       celebrity_id: celebrityId,
       source: 'WIDGET',
       initial_content: message,
       sender_id: randomUUID(),
-      sender_handle: email || 'Anonymous Widget User'
+      sender_handle: email
     })
 
-    return NextResponse.json({ success: true, opportunity })
+    return NextResponse.json({
+      success: true,
+      message: 'Message received successfully',
+      opportunity
+    })
   } catch (error) {
-    console.error('Error in widget submit:', error)
+    console.error('Error processing widget submission:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
