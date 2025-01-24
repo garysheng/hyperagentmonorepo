@@ -1,0 +1,13 @@
+# Dependencies
+node_modules
+
+# Build output
+public
+
+# Vercel
+.vercel
+
+# Environment variables
+.env
+.env.*
+!.env.example 

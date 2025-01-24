@@ -1,0 +1,15 @@
+{
+  "name": "widget-server",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "serve public --cors --listen 3001",
+    "dev": "serve public --cors --listen 3001",
+    "prebuild": "mkdir -p public/widget",
+    "build": "cp src/v1.js public/widget/ && cp src/bundle.js public/widget/ && cp src/styles.css public/widget/",
+    "vercel-build": "pnpm build"
+  },
+  "dependencies": {
+    "serve": "^14.2.1"
+  }
+} 

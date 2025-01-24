@@ -3,6 +3,9 @@
 import { useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 
+// Widget server URL - update this with your actual widget server domain
+const WIDGET_SERVER_URL = process.env.NEXT_PUBLIC_WIDGET_SERVER_URL || 'https://widget.hyperagent.so'
+
 export default function ContactPage() {
   useEffect(() => {
     const loadWidget = async () => {
@@ -25,14 +28,9 @@ export default function ContactPage() {
           console.log('Widget script loaded successfully')
         }
         
-        // Use absolute URL in production, local in development
-        const isDev = process.env.NODE_ENV === 'development'
-        const widgetUrl = isDev 
-          ? '/widget/v1.js'  // Use relative path in development
-          : `${process.env.NEXT_PUBLIC_SITE_URL}/widget/v1.js`
-        
+        // Always use the widget server URL
+        const widgetUrl = `${WIDGET_SERVER_URL}/widget/v1.js`
         console.log('Loading widget from:', widgetUrl)
-        console.log('Current environment:', process.env.NODE_ENV)
         
         script.src = widgetUrl
         document.body.appendChild(script)
