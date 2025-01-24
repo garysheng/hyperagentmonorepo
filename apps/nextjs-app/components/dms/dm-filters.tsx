@@ -2,7 +2,6 @@
 
 import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Separator } from '@/components/ui/separator'
 import { Slider } from '@/components/ui/slider'
 import { useTeamMembers } from '@/hooks/use-team-members'
@@ -16,50 +15,64 @@ import {
 } from '@/components/ui/select'
 
 export interface DMFilters {
-  status: 'all' | 'pending' | 'approved' | 'rejected'
-  minRelevanceScore: number
-  assignedTo: string | 'all'
-  needsDiscussion: boolean
+  statuses: {
+    pending: boolean;
+    approved: boolean;
+    rejected: boolean;
+  };
+  minRelevanceScore: number;
+  assignedTo: string | 'all';
+  needsDiscussion: boolean;
 }
 
 interface DMFiltersProps {
-  filters: DMFilters
-  onFiltersChange: (filters: DMFilters) => void
+  filters: DMFilters;
+  onFiltersChange: (filters: DMFilters) => void;
 }
 
 export function DMFilters({ filters, onFiltersChange }: DMFiltersProps) {
   const { data: teamMembers = [] } = useTeamMembers()
 
+  const handleStatusChange = (status: keyof DMFilters['statuses'], checked: boolean) => {
+    onFiltersChange({
+      ...filters,
+      statuses: {
+        ...filters.statuses,
+        [status]: checked
+      }
+    });
+  };
+
   return (
     <Card className="p-6 space-y-6">
       <div>
         <h3 className="font-medium mb-4">Status</h3>
-        <RadioGroup
-          value={filters.status}
-          onValueChange={(value) =>
-            onFiltersChange({
-              ...filters,
-              status: value as DMFilters['status'],
-            })
-          }
-        >
+        <div className="space-y-2">
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="all" id="all" />
-            <Label htmlFor="all">All</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="pending" id="pending" />
+            <Checkbox
+              id="pending"
+              checked={filters.statuses.pending}
+              onCheckedChange={(checked) => handleStatusChange('pending', checked as boolean)}
+            />
             <Label htmlFor="pending">Pending</Label>
           </div>
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="approved" id="approved" />
+            <Checkbox
+              id="approved"
+              checked={filters.statuses.approved}
+              onCheckedChange={(checked) => handleStatusChange('approved', checked as boolean)}
+            />
             <Label htmlFor="approved">Approved</Label>
           </div>
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="rejected" id="rejected" />
+            <Checkbox
+              id="rejected"
+              checked={filters.statuses.rejected}
+              onCheckedChange={(checked) => handleStatusChange('rejected', checked as boolean)}
+            />
             <Label htmlFor="rejected">Rejected</Label>
           </div>
-        </RadioGroup>
+        </div>
       </div>
 
       <Separator />

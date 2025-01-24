@@ -13,7 +13,11 @@ export default function InboundPage() {
   const { user, loading } = useAuth()
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null)
   const [filters, setFilters] = useState<DMFiltersType>({
-    status: 'all',
+    statuses: {
+      pending: true,    // Show pending by default
+      approved: false,  // Hide approved by default
+      rejected: false,  // Hide rejected by default
+    },
     minRelevanceScore: -1,
     assignedTo: 'all',
     needsDiscussion: false
@@ -25,24 +29,44 @@ export default function InboundPage() {
     enabled: !!user,
   })
 
-  // Filter out opportunities that are in conversation (they'll be shown in Outbound)
+  // Filter and sort opportunities
   const filteredOpportunities = opportunities
-    .filter(opp => opp.status !== 'conversation_started')
-    .filter((opp) => {
-      if (filters.status !== 'all' && opp.status !== filters.status) {
-        return false
+    // Filter based on selected statuses
+    .filter(opp => {
+      // If no statuses are selected, show nothing
+      if (!filters.statuses.pending && !filters.statuses.approved && !filters.statuses.rejected) {
+        return false;
       }
+      
+      // Check if the opportunity's status matches any of the selected statuses
+      switch (opp.status) {
+        case 'pending':
+          return filters.statuses.pending;
+        case 'approved':
+          return filters.statuses.approved;
+        case 'rejected':
+          return filters.statuses.rejected;
+        case 'conversation_started':
+          return false; // Always hide in-conversation opportunities
+        default:
+          return false;
+      }
+    })
+    // Apply other filters
+    .filter((opp) => {
       if (opp.relevance_score < filters.minRelevanceScore) {
-        return false
+        return false;
       }
       if (filters.assignedTo !== 'all' && opp.assigned_to !== filters.assignedTo) {
-        return false
+        return false;
       }
       if (filters.needsDiscussion && !opp.needs_discussion) {
-        return false
+        return false;
       }
-      return true
+      return true;
     })
+    // Sort by relevance score (highest first)
+    .sort((a, b) => b.relevance_score - a.relevance_score)
 
   if (loading || !user) {
     return null

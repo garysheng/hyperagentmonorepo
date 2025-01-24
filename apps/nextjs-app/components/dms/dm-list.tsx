@@ -7,6 +7,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Opportunity as DM } from '@/types'
 import { Badge } from '@/components/ui/badge'
 import { formatDistanceToNow } from 'date-fns'
+import { User, Star } from 'lucide-react'
+import { useTeamMembers } from '@/hooks/use-team-members'
 
 interface DMListProps {
   dms: DM[]
@@ -28,9 +30,22 @@ function getStatusBadgeVariant(status: DM['status']): "default" | "secondary" | 
   }
 }
 
+function formatRelevanceScore(score: number): string {
+  // Convert score to a scale of 0-5
+  return `${score}/5`;
+}
+
 const isEmail = (handle: string) => handle.includes('@')
 
 export function DMList({ dms, selectedDM, onSelectDM, isLoading }: DMListProps) {
+  const { data: teamMembers = [] } = useTeamMembers()
+
+  const getAssignedUserName = (userId: string | undefined | null) => {
+    if (!userId) return 'Unassigned'
+    const member = teamMembers.find(m => m.id === userId)
+    return member ? member.full_name : 'Unknown User'
+  }
+
   if (isLoading) {
     return (
       <Card>
@@ -65,22 +80,34 @@ export function DMList({ dms, selectedDM, onSelectDM, isLoading }: DMListProps) 
               onClick={() => onSelectDM(dm)}
             >
               <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">
-                        {isEmail(dm.sender_handle) ? dm.sender_handle : `@${dm.sender_handle}`}
-                      </span>
-                      <Badge variant={getStatusBadgeVariant(dm.status)}>
-                        {dm.status}
-                      </Badge>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">
+                          {isEmail(dm.sender_handle) ? dm.sender_handle : `@${dm.sender_handle}`}
+                        </span>
+                        <Badge variant={getStatusBadgeVariant(dm.status)}>
+                          {dm.status}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {dm.initial_content}
+                      </p>
                     </div>
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {dm.initial_content}
-                    </p>
+                    <div className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(dm.created_at), { addSuffix: true })}
+                    </div>
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(dm.created_at), { addSuffix: true })}
+                  <div className="flex items-center justify-between text-xs text-muted-foreground border-t pt-2">
+                    <div className="flex items-center gap-1">
+                      <User className="h-3 w-3" />
+                      <span>{getAssignedUserName(dm.assigned_to)}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Star className="h-3 w-3" />
+                      <span>Relevance: {formatRelevanceScore(dm.relevance_score)}</span>
+                    </div>
                   </div>
                 </div>
               </CardContent>

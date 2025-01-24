@@ -205,7 +205,7 @@ export function OpportunityList({ opportunities, isLoading, onSendMessage }: Opp
                     }}>
                       <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
                         <Button size="sm">
-                          Send First REsp
+                          Send First Response
                         </Button>
                       </DialogTrigger>
                       <DialogContent className="max-w-2xl">
