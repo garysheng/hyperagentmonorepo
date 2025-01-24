@@ -55,7 +55,7 @@ export default function WritingStyleSettings() {
   });
 
   return (
-    <div className="container max-w-7xl py-6">
+    <div className="container max-w-7xl py-6 pl-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Writing Style Settings</h1>

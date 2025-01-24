@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { formatDistanceToNow } from 'date-fns'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import { cn } from '@/lib/utils'
 
 interface ActionWithRelations {
   id: string
@@ -34,6 +35,33 @@ interface ActionResponse {
   opportunities: {
     celebrity_id: string
   }
+}
+
+function getStatusBadgeVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
+  switch (status) {
+    case 'approved':
+      return 'default'
+    case 'rejected':
+      return 'destructive'
+    case 'conversation_started':
+      return 'secondary'
+    default:
+      return 'outline'
+  }
+}
+
+function getStatusBadgeClass(status: string): string {
+  if (status === 'conversation_started') {
+    return "animate-pulse bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-[0_0_10px_rgba(147,51,234,0.5)] dark:shadow-[0_0_10px_rgba(168,85,247,0.5)]"
+  }
+  return ""
+}
+
+function getActionBadgeVariant(action: string): "default" | "secondary" | "destructive" | "outline" {
+  if (action.includes('approve')) return 'default'
+  if (action.includes('reject')) return 'destructive'
+  if (action.includes('assign') || action.includes('goal')) return 'secondary'
+  return 'outline'
 }
 
 export function RecentActivity() {
@@ -151,7 +179,15 @@ export function RecentActivity() {
               <div key={dm.id} className="flex flex-col space-y-1">
                 <div className="flex items-center gap-2">
                   <span className="font-medium">@{dm.sender_handle}</span>
-                  <Badge variant="outline" className="capitalize">{dm.status.replace('_', ' ')}</Badge>
+                  <Badge 
+                    variant={getStatusBadgeVariant(dm.status)} 
+                    className={cn(
+                      "capitalize",
+                      getStatusBadgeClass(dm.status)
+                    )}
+                  >
+                    {dm.status.replace('_', ' ')}
+                  </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground line-clamp-1">{dm.content}</p>
                 <span className="text-xs text-muted-foreground">
@@ -190,7 +226,7 @@ export function RecentActivity() {
                 <div key={action.id} className="flex flex-col space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{action.user.full_name}</span>
-                    <Badge variant="outline" className="capitalize">
+                    <Badge variant={getActionBadgeVariant(action.type)} className="capitalize">
                       {action.type.split('_').join(' ')}
                     </Badge>
                   </div>
