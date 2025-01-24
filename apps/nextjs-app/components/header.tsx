@@ -91,9 +91,11 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60" key={`${profile?.celebrity_name}-${pathname}`}>
       <div className="container flex h-14 items-center">
         <div className="mr-4 flex">
-          <Link href="/" className="ml-6 mr-6 flex items-center space-x-2">
+          <Link href="/" className="ml-6 mr-6 flex items-center space-x-2 group">
             <Logo size={24} />
-            <span className="font-bold">HyperAgent</span>
+            <span className="font-bold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent group-hover:from-blue-500 group-hover:to-primary transition-all duration-300">
+              HyperAgent
+            </span>
           </Link>
           {!!user && !!profile?.hasGoals && (
             <nav className="flex items-center space-x-6 text-sm font-medium">
@@ -102,8 +104,12 @@ export function Header() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "transition-colors hover:text-foreground/80",
-                    pathname === item.href ? "text-foreground" : "text-foreground/60"
+                    "transition-colors relative",
+                    "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:transform",
+                    "hover:text-primary",
+                    pathname === item.href 
+                      ? "text-foreground after:bg-gradient-to-r after:from-primary after:to-blue-500" 
+                      : "text-foreground/60 after:bg-gradient-to-r after:from-primary/0 after:to-blue-500/0 hover:after:from-primary/40 hover:after:to-blue-500/40"
                   )}
                 >
                   {item.name}
@@ -116,15 +122,21 @@ export function Header() {
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="hover:bg-primary/10 hover:text-primary transition-colors"
+                >
                   Profile
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="flex flex-col items-start">
-                  <span className="font-medium">{user.email}</span>
+              <DropdownMenuContent align="end" className="w-56 border-primary/20">
+                <DropdownMenuLabel className="bg-gradient-to-r from-primary/10 to-blue-500/10 rounded-t-sm">
+                  My Account
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-primary/10" />
+                <DropdownMenuItem className="flex flex-col items-start focus:bg-primary/5">
+                  <span className="font-medium text-primary">{user.email}</span>
                   {isLoadingProfile ? (
                     <Skeleton className="h-4 w-16 mt-1" />
                   ) : (
@@ -133,9 +145,9 @@ export function Header() {
                     </span>
                   )}
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="flex flex-col items-start">
-                  <span className="text-sm font-medium">Managing</span>
+                <DropdownMenuSeparator className="bg-primary/10" />
+                <DropdownMenuItem className="flex flex-col items-start focus:bg-primary/5">
+                  <span className="text-sm font-medium text-primary">Managing</span>
                   {isLoadingProfile ? (
                     <Skeleton className="h-4 w-24 mt-1" />
                   ) : (
@@ -144,9 +156,9 @@ export function Header() {
                     </span>
                   )}
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator className="bg-primary/10" />
                 <DropdownMenuItem
-                  className="text-destructive focus:text-destructive"
+                  className="text-destructive focus:bg-destructive/5 focus:text-destructive"
                   disabled={isSigningOut}
                   onClick={handleSignOut}
                 >
@@ -155,7 +167,12 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button asChild variant="ghost" size="sm">
+            <Button 
+              asChild 
+              variant="ghost" 
+              size="sm"
+              className="hover:bg-primary/10 hover:text-primary transition-colors"
+            >
               <Link href="/login">Sign in</Link>
             </Button>
           )}

@@ -14,43 +14,43 @@ const EXAMPLE_MESSAGES = [
   {
     id: 1,
     handle: '@charity_org',
-    content: 'We have a unique opportunity to help 1000 underprivileged students get laptops for school. Would love to collaborate on this initiative.',
+    content: 'We\'ve secured matching donations up to $10M to provide laptops and internet access to 10,000 underprivileged students. Your involvement could double our impact. Ready to launch within 2 weeks.',
     relevance: 4.8,
     type: 'Philanthropy'
   },
   {
     id: 2,
     handle: '@production_studio',
-    content: 'Our team has developed a groundbreaking challenge concept: Last person to leave a self-sustaining ecosystem wins $500,000. Full production support included.',
+    content: 'Groundbreaking challenge concept: 10 contestants live in a fully self-sustaining biodome for 100 days. $2M prize pool, Netflix already interested in distribution. Full production crew and infrastructure ready.',
     relevance: 4.5,
     type: 'Content Creation'
   },
   {
     id: 3,
-    handle: '@food_franchise',
-    content: 'Interested in expanding Feastables to our chain of 500+ stores nationwide. Our audience aligns perfectly with your demographic.',
+    handle: 'partnerships@major-retail.com',
+    content: 'Exclusive opportunity to launch Feastables in our 2,000+ premium stores nationwide. Committed to $5M marketing budget and prime shelf placement. Our Gen-Z customer base perfectly matches your demographic.',
     relevance: 4.2,
     type: 'Business Ventures'
   },
   {
     id: 4,
     handle: '@event_organizer',
-    content: 'Planning a massive gaming tournament with a $1M prize pool. Would you be interested in hosting?',
+    content: 'Planning the world\'s largest gaming tournament: $5M prize pool, 100k live attendees, global streaming rights. Looking for you to be the face of the event with creative control.',
     relevance: 3.7,
     type: 'Content Creation'
   },
   {
     id: 5,
     handle: '@tech_startup',
-    content: 'We\'ve developed an app that gamifies charitable giving. Would love to discuss partnership opportunities.',
-    relevance: 3.4,
+    content: 'We\'ve developed an app that gamifies charitable giving with real-time impact tracking. Already raised $2M in seed funding and have 50k waitlist signups.',
+    relevance: 2.6,
     type: 'Philanthropy'
   },
   {
     id: 6,
     handle: '@crypto_scam',
     content: 'Hey MrBeast! Want to promote our new crypto token? $500k upfront payment! To the moon! 🚀',
-    relevance: 1.2,
+    relevance: 0.2,
     type: 'Spam'
   }
 ]
@@ -125,25 +125,23 @@ export default function HomePage() {
     }
   }, [loading, user, router])
 
-  // If loading, don't show anything yet
   if (loading) {
     return null
   }
 
-  // If user is logged in, show a welcome message and dashboard link
   if (user) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-background via-background/95 to-background/90">
         <div className="text-center space-y-8">
           <div className="space-y-2">
-            <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl">
+            <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl bg-gradient-to-r from-primary via-blue-500 to-primary bg-clip-text text-transparent">
               Welcome Back!
             </h1>
             <p className="text-muted-foreground text-lg">
               Continue managing your DMs with AI-powered assistance.
             </p>
           </div>
-          <Button asChild size="lg">
+          <Button asChild size="lg" className="bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90">
             <Link href="/dashboard" className="flex items-center justify-center">
               Go to Dashboard
               <ArrowRight className="ml-2 h-4 w-4" />
@@ -155,15 +153,15 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90">
       {/* Header */}
-      <header className="border-b">
+      <header className="border-b backdrop-blur-sm bg-background/30">
         <div className="container flex items-center justify-between py-4">
           <div className="flex items-center gap-2 ml-4">
             <Logo size={24} />
-            <span className="font-semibold">HyperAgent</span>
+            <span className="font-semibold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">HyperAgent</span>
           </div>
-          <Button asChild variant="ghost" size="sm">
+          <Button asChild variant="ghost" size="sm" className="hover:bg-primary/10">
             <Link href="/login" className="flex items-center gap-2">
               Sign In
               <ArrowRight className="h-4 w-4" />
@@ -178,7 +176,9 @@ export default function HomePage() {
           <div className="text-center max-w-3xl mx-auto mt-10">
             <div className="flex items-center justify-center gap-2 mb-4">
               <Logo size={48} />
-              <h1 className="text-5xl font-bold">HyperAgent</h1>
+              <h1 className="text-5xl font-bold bg-gradient-to-r from-primary via-blue-500 to-primary bg-clip-text text-transparent">
+                HyperAgent
+              </h1>
             </div>
             <p className="text-xl mb-12 text-muted-foreground">
               AI-powered DM management for celebrities and public figures.<br />
@@ -188,22 +188,26 @@ export default function HomePage() {
 
           {/* Step 1: Create Account */}
           <div className="max-w-4xl mx-auto space-y-4 text-center mb-8">
-            <div className="inline-block rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
+            <div className="inline-block rounded-full bg-gradient-to-r from-primary/20 to-blue-500/20 px-3 py-1 text-sm text-primary">
               Step 1
             </div>
-            <h2 className="text-2xl font-semibold">Create an Account for Your Celebrity</h2>
+            <h2 className="text-2xl font-semibold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
+              Create an Account for Your Celebrity
+            </h2>
             <p className="text-muted-foreground">Example: How Mr Beast's team manages opportunities</p>
           </div>
 
           {/* Sign Up Options */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-16">
-            <div className="relative flex flex-col items-center space-y-4 rounded-lg border bg-card p-6">
+            <div className="relative flex flex-col items-center space-y-4 rounded-lg border bg-card/50 backdrop-blur-sm p-6 hover:bg-card/60 transition-colors">
               <Logo size={32} className="mb-2" />
-              <h2 className="text-2xl font-bold">Celebrity Admin</h2>
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
+                Celebrity Admin
+              </h2>
               <p className="text-muted-foreground text-center">
                 Create a new account to manage your own Twitter DMs and build your team.
               </p>
-              <Button asChild size="lg" className="w-full mt-4">
+              <Button asChild size="lg" className="w-full mt-4 bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90">
                 <Link href="/signup" className="flex items-center justify-center">
                   Create Account
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -211,13 +215,15 @@ export default function HomePage() {
               </Button>
             </div>
 
-            <div className="relative flex flex-col items-center space-y-4 rounded-lg border bg-card p-6">
+            <div className="relative flex flex-col items-center space-y-4 rounded-lg border bg-card/50 backdrop-blur-sm p-6 hover:bg-card/60 transition-colors">
               <MessageSquare className="h-8 w-8 text-primary mb-2" />
-              <h2 className="text-2xl font-bold">Team Member</h2>
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
+                Team Member
+              </h2>
               <p className="text-muted-foreground text-center">
                 Join an existing celebrity's team using an invite code from your admin.
               </p>
-              <Button asChild variant="outline" size="lg" className="w-full mt-4">
+              <Button asChild variant="outline" size="lg" className="w-full mt-4 border-primary/20 hover:bg-primary/10">
                 <Link href="/join-team" className="flex items-center justify-center">
                   Join Team
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -228,55 +234,61 @@ export default function HomePage() {
 
           {/* Step 2: Set Goals */}
           <div className="max-w-4xl mx-auto space-y-4 text-center">
-            <div className="inline-block rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
+            <div className="inline-block rounded-full bg-gradient-to-r from-primary/20 to-blue-500/20 px-3 py-1 text-sm text-primary">
               Step 2
             </div>
-            <h2 className="text-2xl font-semibold">Set Your Celebrity's Goals</h2>
+            <h2 className="text-2xl font-semibold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
+              Set Your Celebrity's Goals
+            </h2>
             <p className="text-muted-foreground mb-8">Mr Beast's example goals for opportunity filtering</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {EXAMPLE_GOALS.map((goal) => (
-                <div key={goal.id} className="flex flex-col items-center space-y-3 p-6 rounded-lg border bg-card">
-                  <div className="p-3 rounded-full bg-primary/10">
+                <div key={goal.id} className="flex flex-col items-center space-y-3 p-6 rounded-lg border bg-card/50 backdrop-blur-sm hover:bg-card/60 transition-colors">
+                  <div className="p-3 rounded-full bg-gradient-to-r from-primary/20 to-blue-500/20">
                     {goal.icon === 'Heart' && <Heart className="w-6 h-6 text-primary" />}
                     {goal.icon === 'Video' && <Video className="w-6 h-6 text-primary" />}
                     {goal.icon === 'Store' && <Store className="w-6 h-6 text-primary" />}
                   </div>
-                  <h3 className="text-lg font-semibold">{goal.title}</h3>
+                  <h3 className="text-lg font-semibold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
+                    {goal.title}
+                  </h3>
                   <p className="text-sm text-muted-foreground text-center">{goal.description}</p>
                 </div>
               ))}
             </div>
           </div>
-        </div>
-      </div>
-      
-      {/* Step 3: See Opportunities */}
-      <div className="w-full bg-gradient-to-b from-background to-muted/20 py-12 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-8">
-            <div className="inline-block rounded-full bg-primary/10 px-3 py-1 text-sm text-primary mb-4">
+
+          {/* Example Messages */}
+          <div className="max-w-4xl mx-auto space-y-4 text-center">
+            <div className="inline-block rounded-full bg-gradient-to-r from-primary/20 to-blue-500/20 px-3 py-1 text-sm text-primary">
               Step 3
             </div>
-            <h2 className="text-2xl font-semibold mb-2">See How AI Matches Opportunities to Mr Beast's Goals</h2>
-            <p className="text-muted-foreground">Our AI automatically categorizes and ranks incoming messages based on your goals</p>
+            <h2 className="text-2xl font-semibold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
+              Let AI Filter Your Opportunities
+            </h2>
+            <p className="text-muted-foreground mb-8">Example messages ranked by relevance to Mr Beast's goals</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {EXAMPLE_MESSAGES.map((message, index) => (
-              <ExampleMessage 
-                key={message.id} 
-                message={message} 
-                index={index}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
 
-      {/* Features Section */}
-      <div className="w-full bg-muted/20 py-12">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="max-w-2xl mx-auto text-center space-y-8">
-            <h2 className="text-2xl font-semibold">For Celebrity Teams</h2>
+          {/* Step 3: See Opportunities */}
+          <div className="w-full bg-gradient-to-b from-background to-muted/20 py-12 overflow-hidden">
+            <div className="max-w-7xl mx-auto px-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {EXAMPLE_MESSAGES.map((message, index) => (
+                  <ExampleMessage 
+                    key={message.id} 
+                    message={message} 
+                    index={index}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* For Celebrity Teams */}
+          <div className="max-w-4xl mx-auto space-y-4 text-center mt-16">
+            <h2 className="text-2xl font-semibold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
+              HyperAgent Is Built To Save Busy Celebrity Teams Hours Every Day
+            </h2>
             <ul className="space-y-4 text-lg text-muted-foreground">
               <li>✨ AI-powered opportunity scoring and prioritization</li>
               <li>🤝 Team collaboration on DM management</li>
