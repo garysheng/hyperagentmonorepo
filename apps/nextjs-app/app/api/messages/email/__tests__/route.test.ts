@@ -143,14 +143,15 @@ describe('Email Messages API Route', () => {
       celebrityName: 'Test Celebrity',
       subject: 'Re: Test Subject',
       text: 'test message',
-      threadId: 'thread-123'
+      threadId: 'thread-123',
+      messageId: undefined
     });
 
     // Verify message was stored
     expect(mockSupabase.from).toHaveBeenCalledWith(TableName.EMAIL_MESSAGES);
     expect((mockSupabase.from() as MockSupabaseMethods).insert).toHaveBeenCalledWith({
       thread_id: 'thread-123',
-      from_address: 'test@example.com',
+      from_address: 'postmaster+team+celebrity-123@hyperagent.so',
       to_addresses: ['test@example.com'],
       subject: 'Re: Test Subject',
       content: 'test message',
@@ -176,10 +177,10 @@ describe('Email Messages API Route', () => {
       }
     });
 
-    // Mock no existing thread
+    // Mock thread lookup (no existing thread)
     (mockSupabase.from() as MockSupabaseMethods).single.mockResolvedValueOnce({
       data: null,
-      error: { code: 'PGRST116' }
+      error: { code: 'PGRST116', message: 'No rows returned' }
     });
 
     // Mock thread creation
@@ -212,8 +213,13 @@ describe('Email Messages API Route', () => {
     const response = await POST(request);
     expect(response.status).toBe(200);
 
-    // Verify thread creation
+    // Verify opportunity lookup
+    expect(mockSupabase.from).toHaveBeenCalledWith(TableName.OPPORTUNITIES);
+
+    // Verify thread lookup
     expect(mockSupabase.from).toHaveBeenCalledWith(TableName.EMAIL_THREADS);
+
+    // Verify thread was created
     expect((mockSupabase.from() as MockSupabaseMethods).insert).toHaveBeenCalledWith({
       id: expect.any(String),
       opportunity_id: 'opp-123',
@@ -227,7 +233,7 @@ describe('Email Messages API Route', () => {
     expect((mockSupabase.from() as MockSupabaseMethods).insert).toHaveBeenCalledWith({
       thread_id: expect.any(String),
       from_address: 'test@example.com',
-      to_addresses: ['test@example.com'],
+      to_addresses: ['postmaster+team+celebrity-123@hyperagent.so'],
       subject: 'Initial Message',
       content: 'Initial message',
       direction: 'inbound',
@@ -235,10 +241,9 @@ describe('Email Messages API Route', () => {
     });
 
     // Verify outbound message was stored
-    expect(mockSupabase.from).toHaveBeenCalledWith(TableName.EMAIL_MESSAGES);
     expect((mockSupabase.from() as MockSupabaseMethods).insert).toHaveBeenCalledWith({
       thread_id: expect.any(String),
-      from_address: 'test@example.com',
+      from_address: 'postmaster+team+celebrity-123@hyperagent.so',
       to_addresses: ['test@example.com'],
       subject: 'Response from Team',
       content: 'First response',
@@ -249,7 +254,7 @@ describe('Email Messages API Route', () => {
   });
 
   it('should handle missing celebrity data', async () => {
-    // Mock opportunity lookup without celebrity data
+    // Mock opportunity lookup
     (mockSupabase.from() as MockSupabaseMethods).single.mockResolvedValueOnce({
       data: {
         sender_handle: 'test@example.com',
@@ -265,7 +270,7 @@ describe('Email Messages API Route', () => {
       method: 'POST',
       body: JSON.stringify({
         opportunityId: 'opp-123',
-        message: 'Test message'
+        message: 'test message'
       })
     });
 
@@ -276,7 +281,7 @@ describe('Email Messages API Route', () => {
   });
 
   it('should handle invalid recipient email', async () => {
-    // Mock opportunity lookup with invalid email
+    // Mock opportunity lookup
     (mockSupabase.from() as MockSupabaseMethods).single.mockResolvedValueOnce({
       data: {
         sender_handle: 'invalid-email',
@@ -295,7 +300,7 @@ describe('Email Messages API Route', () => {
       method: 'POST',
       body: JSON.stringify({
         opportunityId: 'opp-123',
-        message: 'Test message'
+        message: 'test message'
       })
     });
 

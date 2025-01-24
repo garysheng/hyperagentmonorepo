@@ -3,13 +3,15 @@ import { vi } from 'vitest';
 // Create mock instance that we can access in tests
 export const mockEmailService = {
   formatEmailAddress: vi.fn().mockReturnValue({
-    email: 'test@example.com',
-    formatted: 'Test Celebrity Team <test@example.com>'
+    email: 'postmaster+team+celebrity-123@hyperagent.so',
+    formatted: 'Test Celebrity Team <postmaster+team+celebrity-123@hyperagent.so>'
   }),
   sendEmail: vi.fn().mockResolvedValue({ id: 'test-message-id' })
 };
 
 // Mock the EmailService class
-vi.mock('@/lib/email/mailgun', () => ({
-  EmailService: vi.fn().mockImplementation(() => mockEmailService)
-})); 
+vi.mock('@/lib/email/mailgun', () => {
+  return {
+    EmailService: vi.fn().mockImplementation(() => mockEmailService)
+  };
+}); 

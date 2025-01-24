@@ -12,7 +12,7 @@ export default function ContactPage() {
     script.setAttribute('data-celebrity-id', '0ca0f921-7ccd-4975-9afb-3bed98367403')
     script.setAttribute('data-primary-color', '#0F172A')
     script.async = true
-    script.src = '/widget/v1.js'
+    script.src = `${window.location.origin}/widget/v1.js`
     
     document.body.appendChild(script)
 
