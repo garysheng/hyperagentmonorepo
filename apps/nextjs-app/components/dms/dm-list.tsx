@@ -37,6 +37,14 @@ function formatRelevanceScore(score: number): string {
 
 const isEmail = (handle: string) => handle.includes('@')
 
+function getRelevanceClass(score: number): string {
+  if (score >= 4.5) return "border-l-4 border-green-500 dark:border-green-400"
+  if (score >= 4) return "border-l-4 border-emerald-500 dark:border-emerald-400"
+  if (score >= 3) return "border-l-4 border-yellow-500 dark:border-yellow-400"
+  if (score >= 2) return "border-l-4 border-orange-500 dark:border-orange-400"
+  return "border-l-4 border-red-500 dark:border-red-400"
+}
+
 export function DMList({ dms, selectedDM, onSelectDM, isLoading }: DMListProps) {
   const { data: teamMembers = [] } = useTeamMembers()
 
@@ -75,7 +83,8 @@ export function DMList({ dms, selectedDM, onSelectDM, isLoading }: DMListProps) 
               key={dm.id}
               className={cn(
                 "cursor-pointer hover:bg-accent transition-colors",
-                selectedDM?.id === dm.id && "bg-accent"
+                selectedDM?.id === dm.id && "bg-accent",
+                getRelevanceClass(dm.relevance_score)
               )}
               onClick={() => onSelectDM(dm)}
             >
