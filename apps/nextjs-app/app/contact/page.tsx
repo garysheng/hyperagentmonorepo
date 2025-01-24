@@ -3,8 +3,8 @@
 import { useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 
-// Widget server URL - update this with your actual widget server domain
-const WIDGET_SERVER_URL = process.env.NEXT_PUBLIC_WIDGET_SERVER_URL || 'https://widget.hyperagent.so'
+// Widget server URL is now fixed since we have a dedicated domain
+const WIDGET_SERVER_URL = 'https://widget.hyperagent.so'
 
 export default function ContactPage() {
   useEffect(() => {
@@ -28,7 +28,7 @@ export default function ContactPage() {
           console.log('Widget script loaded successfully')
         }
         
-        // Always use the widget server URL
+        // Use the dedicated widget server URL
         const widgetUrl = `${WIDGET_SERVER_URL}/widget/v1.js`
         console.log('Loading widget from:', widgetUrl)
         
