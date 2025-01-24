@@ -5,44 +5,62 @@ import { Card } from '@/components/ui/card'
 
 export default function ContactPage() {
   useEffect(() => {
-    // Load widget script
-    const script = document.createElement('script')
-    
-    // Set all attributes before setting src to prevent race condition
-    script.setAttribute('data-celebrity-id', '0ca0f921-7ccd-4975-9afb-3bed98367403')
-    script.setAttribute('data-primary-color', '#0F172A')
-    script.async = true
-    
-    // Add error handling and debugging
-    script.onerror = (error) => {
-      console.error('Failed to load widget script:', error)
-    }
-    
-    // Use absolute URL in production
-    const widgetUrl = process.env.NEXT_PUBLIC_SITE_URL 
-      ? `https://${process.env.NEXT_PUBLIC_SITE_URL}/widget/v1.js`
-      : `${window.location.origin}/widget/v1.js`
-      
-    console.log('Loading widget from:', widgetUrl)
-    script.src = widgetUrl
-    
-    document.body.appendChild(script)
+    const loadWidget = async () => {
+      try {
+        // Load widget script
+        const script = document.createElement('script')
+        
+        // Set all attributes before setting src to prevent race condition
+        script.setAttribute('data-celebrity-id', '0ca0f921-7ccd-4975-9afb-3bed98367403')
+        script.setAttribute('data-primary-color', '#0F172A')
+        script.async = true
+        
+        // Add error handling and debugging
+        script.onerror = (error) => {
+          console.error('Failed to load widget script. Error:', error)
+          console.error('Script src was:', script.src)
+        }
 
-    // Add a timeout to check if widget container was created
-    setTimeout(() => {
-      const container = document.getElementById('hyperagent-chat-widget')
-      if (!container) {
-        console.error('Widget container not found after 5 seconds')
+        script.onload = () => {
+          console.log('Widget script loaded successfully')
+        }
+        
+        // Use absolute URL in production, local in development
+        const isDev = process.env.NODE_ENV === 'development'
+        const widgetUrl = isDev 
+          ? '/widget/v1.js'  // Use relative path in development
+          : `${process.env.NEXT_PUBLIC_SITE_URL}/widget/v1.js`
+        
+        console.log('Loading widget from:', widgetUrl)
+        console.log('Current environment:', process.env.NODE_ENV)
+        
+        script.src = widgetUrl
+        document.body.appendChild(script)
+
+        // Add a timeout to check if widget container was created
+        setTimeout(() => {
+          const container = document.getElementById('hyperagent-chat-widget')
+          if (!container) {
+            console.error('Widget container not found after 5 seconds')
+            console.log('Window HyperAgentWidget:', window.HyperAgentWidget)
+          }
+        }, 5000)
+      } catch (error) {
+        console.error('Error in widget initialization:', error)
       }
-    }, 5000)
+    }
+
+    loadWidget()
 
     return () => {
       // Cleanup on unmount
       try {
-        document.body.removeChild(script)
+        const scripts = document.querySelectorAll('script[src*="widget/v1.js"]')
+        scripts.forEach(script => script.remove())
+        
         const container = document.getElementById('hyperagent-chat-widget')
         if (container) {
-          document.body.removeChild(container)
+          container.remove()
         }
       } catch (error) {
         console.error('Error cleaning up widget:', error)

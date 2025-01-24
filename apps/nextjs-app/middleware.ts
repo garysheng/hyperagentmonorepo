@@ -6,7 +6,7 @@ const PUBLIC_ROUTES = ['/', '/login', '/signup', '/auth/confirm', '/contact']
 const CREATE_CELEBRITY_ROUTE = '/create-celebrity'
 const SET_GOALS_ROUTE = '/set-goals'
 const AUTH_ROUTES = ['/auth', '/api/auth']
-const STATIC_ROUTES = ['/_next', '/favicon.ico']
+const STATIC_ROUTES = ['/_next', '/favicon.ico', '/widget']
 
 // API routes that require authentication
 const PROTECTED_API_ROUTES = [
@@ -19,9 +19,10 @@ const PROTECTED_API_ROUTES = [
 export async function middleware(request: NextRequest) {
   console.log('🚀 Middleware running for path:', request.nextUrl.pathname)
 
-  // Skip middleware for static routes
-  if (STATIC_ROUTES.some(route => request.nextUrl.pathname.startsWith(route))) {
-    console.log('⏩ Skipping middleware for static route')
+  // Skip middleware for static routes and widget files
+  if (STATIC_ROUTES.some(route => request.nextUrl.pathname.startsWith(route)) || 
+      request.nextUrl.pathname.includes('/widget/')) {
+    console.log('⏩ Skipping middleware for static route or widget')
     return NextResponse.next()
   }
 
