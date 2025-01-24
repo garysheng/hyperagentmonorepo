@@ -32,6 +32,19 @@ const nextConfig = {
       },
     ]
   },
+
+  // Ensure static files are handled correctly
+  output: 'standalone',
+  
+  // Add rewrites to handle widget files
+  async rewrites() {
+    return [
+      {
+        source: '/widget/:path*',
+        destination: '/widget/:path*',
+      },
+    ]
+  },
 };
 
 export default nextConfig; 
