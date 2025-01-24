@@ -176,11 +176,11 @@ export default function HomePage() {
           <div className="text-center max-w-3xl mx-auto mt-10">
             <div className="flex items-center justify-center gap-2 mb-4">
               <Logo size={48} />
-              <h1 className="text-5xl font-bold bg-gradient-to-r from-primary via-blue-500 to-primary bg-clip-text text-transparent">
+              <h1 className="text-5xl font-bold leading-tight bg-gradient-to-r from-primary via-blue-500 to-primary bg-clip-text text-transparent">
                 HyperAgent
               </h1>
             </div>
-            <p className="text-xl mb-12 text-muted-foreground">
+            <p className="text-xl leading-relaxed mb-12 text-muted-foreground">
               AI-powered DM management for celebrities and public figures.<br />
               Never miss an important opportunity again.
             </p>
@@ -199,12 +199,12 @@ export default function HomePage() {
 
           {/* Sign Up Options */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-16">
-            <div className="relative flex flex-col items-center space-y-4 rounded-lg border bg-card/50 backdrop-blur-sm p-6 hover:bg-card/60 transition-colors">
+            <div className="relative flex flex-col items-center space-y-4 rounded-lg border bg-card/50 backdrop-blur-sm p-8 hover:bg-card/60 transition-colors">
               <Logo size={32} className="mb-2" />
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
+              <h2 className="text-2xl font-bold leading-tight bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
                 Celebrity Admin
               </h2>
-              <p className="text-muted-foreground text-center">
+              <p className="text-muted-foreground text-center leading-relaxed">
                 Create a new account to manage your own Twitter DMs and build your team.
               </p>
               <Button asChild size="lg" className="w-full mt-4 bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90">
@@ -215,12 +215,12 @@ export default function HomePage() {
               </Button>
             </div>
 
-            <div className="relative flex flex-col items-center space-y-4 rounded-lg border bg-card/50 backdrop-blur-sm p-6 hover:bg-card/60 transition-colors">
+            <div className="relative flex flex-col items-center space-y-4 rounded-lg border bg-card/50 backdrop-blur-sm p-8 hover:bg-card/60 transition-colors">
               <MessageSquare className="h-8 w-8 text-primary mb-2" />
               <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
                 Team Member
               </h2>
-              <p className="text-muted-foreground text-center">
+              <p className="text-muted-foreground text-center leading-relaxed">
                 Join an existing celebrity's team using an invite code from your admin.
               </p>
               <Button asChild variant="outline" size="lg" className="w-full mt-4 border-primary/20 hover:bg-primary/10">
@@ -234,7 +234,7 @@ export default function HomePage() {
 
           {/* Step 2: Set Goals */}
           <div className="max-w-4xl mx-auto space-y-4 text-center">
-            <div className="inline-block rounded-full bg-gradient-to-r from-primary/20 to-blue-500/20 px-3 py-1 text-sm text-primary">
+            <div className="inline-block rounded-full bg-gradient-to-r from-primary/20 to-blue-500/20 px-3 py-1.5 text-sm text-primary">
               Step 2
             </div>
             <h2 className="text-2xl font-semibold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
@@ -243,16 +243,16 @@ export default function HomePage() {
             <p className="text-muted-foreground mb-8">Mr Beast's example goals for opportunity filtering</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {EXAMPLE_GOALS.map((goal) => (
-                <div key={goal.id} className="flex flex-col items-center space-y-3 p-6 rounded-lg border bg-card/50 backdrop-blur-sm hover:bg-card/60 transition-colors">
+                <div key={goal.id} className="flex flex-col items-center space-y-3 p-8 rounded-lg border bg-card/50 backdrop-blur-sm hover:bg-card/60 transition-colors">
                   <div className="p-3 rounded-full bg-gradient-to-r from-primary/20 to-blue-500/20">
                     {goal.icon === 'Heart' && <Heart className="w-6 h-6 text-primary" />}
                     {goal.icon === 'Video' && <Video className="w-6 h-6 text-primary" />}
                     {goal.icon === 'Store' && <Store className="w-6 h-6 text-primary" />}
                   </div>
-                  <h3 className="text-lg font-semibold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
+                  <h3 className="text-lg font-semibold leading-tight bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
                     {goal.title}
                   </h3>
-                  <p className="text-sm text-muted-foreground text-center">{goal.description}</p>
+                  <p className="text-sm text-muted-foreground text-center leading-relaxed">{goal.description}</p>
                 </div>
               ))}
             </div>
@@ -260,7 +260,7 @@ export default function HomePage() {
 
           {/* Example Messages */}
           <div className="max-w-4xl mx-auto space-y-4 text-center">
-            <div className="inline-block rounded-full bg-gradient-to-r from-primary/20 to-blue-500/20 px-3 py-1 text-sm text-primary">
+            <div className="inline-block rounded-full bg-gradient-to-r from-primary/20 to-blue-500/20 px-3 py-1.5 text-sm text-primary">
               Step 3
             </div>
             <h2 className="text-2xl font-semibold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
@@ -286,10 +286,10 @@ export default function HomePage() {
 
           {/* For Celebrity Teams */}
           <div className="max-w-4xl mx-auto space-y-4 text-center mt-16">
-            <h2 className="text-2xl font-semibold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
+            <h2 className="text-2xl font-semibold leading-tight bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
               HyperAgent Is Built To Save Busy Celebrity Teams Hours Every Day
             </h2>
-            <ul className="space-y-4 text-lg text-muted-foreground">
+            <ul className="space-y-4 text-lg leading-relaxed text-muted-foreground">
               <li>✨ AI-powered opportunity scoring and prioritization</li>
               <li>🤝 Team collaboration on DM management</li>
               <li>📊 Analytics and insights on engagement</li>
