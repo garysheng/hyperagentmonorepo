@@ -1,93 +1,49 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
-export async function GET(req: Request) {
+export async function GET(request: Request) {
   try {
-    // Get celebrityId from query params
-    const { searchParams } = new URL(req.url)
+    const { searchParams } = new URL(request.url)
     const celebrityId = searchParams.get('celebrityId')
 
-    console.log('Fetching goals for celebrity:', celebrityId)
-
     if (!celebrityId) {
-      console.error('Missing celebrityId in request')
       return NextResponse.json(
         { error: 'Celebrity ID is required' },
         { status: 400 }
       )
     }
 
-    console.log('Creating Supabase client...')
-    let supabase
-    try {
-      supabase = await createClient()
-    } catch (error) {
-      console.error('Failed to create Supabase client:', error)
-      return NextResponse.json(
-        { error: 'Database connection error', details: error instanceof Error ? error.message : 'Unknown error' },
-        { status: 500 }
-      )
-    }
-    console.log('Supabase client created successfully')
+    console.log('Fetching goals for celebrity:', celebrityId)
 
-    // First check if celebrity exists
-    console.log('Checking if celebrity exists...')
-    const { data: celebrity, error: celebrityError } = await supabase
-      .from('celebrities')
-      .select('id')
-      .eq('id', celebrityId)
-      .single()
+    const supabase = await createClient()
 
-    if (celebrityError) {
-      console.error('Error checking celebrity:', celebrityError)
-      return NextResponse.json(
-        { error: 'Failed to check celebrity', details: celebrityError.message },
-        { status: 500 }
-      )
-    }
-
-    if (!celebrity) {
-      console.error('Celebrity not found:', celebrityId)
-      return NextResponse.json(
-        { error: 'Celebrity not found' },
-        { status: 404 }
-      )
-    }
-
-    console.log('Found celebrity:', celebrity.id)
-
-    // Fetch goals for the celebrity
-    console.log('Fetching goals...')
-    const { data: goals, error: goalsError } = await supabase
+    const { data: rawGoals, error } = await supabase
       .from('goals')
-      .select('id, name, description, priority, created_at')
+      .select('*')
       .eq('celebrity_id', celebrityId)
       .order('created_at', { ascending: false })
 
-    if (goalsError) {
-      console.error('Error fetching goals:', goalsError)
+    if (error) {
+      console.error('Error fetching goals:', error)
       return NextResponse.json(
-        { error: 'Failed to fetch goals', details: goalsError.message },
+        { error: 'Failed to fetch goals' },
         { status: 500 }
       )
     }
 
-    console.log('Found goals:', goals?.length || 0)
+    // Map the goals to the expected format
+    const goals = rawGoals.map(goal => ({
+      title: goal.name || 'Untitled Goal',
+      description: goal.description || ''
+    }))
 
-    return NextResponse.json({
-      success: true,
-      goals: goals?.map(goal => ({
-        id: goal.id,
-        title: goal.name,
-        description: goal.description,
-        priority: goal.priority,
-        created_at: goal.created_at
-      })) || []
-    })
+    console.log('Found goals:', goals)
+
+    return NextResponse.json({ goals })
   } catch (error) {
-    console.error('Error in goals endpoint:', error)
+    console.error('Unexpected error:', error)
     return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

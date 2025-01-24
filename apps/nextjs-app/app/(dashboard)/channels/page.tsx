@@ -2,12 +2,13 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ConnectTwitterButton } from '@/components/twitter/connect-button'
-import { Code } from '@/components/ui/code'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Info, Twitter, CheckCircle2 } from 'lucide-react'
+import { Info, Twitter, CheckCircle2, ExternalLink } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { Badge } from '@/components/ui/badge'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
 
 export default function ChannelsPage() {
   const supabase = createClient()
@@ -44,17 +45,12 @@ export default function ChannelsPage() {
     }
   })
 
-  const widgetCode = `<script
-  src="${process.env.NEXT_PUBLIC_APP_URL}/widget.js"
-  data-celebrity-id="${celebrityId || 'YOUR_CELEBRITY_ID'}"
-></script>`
-
   return (
     <div className="container space-y-8 py-8 pl-6">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">Channels</h1>
         <p className="text-muted-foreground">
-          Connect your social media accounts and install the chat widget
+          Connect your social media accounts and manage your contact channels
         </p>
       </div>
 
@@ -100,31 +96,40 @@ export default function ChannelsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Chat Widget</CardTitle>
+            <CardTitle>Contact Page</CardTitle>
             <CardDescription>
-              Install our chat widget on your website to collect messages
+              Your public contact page where people can reach out with opportunities
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertTitle>Installation Instructions</AlertTitle>
-              <AlertDescription>
-                Add the following script tag to your website&apos;s HTML, ideally just before the closing &lt;/body&gt; tag.
-              </AlertDescription>
-            </Alert>
-
-            <Code className="text-sm">
-              {widgetCode}
-            </Code>
-
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertTitle>Need help?</AlertTitle>
-              <AlertDescription>
-                Contact our support team for assistance with widget installation or customization.
-              </AlertDescription>
-            </Alert>
+          <CardContent>
+            {celebrityId ? (
+              <>
+                <Alert className="mb-4">
+                  <Info className="h-4 w-4" />
+                  <AlertTitle className="flex items-center justify-between">
+                    <span>Your Contact Page</span>
+                    <Link href={`/contact/${celebrityId}`} target="_blank">
+                      <Button variant="outline" size="sm" className="gap-2">
+                        <span>View Page</span>
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </AlertTitle>
+                  <AlertDescription>
+                    Share this page with people who want to propose business opportunities or collaborations. 
+                    All messages will be collected and managed through your HyperAgent dashboard.
+                  </AlertDescription>
+                </Alert>
+              </>
+            ) : (
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertTitle>Setup Required</AlertTitle>
+                <AlertDescription>
+                  Your contact page is not set up yet. Please contact support for assistance.
+                </AlertDescription>
+              </Alert>
+            )}
           </CardContent>
         </Card>
       </div>

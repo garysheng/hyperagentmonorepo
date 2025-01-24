@@ -1,8 +1,8 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-// Define routes that don't require authentication or celebrity association
-const PUBLIC_ROUTES = ['/', '/login', '/signup', '/auth/confirm', '/contact']
+// Routes that don't require auth
+const PUBLIC_ROUTES = ['/', '/login', '/signup', '/auth/confirm', '/contact', '/api/widget']
 const CREATE_CELEBRITY_ROUTE = '/create-celebrity'
 const SET_GOALS_ROUTE = '/set-goals'
 const AUTH_ROUTES = ['/auth', '/api/auth']
@@ -26,7 +26,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  const pathname = request.nextUrl.pathname
+  const { pathname } = request.nextUrl
   const isPublicRoute = PUBLIC_ROUTES.some(route => pathname === route)
   const isAuthRoute = AUTH_ROUTES.some(route => pathname.startsWith(route))
   const isApiRoute = pathname.startsWith('/api/')
@@ -40,18 +40,42 @@ export async function middleware(request: NextRequest) {
     pathname
   })
 
-  // Allow public routes, auth routes, and non-protected API routes without any checks
-  if (isPublicRoute || isAuthRoute || (isApiRoute && !isProtectedApiRoute)) {
-    console.log('✅ Allowing public/auth/api route access')
-    return NextResponse.next()
+  // Create response early so we can modify headers
+  const response = NextResponse.next()
+
+  // Add CSP header
+  const cspHeader = `
+    default-src 'self';
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://widget.hyperagent.so;
+    style-src 'self' 'unsafe-inline' https://widget.hyperagent.so;
+    img-src 'self' data: https:;
+    font-src 'self';
+    connect-src 'self' https://widget.hyperagent.so https://hyperagent.so https://*.hyperagent.so https://*.supabase.co;
+    frame-src 'self';
+    frame-ancestors 'self';
+  `.replace(/\s+/g, ' ').trim()
+
+  // Only set CSP header for HTML responses
+  const contentType = response.headers.get('content-type')
+  if (!contentType || contentType.includes('text/html')) {
+    response.headers.set('Content-Security-Policy', cspHeader)
   }
 
-  // For protected routes, create a new response
-  const response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  })
+  // Add CORS headers for widget API endpoints
+  if (request.nextUrl.pathname.startsWith('/api/widget')) {
+    response.headers.set('Access-Control-Allow-Origin', '*')
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type')
+    
+    // Return early for widget API endpoints - no auth needed
+    return response
+  }
+
+  // Skip auth for public routes
+  if (isPublicRoute || isAuthRoute || (isApiRoute && !isProtectedApiRoute)) {
+    console.log('✅ Allowing public/auth/api route access')
+    return response
+  }
 
   try {
     // Create Supabase client
@@ -128,29 +152,7 @@ export async function middleware(request: NextRequest) {
     // User is authenticated and has required data - allow access
     console.log('✅ All checks passed - allowing access')
 
-    // Add CORS headers for widget API endpoints
-    if (request.nextUrl.pathname.startsWith('/api/widget')) {
-      response.headers.set('Access-Control-Allow-Origin', '*')
-      response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-      response.headers.set('Access-Control-Allow-Headers', 'Content-Type')
-    }
-
-    // Add CSP header
-    const cspHeader = `
-      default-src 'self';
-      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://widget.hyperagent.so;
-      style-src 'self' 'unsafe-inline' https://widget.hyperagent.so;
-      img-src 'self' data: https:;
-      font-src 'self';
-      connect-src 'self' https://widget.hyperagent.so https://hyperagent.so https://*.hyperagent.so;
-      frame-src 'self';
-      frame-ancestors 'self';
-    `.replace(/\s+/g, ' ').trim()
-
-    response.headers.set('Content-Security-Policy', cspHeader)
-
     return response
-
   } catch (error) {
     console.error('🔥 Auth error:', error)
     // On error, redirect to login
