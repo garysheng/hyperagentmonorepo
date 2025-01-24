@@ -18,7 +18,7 @@ type MockSupabaseMethods = {
 };
 
 type MockSupabaseClient = {
-  from: Mock<any, MockSupabaseMethods>;
+  from: Mock<[], MockSupabaseMethods>;
 };
 
 // Mock dependencies
