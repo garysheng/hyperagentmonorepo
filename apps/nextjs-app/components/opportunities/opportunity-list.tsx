@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { useState, useEffect } from 'react'
-import { Twitter, Mail, AlertCircle } from 'lucide-react'
+import { Twitter, Mail, AlertCircle, Send, X } from 'lucide-react'
 import { ResponseGenerator } from '@/components/ui/response-generator'
 import { useCelebrity } from '@/hooks/use-celebrity'
 import { EmailThreadDialog } from '@/components/email/email-thread-dialog'
@@ -72,35 +72,44 @@ export function OpportunityList({ opportunities, isLoading, onSendMessage }: Opp
 
   const handleCardClick = async (opportunity: Opportunity) => {
     console.log('Card clicked:', opportunity.status);
-    if (opportunity.status === 'conversation_started') {
-      try {
-        const response = await fetch(`/api/messages/thread?opportunityId=${opportunity.id}`)
-        if (!response.ok) {
-          const error = await response.json()
-          console.error('Error fetching thread:', error)
-          return
-        }
-
-        const { thread, messages } = await response.json()
-        console.log('Thread data:', { thread, messages })
-
-        if (messages && messages.length > 0) {
-          setMessages(messages)
-          setSelectedOpportunity(opportunity)
-          setIsThreadDialogOpen(true)
-          
-          // Update last message direction
-          const lastMessage = messages[messages.length - 1]
-          setLastMessageDirections(prev => ({
-            ...prev,
-            [opportunity.id]: lastMessage.direction
-          }))
-        }
-      } catch (error) {
-        console.error('Error fetching thread data:', error)
+    try {
+      // For non-started conversations, just show the dialog with empty messages
+      if (opportunity.status !== 'conversation_started') {
+        setMessages([])
+        setSelectedOpportunity(opportunity)
+        setIsThreadDialogOpen(true)
+        return
       }
-    } else {
-      handleOpenDialog(opportunity)
+
+      const response = await fetch(`/api/messages/thread?opportunityId=${opportunity.id}`)
+      const data = await response.json()
+      
+      if (!response.ok) {
+        console.error('Error fetching thread:', data.error || 'Unknown error')
+        return
+      }
+
+      const { thread, messages } = data
+      console.log('Thread data:', { thread, messages })
+
+      setMessages(messages || [])
+      setSelectedOpportunity(opportunity)
+      setIsThreadDialogOpen(true)
+      
+      // Update last message direction if there are messages
+      if (messages && messages.length > 0) {
+        const lastMessage = messages[messages.length - 1]
+        setLastMessageDirections(prev => ({
+          ...prev,
+          [opportunity.id]: lastMessage.direction
+        }))
+      }
+    } catch (error) {
+      console.error('Error fetching thread data:', error)
+      // Still show the dialog with empty messages in case of error
+      setMessages([])
+      setSelectedOpportunity(opportunity)
+      setIsThreadDialogOpen(true)
     }
   }
 
@@ -266,73 +275,65 @@ export function OpportunityList({ opportunities, isLoading, onSendMessage }: Opp
                     Started {new Date(opportunity.created_at).toLocaleDateString()}
                   </div>
                   {opportunity.status !== 'conversation_started' && (
-                    <Dialog open={state.isOpen} onOpenChange={(open) => {
-                      if (open) {
-                        handleOpenDialog(opportunity)
-                      } else {
-                        handleCloseDialog(opportunity.id)
-                      }
-                    }}>
-                      <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
-                        <Button size="sm">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm" onClick={(e) => {
+                          e.stopPropagation();
+                        }}>
                           Send First Response
                         </Button>
                       </DialogTrigger>
                       <DialogContent className="max-w-2xl">
-                        <DialogHeader>
-                          <DialogTitle className="flex items-center gap-2">
-                            {getMessageIcon(opportunity.source)}
-                            Send First Response via {getMessageMethod(opportunity.source)}
+                        <DialogHeader className="border-b pb-4">
+                          <DialogTitle className="flex items-center gap-2 text-xl">
+                            <Mail className="h-5 w-5 text-blue-500" />
+                            <span className="bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
+                              Send First Response via {opportunity.source === 'TWITTER_DM' ? 'Twitter DM' : 'Email'}
+                            </span>
                           </DialogTitle>
                         </DialogHeader>
-                        <div className="space-y-4">
-                          <div>
-                            <p className="font-medium">To: {opportunity.sender_handle}</p>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {opportunity.initial_content}
-                            </p>
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Textarea
-                                placeholder="Type your message here..."
-                                value={state.message}
-                                onChange={(e) => handleMessageChange(opportunity.id, e.target.value)}
-                                rows={4}
-                                className="min-h-[200px]"
-                              />
-                              <div className="flex justify-end gap-2 mt-4">
-                                <Button
-                                  variant="outline"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    handleCloseDialog(opportunity.id)
-                                  }}
-                                >
-                                  Cancel
-                                </Button>
-                                <Button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    handleSend(opportunity)
-                                  }}
-                                  disabled={state.isSending || !state.message.trim()}
-                                  className="flex items-center gap-2"
-                                >
-                                  {getMessageIcon(opportunity.source)}
-                                  {state.isSending ? 'Sending...' : 'Send'}
-                                </Button>
-                              </div>
+                        
+                        <div className="py-4">
+                          <div className="mb-6">
+                            <div className="text-sm font-medium text-blue-400 mb-1">To: {opportunity.sender_handle}</div>
+                            <div className="p-4 rounded-lg bg-muted/50 border border-blue-500/20">
+                              <p className="whitespace-pre-wrap text-sm">{opportunity.initial_content}</p>
                             </div>
-                            <div>
-                              {celebrity && (
-                                <ResponseGenerator
-                                  type={opportunity.source === 'TWITTER_DM' ? 'tweet' : 'email'}
-                                  content={opportunity.initial_content}
-                                  celebrityId={celebrity.id}
-                                  onResponseGenerated={(response) => handleMessageChange(opportunity.id, response)}
-                                />
-                              )}
+                          </div>
+
+                          <div className="space-y-4">
+                            <Textarea
+                              value={state.message}
+                              onChange={(e) => handleMessageChange(opportunity.id, e.target.value)}
+                              placeholder="Type your response..."
+                              className="min-h-[150px] border-blue-500/20 focus:border-blue-500 transition-colors"
+                            />
+                            <div className="flex justify-end gap-2">
+                              <ResponseGenerator
+                                content={opportunity.initial_content}
+                                type={opportunity.source === 'TWITTER_DM' ? 'tweet' : 'email'}
+                                celebrityId={opportunity.celebrity_id}
+                                onResponseGenerated={(response) => handleMessageChange(opportunity.id, response)}
+                              />
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSend(opportunity);
+                                }}
+                                disabled={state.isSending}
+                                className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+                              >
+                                {state.isSending ? (
+                                  <>
+                                    <span className="animate-pulse">Sending...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Send className="h-4 w-4 mr-2" />
+                                    Send Response
+                                  </>
+                                )}
+                              </Button>
                             </div>
                           </div>
                         </div>
