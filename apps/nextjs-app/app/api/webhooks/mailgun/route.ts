@@ -39,11 +39,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Extract email data
-    const sender = formData.get('sender') as string;
+    const fromAddress = formData.get('sender') as string;
+    const toAddresses = (formData.get('recipient') as string).split(',').map(addr => addr.trim());
     const subject = formData.get('subject') as string;
-    const bodyPlain = formData.get('body-plain') as string;
-    const strippedText = formData.get('stripped-text') as string;
-    const messageId = formData.get('Message-Id') as string;
+    const content = formData.get('stripped-text') || formData.get('body-plain') as string;
+    const mailgunMessageId = formData.get('Message-Id') as string;
 
     const supabase = await createClient();
 
@@ -51,14 +51,14 @@ export async function POST(req: NextRequest) {
     const { data: existingOpportunity } = await supabase
       .from(TableName.OPPORTUNITIES)
       .select('id, status')
-      .eq('sender_handle', sender)
+      .eq('sender_handle', fromAddress)
       .eq('source', 'WIDGET')
       .order('created_at', { ascending: false })
       .limit(1)
       .single();
 
     if (!existingOpportunity) {
-      console.error('No existing opportunity found for sender:', sender);
+      console.error('No existing opportunity found for sender:', fromAddress);
       return NextResponse.json({ error: 'Opportunity not found' }, { status: 404 });
     }
 
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
         .from(TableName.EMAIL_THREADS)
         .insert({
           opportunity_id: existingOpportunity.id,
-          subject: subject || 'No Subject',
+          subject,
         })
         .select()
         .single();
@@ -95,15 +95,17 @@ export async function POST(req: NextRequest) {
       .from(TableName.EMAIL_MESSAGES)
       .insert({
         thread_id: threadId,
-        opportunity_id: existingOpportunity.id,
-        content: strippedText || bodyPlain, // Prefer stripped text if available
-        direction: 'inbound',
-        external_id: messageId,
+        from_address: fromAddress,
+        to_addresses: toAddresses,
+        subject,
+        content,
+        mailgun_message_id: mailgunMessageId,
+        direction: 'inbound'
       });
 
     if (messageError) {
       console.error('Failed to create message:', messageError);
-      return NextResponse.json({ error: 'Failed to create message' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create message' }, { status: 500 });
     }
 
     // Update opportunity status if needed

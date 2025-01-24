@@ -98,6 +98,7 @@ describe('Mailgun Webhook Handler', () => {
     token: 'test-token',
     signature: '7536e0dd9c8b2d16f1d1a6a3c2c4a5b6c7d8e9f0',
     sender: 'test@example.com',
+    recipient: 'recipient@example.com',
     subject: 'Test Subject',
     'body-plain': 'Test message body',
     'stripped-text': 'Stripped test message',
@@ -157,10 +158,12 @@ describe('Mailgun Webhook Handler', () => {
     expect(mockSupabase.from).toHaveBeenCalledWith(TableName.EMAIL_MESSAGES);
     expect(mockSupabase.from().insert).toHaveBeenCalledWith({
       thread_id: 'thread-123',
-      opportunity_id: 'opp-123',
+      from_address: 'test@example.com',
+      to_addresses: ['recipient@example.com'],
+      subject: 'Test Subject',
       content: 'Stripped test message',
-      direction: 'inbound',
-      external_id: '<test123@mailgun.org>',
+      mailgun_message_id: '<test123@mailgun.org>',
+      direction: 'inbound'
     });
   });
 
