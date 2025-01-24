@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
       .from(TableName.OPPORTUNITIES)
       .select('id, status')
       .eq('sender_handle', sender)
-      .eq('source', 'EMAIL')
+      .eq('source', 'WIDGET')
       .order('created_at', { ascending: false })
       .limit(1)
       .single();

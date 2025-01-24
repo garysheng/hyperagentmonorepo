@@ -1,8 +1,25 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import { POST } from '../route';
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest } from 'next/server';
 import { TableName } from '@/types';
+import { SupabaseClient } from '@supabase/supabase-js';
+
+// Define types for our mocks
+type MockSupabaseMethods = {
+  select: Mock;
+  insert: Mock;
+  update: Mock;
+  eq: Mock;
+  order: Mock;
+  limit: Mock;
+  single: Mock;
+  is: Mock;
+};
+
+type MockSupabaseClient = {
+  from: Mock<any, MockSupabaseMethods>;
+};
 
 // Mock dependencies
 vi.mock('@/lib/supabase/server');
@@ -16,13 +33,13 @@ vi.mock('crypto', () => ({
 }));
 
 describe('Mailgun Webhook Handler', () => {
-  let mockSupabase: any;
+  let mockSupabase: MockSupabaseClient;
 
   beforeEach(() => {
     vi.clearAllMocks();
 
     // Create a fresh mock for each test with all required methods
-    const mockMethods = {
+    const mockMethods: MockSupabaseMethods = {
       select: vi.fn().mockReturnThis(),
       insert: vi.fn().mockReturnThis(),
       update: vi.fn().mockReturnThis(),
@@ -64,7 +81,7 @@ describe('Mailgun Webhook Handler', () => {
       eq: vi.fn().mockResolvedValue({ error: null })
     });
 
-    vi.mocked(createClient).mockResolvedValue(mockSupabase);
+    vi.mocked(createClient).mockResolvedValue(mockSupabase as unknown as SupabaseClient);
     process.env.MAILGUN_SIGNING_KEY = 'test-signing-key';
   });
 
@@ -107,7 +124,8 @@ describe('Mailgun Webhook Handler', () => {
       .mockResolvedValueOnce({ 
         data: { 
           id: 'opp-123', 
-          status: 'new' 
+          status: 'new',
+          source: 'WIDGET'
         } 
       })
       .mockResolvedValueOnce({ 
@@ -152,7 +170,8 @@ describe('Mailgun Webhook Handler', () => {
       .mockResolvedValueOnce({ 
         data: { 
           id: 'opp-123', 
-          status: 'new' 
+          status: 'new',
+          source: 'WIDGET'
         } 
       })
       .mockResolvedValueOnce({ 
@@ -217,8 +236,18 @@ describe('Mailgun Webhook Handler', () => {
   it('should handle errors during message creation', async () => {
     // Mock existing opportunity and thread
     mockSupabase.from().single
-      .mockResolvedValueOnce({ data: { id: 'opp-123', status: 'new' } })
-      .mockResolvedValueOnce({ data: { id: 'thread-123' } });
+      .mockResolvedValueOnce({ 
+        data: { 
+          id: 'opp-123', 
+          status: 'new',
+          source: 'WIDGET'
+        } 
+      })
+      .mockResolvedValueOnce({ 
+        data: { 
+          id: 'thread-123' 
+        } 
+      });
 
     // Mock message creation error
     mockSupabase.from().insert.mockResolvedValueOnce({ error: { message: 'Database error' } });
