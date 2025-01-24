@@ -13,7 +13,11 @@ export default function DMsPage() {
   const { user, loading } = useAuth()
   const [selectedDM, setSelectedDM] = useState<DM | null>(null)
   const [filters, setFilters] = useState<DMFiltersType>({
-    status: 'all',
+    statuses: {
+      pending: true,    // Show pending by default
+      approved: false,  // Hide approved by default
+      rejected: false,  // Hide rejected by default
+    },
     minRelevanceScore: -1,
     assignedTo: 'all',
     needsDiscussion: false
@@ -25,21 +29,43 @@ export default function DMsPage() {
     enabled: !!user,
   })
 
-  const filteredDMs = dms.filter((dm) => {
-    if (filters.status !== 'all' && dm.status !== filters.status) {
-      return false
-    }
-    if (dm.relevance_score < filters.minRelevanceScore) {
-      return false
-    }
-    if (filters.assignedTo !== 'all' && dm.assigned_to !== filters.assignedTo) {
-      return false
-    }
-    if (filters.needsDiscussion && !dm.needs_discussion) {
-      return false
-    }
-    return true
-  })
+  const filteredDMs = dms
+    // Filter based on selected statuses
+    .filter(dm => {
+      // If no statuses are selected, show nothing
+      if (!filters.statuses.pending && !filters.statuses.approved && !filters.statuses.rejected) {
+        return false;
+      }
+      
+      // Check if the DM's status matches any of the selected statuses
+      switch (dm.status) {
+        case 'pending':
+          return filters.statuses.pending;
+        case 'approved':
+          return filters.statuses.approved;
+        case 'rejected':
+          return filters.statuses.rejected;
+        case 'conversation_started':
+          return false; // Always hide in-conversation DMs
+        default:
+          return false;
+      }
+    })
+    // Apply other filters
+    .filter((dm) => {
+      if (dm.relevance_score < filters.minRelevanceScore) {
+        return false;
+      }
+      if (filters.assignedTo !== 'all' && dm.assigned_to !== filters.assignedTo) {
+        return false;
+      }
+      if (filters.needsDiscussion && !dm.needs_discussion) {
+        return false;
+      }
+      return true;
+    })
+    // Sort by relevance score (highest first)
+    .sort((a, b) => b.relevance_score - a.relevance_score)
 
   if (loading || !user) {
     return null
