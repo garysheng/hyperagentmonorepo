@@ -22,6 +22,7 @@ export function ApproveButton({ opportunity }: ApproveButtonProps) {
         .from('opportunities')
         .update({ 
           status: 'approved',
+          relevance_score: 4,
           status_updated_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })

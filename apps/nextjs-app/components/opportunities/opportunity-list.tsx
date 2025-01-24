@@ -22,6 +22,7 @@ export function OpportunityList({ opportunities, isLoading, onSendMessage }: Opp
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null)
   const [messages, setMessages] = useState<Array<{
     id: string;
+    thread_id: string;
     content: string;
     direction: 'inbound' | 'outbound';
     created_at: string;
@@ -135,7 +136,7 @@ export function OpportunityList({ opportunities, isLoading, onSendMessage }: Opp
     if (threads) {
       const { data: emailMessages } = await supabase
         .from(TableName.EMAIL_MESSAGES)
-        .select('id, content, direction, created_at')
+        .select('id, thread_id, content, direction, created_at')
         .eq('thread_id', threads.id)
         .order('created_at', { ascending: true })
 
