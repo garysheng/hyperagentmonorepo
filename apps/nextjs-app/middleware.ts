@@ -142,7 +142,7 @@ export async function middleware(request: NextRequest) {
       style-src 'self' 'unsafe-inline' https://widget.hyperagent.so;
       img-src 'self' data: https:;
       font-src 'self';
-      connect-src 'self' https://widget.hyperagent.so https://hyperagent.so;
+      connect-src 'self' https://widget.hyperagent.so https://hyperagent.so https://*.hyperagent.so;
       frame-src 'self';
       frame-ancestors 'self';
     `.replace(/\s+/g, ' ').trim()
