@@ -21,7 +21,7 @@ interface OpportunityWithCelebrity {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { opportunityId, message, threadId, messageId } = body;
+    const { opportunityId, message, messageId } = body;
 
     // Validate required fields
     if (!opportunityId) {
@@ -95,17 +95,32 @@ export async function POST(request: Request) {
       opportunity.celebrity.celebrity_name
     );
 
-    // Create or get thread ID
-    const currentThreadId = threadId || randomUUID();
+    // Find existing thread for this opportunity
+    const { data: existingThread, error: threadLookupError } = await supabase
+      .from(TableName.EMAIL_THREADS)
+      .select('id, subject')
+      .eq('opportunity_id', opportunityId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
 
-    // Create thread if this is first response
-    if (!threadId) {
+    if (threadLookupError && threadLookupError.code !== 'PGRST116') {
+      console.error('Error looking up thread:', threadLookupError);
+      throw new Error(`Failed to lookup thread: ${threadLookupError.message}`);
+    }
+
+    // Use existing thread or create new one
+    const currentThreadId = existingThread?.id || randomUUID();
+    const threadSubject = existingThread?.subject || 'Response from Team';
+
+    if (!existingThread) {
+      // Create new thread
       const { error: threadError } = await supabase
         .from(TableName.EMAIL_THREADS)
         .insert({
           id: currentThreadId,
           opportunity_id: opportunityId,
-          subject: 'Response from Team',
+          subject: threadSubject,
           last_message_at: new Date().toISOString(),
           status: 'active'
         });
@@ -137,7 +152,7 @@ export async function POST(request: Request) {
       to: recipientEmail,
       celebrityId: opportunity.celebrity.id,
       celebrityName: opportunity.celebrity.celebrity_name,
-      subject: threadId ? 'Re: Your Message' : 'Response from Team',
+      subject: existingThread ? `Re: ${threadSubject}` : threadSubject,
       text: message,
       threadId: currentThreadId,
       messageId
@@ -150,7 +165,7 @@ export async function POST(request: Request) {
         thread_id: currentThreadId,
         from_address: fromEmail,
         to_addresses: [recipientEmail],
-        subject: threadId ? 'Re: Your Message' : 'Response from Team',
+        subject: existingThread ? `Re: ${threadSubject}` : threadSubject,
         content: message,
         mailgun_message_id: emailResponse.id,
         direction: 'outbound',

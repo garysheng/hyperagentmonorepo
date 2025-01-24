@@ -17,6 +17,14 @@ function verifyWebhookSignature(
   return encodedToken === signature;
 }
 
+// Generate a unique hash for a message
+function generateMessageHash(sender: string, content: string): string {
+  return crypto
+    .createHash('sha256')
+    .update(`${sender}:${content}`)
+    .digest('hex');
+}
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
@@ -39,13 +47,28 @@ export async function POST(req: NextRequest) {
     }
 
     // Extract email data
-    const fromAddress = formData.get('sender') as string;
-    const toAddresses = (formData.get('recipient') as string).split(',').map(addr => addr.trim());
-    const subject = formData.get('subject') as string;
-    const content = formData.get('stripped-text') || formData.get('body-plain') as string;
-    const mailgunMessageId = formData.get('Message-Id') as string;
+    const fromAddress = formData.get('sender')?.toString() || '';
+    const toAddresses = (formData.get('recipient')?.toString() || '').split(',').map(addr => addr.trim());
+    const subject = formData.get('subject')?.toString() || '';
+    const content = (formData.get('stripped-text') || formData.get('body-plain'))?.toString() || '';
+    const mailgunMessageId = formData.get('Message-Id')?.toString() || '';
+
+    // Generate message hash
+    const messageHash = generateMessageHash(fromAddress, content);
 
     const supabase = await createClient();
+
+    // Check if we've already processed this message
+    const { data: existingMessage } = await supabase
+      .from(TableName.EMAIL_MESSAGES)
+      .select('id')
+      .eq('message_hash', messageHash)
+      .maybeSingle();
+
+    if (existingMessage) {
+      console.log('Duplicate message detected, skipping processing:', { messageHash });
+      return NextResponse.json({ success: true, status: 'duplicate' });
+    }
 
     // First, try to find an existing opportunity from this sender
     const { data: existingOpportunity } = await supabase
@@ -100,12 +123,13 @@ export async function POST(req: NextRequest) {
         subject,
         content,
         mailgun_message_id: mailgunMessageId,
+        message_hash: messageHash,
         direction: 'inbound'
       });
 
     if (messageError) {
       console.error('Failed to create message:', messageError);
-    return NextResponse.json({ error: 'Failed to create message' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to create message' }, { status: 500 });
     }
 
     // Update opportunity status if needed

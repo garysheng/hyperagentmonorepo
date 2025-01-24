@@ -15,6 +15,7 @@ type MockSupabaseMethods = {
   limit: Mock;
   single: Mock;
   is: Mock;
+  maybeSingle: Mock;
 };
 
 type MockSupabaseClient = {
@@ -26,6 +27,10 @@ vi.mock('@/lib/supabase/server');
 vi.mock('crypto', () => ({
   default: {
     createHmac: vi.fn().mockReturnValue({
+      update: vi.fn().mockReturnThis(),
+      digest: vi.fn().mockReturnValue('7536e0dd9c8b2d16f1d1a6a3c2c4a5b6c7d8e9f0')
+    }),
+    createHash: vi.fn().mockReturnValue({
       update: vi.fn().mockReturnThis(),
       digest: vi.fn().mockReturnValue('7536e0dd9c8b2d16f1d1a6a3c2c4a5b6c7d8e9f0')
     })
@@ -47,7 +52,8 @@ describe('Mailgun Webhook Handler', () => {
       order: vi.fn().mockReturnThis(),
       limit: vi.fn().mockReturnThis(),
       single: vi.fn().mockResolvedValue({ data: null }),
-      is: vi.fn().mockReturnThis()
+      is: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null })
     };
 
     mockSupabase = {
@@ -163,6 +169,7 @@ describe('Mailgun Webhook Handler', () => {
       subject: 'Test Subject',
       content: 'Stripped test message',
       mailgun_message_id: '<test123@mailgun.org>',
+      message_hash: '7536e0dd9c8b2d16f1d1a6a3c2c4a5b6c7d8e9f0',
       direction: 'inbound'
     });
   });
@@ -264,5 +271,49 @@ describe('Mailgun Webhook Handler', () => {
     expect(response.status).toBe(500);
     const data = await response.json();
     expect(data.error).toBe('Failed to create message');
+  });
+
+  it('should detect and skip duplicate messages', async () => {
+    // Mock existing opportunity
+    mockSupabase.from().single
+      .mockResolvedValueOnce({ 
+        data: { 
+          id: 'opp-123', 
+          status: 'new',
+          source: 'WIDGET'
+        } 
+      })
+      .mockResolvedValueOnce({ 
+        data: { 
+          id: 'thread-123' 
+        } 
+      });
+
+    // Mock existing message check to simulate a duplicate
+    mockSupabase.from().maybeSingle
+      .mockResolvedValueOnce({ 
+        data: { 
+          id: 'msg-123' 
+        } 
+      });
+
+    const req = new NextRequest('http://localhost/api/webhooks/mailgun', {
+      method: 'POST',
+      body: createFormData(mockValidWebhookData),
+    });
+
+    const response = await POST(req);
+    expect(response.status).toBe(200);
+    
+    const data = await response.json();
+    expect(data.status).toBe('duplicate');
+    
+    // Verify we checked for existing message
+    expect(mockSupabase.from).toHaveBeenCalledWith(TableName.EMAIL_MESSAGES);
+    expect(mockSupabase.from().select).toHaveBeenCalledWith('id');
+    expect(mockSupabase.from().eq).toHaveBeenCalledWith('message_hash', expect.any(String));
+    
+    // Verify we didn't try to create a new message
+    expect(mockSupabase.from().insert).not.toHaveBeenCalled();
   });
 }); 

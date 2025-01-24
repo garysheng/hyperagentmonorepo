@@ -66,7 +66,7 @@ export function ChatWidget({ celebrityId, theme }: ChatWidgetProps) {
         ...prev,
         {
           type: 'system',
-          content: 'Thanks for your message! We\'ll review it and get back to you soon.'
+          content: 'Thanks for your message! We\'ll review it and get back to you if there\'s a good fit.'
         }
       ])
     } catch (error) {
