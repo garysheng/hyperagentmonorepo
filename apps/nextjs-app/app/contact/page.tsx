@@ -12,16 +12,37 @@ export default function ContactPage() {
     script.setAttribute('data-celebrity-id', '0ca0f921-7ccd-4975-9afb-3bed98367403')
     script.setAttribute('data-primary-color', '#0F172A')
     script.async = true
-    script.src = `${window.location.origin}/widget/v1.js`
+    
+    // Add error handling and debugging
+    script.onerror = (error) => {
+      console.error('Failed to load widget script:', error)
+    }
+    
+    // Log the full URL being used
+    const widgetUrl = `${window.location.origin}/widget/v1.js`
+    console.log('Loading widget from:', widgetUrl)
+    script.src = widgetUrl
     
     document.body.appendChild(script)
 
+    // Add a timeout to check if widget container was created
+    setTimeout(() => {
+      const container = document.getElementById('hyperagent-chat-widget')
+      if (!container) {
+        console.error('Widget container not found after 5 seconds')
+      }
+    }, 5000)
+
     return () => {
       // Cleanup on unmount
-      document.body.removeChild(script)
-      const container = document.getElementById('hyperagent-chat-widget')
-      if (container) {
-        document.body.removeChild(container)
+      try {
+        document.body.removeChild(script)
+        const container = document.getElementById('hyperagent-chat-widget')
+        if (container) {
+          document.body.removeChild(container)
+        }
+      } catch (error) {
+        console.error('Error cleaning up widget:', error)
       }
     }
   }, [])
