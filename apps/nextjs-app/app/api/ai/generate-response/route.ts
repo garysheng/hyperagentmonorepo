@@ -23,6 +23,7 @@ interface Message {
 interface DatabaseMessage {
   content: string;
   direction: 'inbound' | 'outbound';
+  created_at: string;
 }
 
 export async function POST(req: NextRequest) {
@@ -35,24 +36,45 @@ export async function POST(req: NextRequest) {
     let previousMessages: Message[] = existingMessages || [];
     if (threadId) {
       const supabase = await createClient();
-      const { data: messages } = await supabase
+      const { data: messages, error } = await supabase
         .from(messageType === 'email' ? TableName.EMAIL_MESSAGES : TableName.OPPORTUNITY_MESSAGES)
-        .select('content, direction')
+        .select('content, direction, created_at')
         .eq(messageType === 'email' ? 'thread_id' : 'opportunity_id', threadId)
-        .order('created_at', { ascending: true })
-        .limit(5);
+        .order('created_at', { ascending: true });
 
-      if (messages) {
-        // If we have both thread messages and existing messages, combine them
+      if (error) {
+        console.error('Error fetching thread messages:', error);
+        return NextResponse.json(
+          { error: 'Failed to fetch conversation history' },
+          { status: 500 }
+        );
+      }
+
+      if (messages && messages.length > 0) {
+        // Convert database messages to the format expected by the AI
         const threadMessages = (messages as DatabaseMessage[]).map(msg => ({
           role: msg.direction === 'inbound' ? 'user' as const : 'assistant' as const,
           content: msg.content
         }));
+
+        // Combine thread messages with any existing messages
+        // Thread messages come first to maintain chronological order
         previousMessages = [...threadMessages, ...previousMessages];
+
+        // Limit to last 10 messages to keep context manageable
+        if (previousMessages.length > 10) {
+          previousMessages = previousMessages.slice(-10);
+        }
+
+        console.log('Using conversation history:', {
+          threadId,
+          messageCount: previousMessages.length,
+          lastMessage: previousMessages[previousMessages.length - 1]
+        });
       }
     }
 
-    // Generate response
+    // Generate response with conversation history
     const response = await responseGenerator.generateResponse({
       messageType,
       content,
@@ -72,7 +94,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: 'Failed to generate response' },
+      { error: error instanceof Error ? error.message : 'Failed to generate response' },
       { status: 500 }
     );
   }

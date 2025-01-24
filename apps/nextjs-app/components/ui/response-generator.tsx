@@ -9,6 +9,7 @@ interface ResponseGeneratorProps {
   content: string;
   type: 'email' | 'tweet';
   celebrityId: string;
+  threadId?: string;
   onResponseGenerated: (response: string) => void;
 }
 
@@ -16,6 +17,7 @@ export function ResponseGenerator({
   content,
   type,
   celebrityId,
+  threadId,
   onResponseGenerated
 }: ResponseGeneratorProps) {
   const { generateResponse, isGenerating } = useGenerateResponse();
@@ -27,6 +29,7 @@ export function ResponseGenerator({
         celebrityId,
         content,
         type,
+        threadId,
       });
       onResponseGenerated(response);
     } catch (err) {

@@ -5,13 +5,14 @@ interface GenerateResponseOptions {
   celebrityId: string;
   content: string;
   type: 'email' | 'tweet';
+  threadId?: string;
 }
 
 export function useGenerateResponse() {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const generateMutation = useMutation({
-    mutationFn: async ({ celebrityId, content, type }: GenerateResponseOptions) => {
+    mutationFn: async ({ celebrityId, content, type, threadId }: GenerateResponseOptions) => {
       const response = await fetch('/api/ai/generate-response', {
         method: 'POST',
         headers: {
@@ -21,6 +22,7 @@ export function useGenerateResponse() {
           messageType: type,
           content,
           celebrityId,
+          threadId,
         }),
       });
 

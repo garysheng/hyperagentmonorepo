@@ -1,28 +1,29 @@
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { TableName } from '@/types'
-import { NextResponse } from 'next/server'
 
-export async function GET(request: Request) {
+export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
+    const { searchParams } = new URL(req.url)
     const opportunityId = searchParams.get('opportunityId')
 
     if (!opportunityId) {
       return NextResponse.json(
-        { error: 'opportunityId is required' },
+        { error: 'Opportunity ID is required' },
         { status: 400 }
       )
     }
 
     const supabase = await createClient()
 
-    // Get the most recent email thread
-    const { data: threads, error: threadError } = await supabase
+    // First get the email thread for this opportunity
+    const { data: thread, error: threadError } = await supabase
       .from(TableName.EMAIL_THREADS)
-      .select('*')
+      .select('id, subject')
       .eq('opportunity_id', opportunityId)
       .order('created_at', { ascending: false })
       .limit(1)
+      .single()
 
     if (threadError) {
       console.error('Error fetching thread:', threadError)
@@ -32,16 +33,14 @@ export async function GET(request: Request) {
       )
     }
 
-    if (!threads || threads.length === 0) {
+    if (!thread) {
       return NextResponse.json(
         { error: 'Thread not found' },
         { status: 404 }
       )
     }
 
-    const thread = threads[0]
-
-    // Get all messages for this thread
+    // Then get all messages for this thread
     const { data: messages, error: messagesError } = await supabase
       .from(TableName.EMAIL_MESSAGES)
       .select('*')

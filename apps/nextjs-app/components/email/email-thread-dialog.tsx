@@ -19,6 +19,7 @@ interface EmailThreadDialogProps {
   opportunity: Opportunity;
   messages: Array<{
     id: string;
+    thread_id: string;
     content: string;
     direction: 'inbound' | 'outbound';
     created_at: string;
@@ -92,6 +93,7 @@ export function EmailThreadDialog({
                     content={opportunity.initial_content}
                     type={opportunity.source === 'TWITTER_DM' ? 'tweet' : 'email'}
                     celebrityId={opportunity.celebrity_id}
+                    threadId={messages[0]?.thread_id}
                     onResponseGenerated={setNewMessage}
                   />
                   <Button onClick={handleSendMessage}>
