@@ -18,8 +18,11 @@ export default function ContactPage() {
       console.error('Failed to load widget script:', error)
     }
     
-    // Log the full URL being used
-    const widgetUrl = `${window.location.origin}/widget/v1.js`
+    // Use absolute URL in production
+    const widgetUrl = process.env.NEXT_PUBLIC_SITE_URL 
+      ? `https://${process.env.NEXT_PUBLIC_SITE_URL}/widget/v1.js`
+      : `${window.location.origin}/widget/v1.js`
+      
     console.log('Loading widget from:', widgetUrl)
     script.src = widgetUrl
     

@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "pnpm build:widget && next build",
-    "build:widget": "tsc -p widget.tsconfig.json",
+    "build:widget": "tsx widget.config.ts",
     "start": "next start",
     "lint": "next lint",
     "dev:widget": "tsx watch widget.config.ts",
