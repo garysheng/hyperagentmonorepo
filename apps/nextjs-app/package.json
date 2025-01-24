@@ -4,11 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "pnpm build:widget && next build",
-    "build:widget": "tsx widget.config.ts",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "dev:widget": "tsx watch widget.config.ts",
     "test": "NODE_ENV=test vitest"
   },
   "dependencies": {
