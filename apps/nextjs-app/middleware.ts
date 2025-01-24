@@ -2,7 +2,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 // Define routes that don't require authentication or celebrity association
-const PUBLIC_ROUTES = ['/', '/login', '/signup', '/auth/confirm']
+const PUBLIC_ROUTES = ['/', '/login', '/signup', '/auth/confirm', '/contact']
 const CREATE_CELEBRITY_ROUTE = '/create-celebrity'
 const SET_GOALS_ROUTE = '/set-goals'
 const AUTH_ROUTES = ['/auth', '/api/auth']

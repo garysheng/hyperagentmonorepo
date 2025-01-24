@@ -1,21 +1,12 @@
 import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import { POST } from '../route';
 import { createClient } from '@/lib/supabase/server';
-import { EmailService } from '@/lib/email/mailgun';
 import { TableName } from '@/types';
 import { SupabaseClient } from '@supabase/supabase-js';
+import { mockEmailService } from './mocks';
 
 // Mock dependencies
 vi.mock('@/lib/supabase/server');
-vi.mock('@/lib/email/mailgun', () => ({
-  EmailService: vi.fn().mockImplementation(() => ({
-    formatEmailAddress: vi.fn().mockReturnValue({
-      email: 'test@example.com',
-      formatted: 'Test Celebrity Team <test@example.com>'
-    }),
-    sendEmail: vi.fn().mockResolvedValue({ id: 'test-message-id' })
-  }))
-}));
 
 // Define types for our mocks
 type MockSupabaseMethods = {
@@ -145,11 +136,8 @@ describe('Email Messages API Route', () => {
     // Verify thread lookup
     expect(mockSupabase.from).toHaveBeenCalledWith(TableName.EMAIL_THREADS);
 
-    // Get the mock instance
-    const mockInstance = vi.mocked(EmailService).mock.results[0].value;
-
     // Verify email was sent
-    expect(mockInstance.sendEmail).toHaveBeenCalledWith({
+    expect(mockEmailService.sendEmail).toHaveBeenCalledWith({
       to: 'test@example.com',
       celebrityId: 'celebrity-123',
       celebrityName: 'Test Celebrity',
