@@ -145,9 +145,9 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - widget files
      * - public folder
-     * Note: This is the default Next.js matcher
      */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico|widget/).*)',
   ],
 } 
