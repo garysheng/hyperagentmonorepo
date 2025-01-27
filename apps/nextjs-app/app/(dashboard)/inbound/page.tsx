@@ -6,11 +6,13 @@ import { DMList } from '@/components/dms/dm-list'
 import { DMFilters, type DMFilters as DMFiltersType } from '@/components/dms/dm-filters'
 import { DMDetail } from '@/components/dms/dm-detail'
 import { getOpportunities } from './actions'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Opportunity } from '@/types'
+import { BulkTranscriptWizard } from '@/components/opportunities/bulk-transcript-wizard'
 
 export default function InboundPage() {
   const { user, loading } = useAuth()
+  const queryClient = useQueryClient()
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null)
   const [filters, setFilters] = useState<DMFiltersType>({
     statuses: {
@@ -68,6 +70,10 @@ export default function InboundPage() {
     // Sort by relevance score (highest first)
     .sort((a, b) => b.relevance_score - a.relevance_score)
 
+  const handleProcessComplete = () => {
+    queryClient.invalidateQueries({ queryKey: ['opportunities'] })
+  }
+
   if (loading || !user) {
     return null
   }
@@ -76,6 +82,10 @@ export default function InboundPage() {
     <div className="flex-1 space-y-4 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Inbound Messages</h2>
+        <BulkTranscriptWizard 
+          opportunities={opportunities} 
+          onProcessComplete={handleProcessComplete}
+        />
       </div>
       <div className="grid gap-4 md:grid-cols-7">
         <div className="col-span-3">

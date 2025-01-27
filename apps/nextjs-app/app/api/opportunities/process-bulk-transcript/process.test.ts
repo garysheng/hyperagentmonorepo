@@ -6,17 +6,20 @@ describe('analyzeBulkTranscript', () => {
     {
       id: 'opp1',
       initial_content: 'Interested in discussing AI collaboration',
-      status: 'pending'
+      status: 'pending',
+      sender_handle: 'ai_researcher'
     },
     {
       id: 'opp2',
       initial_content: 'Would love to discuss blockchain technology',
-      status: 'pending'
+      status: 'pending',
+      sender_handle: 'crypto_dev'
     },
     {
       id: 'opp3',
       initial_content: 'Potential partnership for IoT project',
-      status: 'approved'
+      status: 'approved',
+      sender_handle: 'iot_expert'
     }
   ]
 
@@ -47,6 +50,31 @@ describe('analyzeBulkTranscript', () => {
     const aiOpp = result.identifiedOpportunities.find(o => o.id === 'opp1')
     expect(aiOpp?.confidence).toBeGreaterThan(0.7)
     expect(aiOpp?.relevantSection).toMatch(/AI collaboration[\s\S]*expertise looks solid/)
+  }, 30000)
+
+  it('should identify opportunities by sender handle', async () => {
+    const input = {
+      opportunities,
+      transcript: `
+        Host: Let's review the pending requests.
+        
+        The ai_researcher should be approved.
+        Guest: Yes, their background is impressive.
+        
+        What about crypto_dev?
+        Host: Not a good fit for us right now.
+      `
+    }
+
+    const result = await analyzeBulkTranscript(input)
+
+    expect(result.identifiedOpportunities).toHaveLength(2)
+    expect(result.identifiedOpportunities.map(o => o.id)).toContain('opp1')
+    expect(result.identifiedOpportunities.map(o => o.id)).toContain('opp2')
+    
+    const aiOpp = result.identifiedOpportunities.find(o => o.id === 'opp1')
+    expect(aiOpp?.confidence).toBeGreaterThan(0.7)
+    expect(aiOpp?.relevantSection).toMatch(/ai_researcher[\s\S]*should be approved/)
   }, 30000)
 
   it('should handle transcripts with no matching opportunities', async () => {

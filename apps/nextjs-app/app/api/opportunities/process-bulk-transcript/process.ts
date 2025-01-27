@@ -8,6 +8,7 @@ export interface BulkTranscriptAnalysisInput {
     id: string
     initial_content: string
     status: string
+    sender_handle?: string
   }>
 }
 
@@ -96,15 +97,22 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
       {opportunities}
       
       Remember:
-      - Only include opportunities that were actually discussed
+      - Look for mentions of sender handles, usernames, or discussion of their initial messages
+      - Consider both direct mentions and contextual references
+      - Match even if only the sender handle or key aspects are mentioned
       - Extract the minimal relevant section for each opportunity
-      - Provide accurate confidence scores based on clarity of discussion`],
+      - Provide accurate confidence scores based on clarity of discussion
+      - If someone is mentioned by their handle (e.g. "ai_researcher"), this is a strong signal
+      - Include opportunities even if only briefly mentioned, with appropriate confidence scores`],
     ["human", "{transcript}"]
   ])
 
   const formattedPrompt = await prompt.formatMessages({
     opportunities: input.opportunities.map(opp => 
-      `ID: ${opp.id}\nInitial Message: ${opp.initial_content}\nCurrent Status: ${opp.status}`
+      `ID: ${opp.id}
+      Initial Message: ${opp.initial_content}
+      Current Status: ${opp.status}
+      ${opp.sender_handle ? 'Sender Handle: ' + opp.sender_handle : ''}`
     ).join('\n\n'),
     transcript: input.transcript
   })
