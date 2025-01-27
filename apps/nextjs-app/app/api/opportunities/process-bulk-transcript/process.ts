@@ -156,7 +156,7 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
     ["system", `You are an AI assistant helping to analyze meeting transcripts about opportunities.
       Your task is to:
       1. Identify which opportunities from the provided list were discussed in the transcript
-      2. Extract the relevant section for each opportunity
+      2. Extract the EXACT relevant section for each opportunity
       3. Provide a confidence score for each match
 
       Here are the opportunities to look for:
@@ -165,15 +165,16 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
       Guidelines for confidence scores:
       - Score > 0.8: Clear, direct discussion with specific details or decisions
       - Score 0.6-0.8: Moderate discussion with some context but less detail
-      - Score 0.3-0.6: Brief mention or unclear reference
+      - Score 0.3-0.5: Brief mention or unclear reference
       - Score < 0.3: Very uncertain or tangential reference
 
       Guidelines for relevant sections:
-      - Include the COMPLETE context of the discussion
-      - Start from the first mention of the topic
-      - Include all key points and decisions
-      - Include the conclusion/outcome if present
-      - Maintain conversation flow and speaker attribution
+      - Extract ONLY the specific sentences that directly discuss the opportunity
+      - Include ONLY the discussion about that specific opportunity, not surrounding context
+      - Do not include discussions about other opportunities
+      - Each relevant section should be self-contained and focused
+      - For decisions, include only the specific decision-making statements
+      - Maintain speaker attribution if present
 
       Remember:
       - Look for mentions of sender handles, usernames, or discussion of their initial messages
@@ -181,7 +182,8 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
       - Match even if only the sender handle or key aspects are mentioned
       - If someone is mentioned by their handle (e.g. "ai_researcher"), this is a strong signal
       - Include opportunities even if only briefly mentioned, with appropriate confidence scores
-      - For briefly mentioned opportunities, confidence should be <= 0.5`],
+      - For briefly mentioned opportunities, confidence MUST be <= 0.5
+      - When extracting relevant sections, be precise and avoid including unrelated context`],
     ["human", "{transcript}"]
   ])
 
