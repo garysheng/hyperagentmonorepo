@@ -1,6 +1,20 @@
 import { ChatOpenAI } from '@langchain/openai'
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { Client } from 'langsmith'
+import { BaseMessage } from '@langchain/core/messages'
+
+interface ExtendedBaseMessage extends BaseMessage {
+  llmOutput?: {
+    tokenUsage?: {
+      total_tokens?: number
+      totalTokens?: number
+    }
+  }
+  tokenUsage?: {
+    total_tokens?: number
+    totalTokens?: number
+  }
+}
 
 // Default model configuration
 const DEFAULT_MODEL_CONFIG = {
@@ -20,6 +34,8 @@ export interface BulkTranscriptAnalysisInput {
     modelName: string
     temperature?: number
     maxTokens?: number
+    baseURL?: string
+    apiKey?: string
   }
 }
 
@@ -56,6 +72,10 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
     modelName: modelConfig.modelName,
     temperature: modelConfig.temperature,
     maxTokens: modelConfig.maxTokens,
+    configuration: modelConfig.baseURL ? {
+      baseURL: modelConfig.baseURL,
+      apiKey: modelConfig.apiKey || process.env.OPENAI_API_KEY
+    } : undefined,
     callbacks: [
       {
         handleLLMEnd: async (output, runId) => {
@@ -175,10 +195,16 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
     transcript: input.transcript
   })
   
-  const response = await model.invoke(formattedPrompt)
+  const response = await model.invoke(formattedPrompt) as ExtendedBaseMessage
   const result = response.additional_kwargs.function_call?.arguments
     ? JSON.parse(response.additional_kwargs.function_call.arguments)
     : { identifiedOpportunities: [] }
+
+  // Get token usage directly from the response
+  const totalTokens = response.llmOutput?.tokenUsage?.total_tokens || 
+                     response.llmOutput?.tokenUsage?.totalTokens || 
+                     response.tokenUsage?.total_tokens || 
+                     response.tokenUsage?.totalTokens || 0
 
   return {
     ...result,
@@ -187,7 +213,7 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
       temperature: modelConfig.temperature,
       maxTokens: modelConfig.maxTokens,
       processingTimeMs: Date.now() - startTime,
-      totalTokens: (response as any).tokenUsage?.totalTokens || 0
+      totalTokens
     }
   } as BulkTranscriptAnalysisResult
 } 

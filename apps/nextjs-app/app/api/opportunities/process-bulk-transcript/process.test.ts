@@ -11,6 +11,12 @@ const MODEL_CONFIGS = {
         modelName: "gpt-4o",
         temperature: 0,
     },
+    DEEPSEEK: {
+        modelName: "deepseek-chat",
+        temperature: 0,
+        baseURL: "https://api.deepseek.com",
+        apiKey: process.env.DEEPSEEK_API_KEY
+    }
 } as const
 
 describe('analyzeBulkTranscript', () => {
