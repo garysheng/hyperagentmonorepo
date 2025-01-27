@@ -177,10 +177,13 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
       - Maintain speaker attribution if present
 
       Remember:
-      - Look for mentions of sender handles, usernames, or discussion of their initial messages
+      - Look for mentions of sender handles, usernames, emails, or role titles
+      - Match opportunities by:
+        * Exact handle matches (e.g. "ai_researcher")
+        * Email addresses (e.g. "user@example.com")
+        * Role/title mentions (e.g. "product designer" matches "product_designer")
+        * Partial matches of handle components
       - Consider both direct mentions and contextual references
-      - Match even if only the sender handle or key aspects are mentioned
-      - If someone is mentioned by their handle (e.g. "ai_researcher"), this is a strong signal
       - Include opportunities even if only briefly mentioned, with appropriate confidence scores
       - For briefly mentioned opportunities, confidence MUST be <= 0.5
       - When extracting relevant sections, be precise and avoid including unrelated context`],

@@ -41,6 +41,65 @@ describe('analyzeBulkTranscript', () => {
         }
     ]
 
+    // Add new test group for alternative reference formats
+    describe('Alternative Reference Tests', () => {
+        it('should identify opportunities by email and role references', async () => {
+            const testOpportunities = [
+                {
+                    id: 'opp1',
+                    initial_content: 'Looking for product design role',
+                    status: 'pending',
+                    sender_handle: 'product_designer'
+                },
+                {
+                    id: 'opp2',
+                    initial_content: 'Interested in coaching position',
+                    status: 'pending',
+                    sender_handle: 'dating_coach'
+                },
+                {
+                    id: 'opp3',
+                    initial_content: 'Hi there',
+                    status: 'pending',
+                    sender_handle: 'attractive.woman@abc.com'
+                }
+            ]
+
+            const input = {
+                opportunities: testOpportunities,
+                transcript: `
+                    Okay, welcome to the meeting everyone. 
+                    I'm looking at attractive.woman@abc.com. I think that would be worth approving. 
+                    So let's do that in terms of the product designer, seems like a legitimate person. Let's go, let's move forward with that one. 
+                    And then in terms of the dating coach, let's move forward with that one as well.
+                `,
+                modelConfig: MODEL_CONFIGS.GPT4O
+            }
+
+            const result = await analyzeBulkTranscript(input)
+
+            expect(result.identifiedOpportunities).toHaveLength(3)
+            
+            // Check email reference
+            const emailOpp = result.identifiedOpportunities.find(o => o.id === 'opp3')
+            expect(emailOpp).toBeDefined()
+            expect(emailOpp?.confidence).toBeGreaterThan(0.7)
+            expect(emailOpp?.relevantSection).toMatch(/attractive\.woman@abc\.com.*worth approving/)
+
+            // Check role reference - product designer
+            const designerOpp = result.identifiedOpportunities.find(o => o.id === 'opp1')
+            expect(designerOpp).toBeDefined()
+            expect(designerOpp?.confidence).toBeGreaterThan(0.7)
+            expect(designerOpp?.relevantSection).toMatch(/product designer.*move forward/)
+
+            // Check role reference - dating coach
+            const coachOpp = result.identifiedOpportunities.find(o => o.id === 'opp2')
+            expect(coachOpp).toBeDefined()
+            expect(coachOpp?.confidence).toBeGreaterThan(0.7)
+            expect(coachOpp?.relevantSection).toMatch(/dating coach.*move forward/)
+        }, 30000)
+    })
+
     // Run each test with each model configuration
     Object.entries(MODEL_CONFIGS).forEach(([modelName, modelConfig]) => {
         describe(`Using ${modelName}`, () => {
