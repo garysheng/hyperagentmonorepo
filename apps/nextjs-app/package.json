@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "NODE_ENV=test vitest"
+    "test": "NODE_ENV=test vitest",
+    "test:once": "vitest run",
+    "test:bulk": "vitest run process-bulk-transcript/process.test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

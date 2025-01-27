@@ -2,6 +2,12 @@ import { ChatOpenAI } from '@langchain/openai'
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { Client } from 'langsmith'
 
+// Default model configuration
+const DEFAULT_MODEL_CONFIG = {
+  modelName: "gpt-4",
+  temperature: 0
+} as const
+
 export interface BulkTranscriptAnalysisInput {
   transcript: string
   opportunities: Array<{
@@ -36,6 +42,10 @@ export interface BulkTranscriptAnalysisResult {
 
 export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput): Promise<BulkTranscriptAnalysisResult> {
   const startTime = Date.now()
+  const modelConfig = {
+    ...DEFAULT_MODEL_CONFIG,
+    ...input.modelConfig
+  }
   
   const client = new Client({
     apiUrl: process.env.LANGCHAIN_ENDPOINT,
@@ -43,13 +53,19 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
   })
 
   const model = new ChatOpenAI({
-    modelName: input.modelConfig?.modelName || "gpt-4",
-    temperature: input.modelConfig?.temperature || 0,
-    maxTokens: input.modelConfig?.maxTokens,
+    modelName: modelConfig.modelName,
+    temperature: modelConfig.temperature,
+    maxTokens: modelConfig.maxTokens,
     callbacks: [
       {
         handleLLMEnd: async (output, runId) => {
           const now = Date.now()
+          const tokenUsage = output.llmOutput?.tokenUsage || {
+            totalTokens: output.llmOutput?.tokenUsage?.total_tokens || 0,
+            promptTokens: output.llmOutput?.tokenUsage?.prompt_tokens || 0,
+            completionTokens: output.llmOutput?.tokenUsage?.completion_tokens || 0
+          }
+          
           await client.createRun({
             id: runId,
             name: "analyze_bulk_transcript",
@@ -57,26 +73,26 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
             inputs: { 
               transcript: input.transcript,
               opportunities: input.opportunities,
-              modelConfig: input.modelConfig || {
-                modelName: "gpt-4o",
-                temperature: 0
-              }
+              modelConfig
             },
             outputs: { 
               result: (output.generations[0][0] as any).message?.additional_kwargs?.function_call?.arguments || "{}",
-              totalTokens: output.llmOutput?.tokenUsage?.totalTokens || 0
+              totalTokens: tokenUsage.totalTokens
             },
             start_time: now - 1000,
             end_time: now,
             extra: {
-              modelName: input.modelConfig?.modelName || "gpt-4o",
-              temperature: input.modelConfig?.temperature || 0,
-              maxTokens: input.modelConfig?.maxTokens,
-              totalTokens: output.llmOutput?.tokenUsage?.totalTokens || 0,
-              promptTokens: output.llmOutput?.tokenUsage?.promptTokens || 0,
-              completionTokens: output.llmOutput?.tokenUsage?.completionTokens || 0
+              modelName: modelConfig.modelName,
+              temperature: modelConfig.temperature,
+              maxTokens: modelConfig.maxTokens,
+              totalTokens: tokenUsage.totalTokens,
+              promptTokens: tokenUsage.promptTokens,
+              completionTokens: tokenUsage.completionTokens
             }
           })
+
+          // Store token usage for the result metadata
+          ;(output as any).tokenUsage = tokenUsage
         }
       }
     ]
@@ -126,14 +142,26 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
       Here are the opportunities to look for:
       {opportunities}
       
+      Guidelines for confidence scores:
+      - Score > 0.8: Clear, direct discussion with specific details or decisions
+      - Score 0.6-0.8: Moderate discussion with some context but less detail
+      - Score 0.3-0.6: Brief mention or unclear reference
+      - Score < 0.3: Very uncertain or tangential reference
+
+      Guidelines for relevant sections:
+      - Include the COMPLETE context of the discussion
+      - Start from the first mention of the topic
+      - Include all key points and decisions
+      - Include the conclusion/outcome if present
+      - Maintain conversation flow and speaker attribution
+
       Remember:
       - Look for mentions of sender handles, usernames, or discussion of their initial messages
       - Consider both direct mentions and contextual references
       - Match even if only the sender handle or key aspects are mentioned
-      - Extract the minimal relevant section for each opportunity
-      - Provide accurate confidence scores based on clarity of discussion
       - If someone is mentioned by their handle (e.g. "ai_researcher"), this is a strong signal
-      - Include opportunities even if only briefly mentioned, with appropriate confidence scores`],
+      - Include opportunities even if only briefly mentioned, with appropriate confidence scores
+      - For briefly mentioned opportunities, confidence should be <= 0.5`],
     ["human", "{transcript}"]
   ])
 
@@ -155,11 +183,11 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
   return {
     ...result,
     metadata: {
-      modelName: input.modelConfig?.modelName || "gpt-4",
-      temperature: input.modelConfig?.temperature || 0,
-      maxTokens: input.modelConfig?.maxTokens,
+      modelName: modelConfig.modelName,
+      temperature: modelConfig.temperature,
+      maxTokens: modelConfig.maxTokens,
       processingTimeMs: Date.now() - startTime,
-      totalTokens: (response as any).llmOutput?.tokenUsage?.totalTokens || 0
+      totalTokens: (response as any).tokenUsage?.totalTokens || 0
     }
   } as BulkTranscriptAnalysisResult
 } 
