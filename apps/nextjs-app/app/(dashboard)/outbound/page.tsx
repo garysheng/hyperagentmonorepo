@@ -4,14 +4,25 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getOpportunities } from './actions'
 import { useCelebrity } from '@/hooks/use-celebrity'
 import { toast } from '@/hooks/use-toast'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
 import { OpportunityList } from '@/components/opportunities/opportunity-list'
+import { useAuth } from '@/components/providers'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
 export default function OutboundPage() {
+  const router = useRouter()
+  const { user, loading: authLoading } = useAuth()
   const { data: celebrity, isLoading: celebrityLoading } = useCelebrity()
   const queryClient = useQueryClient()
+
+  // Handle auth redirect using useEffect
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login')
+    }
+  }, [authLoading, user, router])
 
   const { data: opportunities, isLoading } = useQuery({
     queryKey: ['opportunities', celebrity?.id],
@@ -67,8 +78,13 @@ export default function OutboundPage() {
     await sendMessageMutation.mutateAsync({ opportunityId, message })
   }
 
-  if (celebrityLoading) {
+  // Handle loading and error states
+  if (authLoading || celebrityLoading) {
     return <Skeleton className="h-[200px]" />
+  }
+
+  if (!user) {
+    return null // Will be redirected by useEffect
   }
 
   if (!celebrity) {

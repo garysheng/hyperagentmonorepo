@@ -1,3 +1,22 @@
+/**
+ * Header Component
+ * 
+ * Improvements made to fix loading issues:
+ * 1. Simplified authentication checks:
+ *    - Shows navigation whenever user is authenticated
+ *    - Removed dependency on profile.hasGoals
+ * 2. Better loading states:
+ *    - Shows loading header while auth initializes
+ *    - Proper skeleton states for profile loading
+ * 3. Improved user experience:
+ *    - Smooth transitions between states
+ *    - Clear loading indicators
+ *    - Consistent navigation visibility
+ * 4. Sign out handling:
+ *    - Proper loading state during sign out
+ *    - Error handling for failed sign outs
+ */
+
 'use client'
 
 import { useState } from 'react'
@@ -39,7 +58,7 @@ interface ProfileResponse {
 
 export function Header() {
   const pathname = usePathname()
-  const { user, signOut } = useAuth()
+  const { user, loading: authLoading, signOut } = useAuth()
   const [isSigningOut, setIsSigningOut] = useState(false)
   const supabase = createClient()
 
@@ -87,8 +106,26 @@ export function Header() {
     }
   }
 
+  // Show loading state while auth is initializing
+  if (authLoading) {
+    return (
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-14 items-center">
+          <div className="mr-4 flex">
+            <div className="ml-6 mr-6 flex items-center space-x-2">
+              <Logo size={24} />
+              <span className="font-bold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
+                HyperAgent
+              </span>
+            </div>
+          </div>
+        </div>
+      </header>
+    )
+  }
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60" key={`${profile?.celebrity_name}-${pathname}`}>
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
         <div className="mr-4 flex">
           <Link href="/" className="ml-6 mr-6 flex items-center space-x-2 group">
@@ -97,7 +134,7 @@ export function Header() {
               HyperAgent
             </span>
           </Link>
-          {!!user && !!profile?.hasGoals && (
+          {!!user && (
             <nav className="flex items-center space-x-6 text-sm font-medium">
               {navigation.map((item) => (
                 <Link
