@@ -10,6 +10,11 @@ export interface BulkTranscriptAnalysisInput {
     status: string
     sender_handle?: string
   }>
+  modelConfig?: {
+    modelName: string
+    temperature?: number
+    maxTokens?: number
+  }
 }
 
 export interface OpportunityReference {
@@ -20,17 +25,27 @@ export interface OpportunityReference {
 
 export interface BulkTranscriptAnalysisResult {
   identifiedOpportunities: OpportunityReference[]
+  metadata: {
+    modelName: string
+    temperature: number
+    maxTokens?: number
+    processingTimeMs: number
+    totalTokens: number
+  }
 }
 
 export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput): Promise<BulkTranscriptAnalysisResult> {
+  const startTime = Date.now()
+  
   const client = new Client({
     apiUrl: process.env.LANGCHAIN_ENDPOINT,
     apiKey: process.env.LANGCHAIN_API_KEY
   })
 
   const model = new ChatOpenAI({
-    modelName: "gpt-4",
-    temperature: 0,
+    modelName: input.modelConfig?.modelName || "gpt-4o",
+    temperature: input.modelConfig?.temperature || 0,
+    maxTokens: input.modelConfig?.maxTokens,
     callbacks: [
       {
         handleLLMEnd: async (output, runId) => {
@@ -44,7 +59,10 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
             start_time: now - 1000,
             end_time: now,
             extra: {
-              tokens: output.llmOutput?.tokenUsage?.totalTokens || 0
+              tokens: output.llmOutput?.tokenUsage?.totalTokens || 0,
+              modelName: input.modelConfig?.modelName || "gpt-4",
+              temperature: input.modelConfig?.temperature || 0,
+              maxTokens: input.modelConfig?.maxTokens
             }
           })
         }
@@ -122,5 +140,14 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
     ? JSON.parse(response.additional_kwargs.function_call.arguments)
     : { identifiedOpportunities: [] }
 
-  return result as BulkTranscriptAnalysisResult
+  return {
+    ...result,
+    metadata: {
+      modelName: input.modelConfig?.modelName || "gpt-4",
+      temperature: input.modelConfig?.temperature || 0,
+      maxTokens: input.modelConfig?.maxTokens,
+      processingTimeMs: Date.now() - startTime,
+      totalTokens: (response as any).llmOutput?.tokenUsage?.totalTokens || 0
+    }
+  } as BulkTranscriptAnalysisResult
 } 
