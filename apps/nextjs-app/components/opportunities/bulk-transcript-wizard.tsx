@@ -58,7 +58,11 @@ export function BulkTranscriptWizard({ opportunities, onProcessComplete }: BulkT
 
     setIsProcessing(true)
     setStep('processing')
+    console.log('Starting transcript analysis...')
+    console.log('Transcript content:', transcript.substring(0, 100) + '...')
+    
     try {
+      console.log('Sending transcript to bulk processing endpoint...')
       const response = await fetch('/api/opportunities/process-bulk-transcript', {
         method: 'POST',
         headers: {
@@ -68,23 +72,47 @@ export function BulkTranscriptWizard({ opportunities, onProcessComplete }: BulkT
       })
 
       if (!response.ok) {
-        throw new Error('Failed to process transcript')
+        const errorText = await response.text()
+        console.error('Bulk processing failed with status:', response.status)
+        console.error('Error response:', errorText)
+        throw new Error(`Failed to process transcript: ${errorText}`)
       }
 
-      const { opportunities: identified } = await response.json()
+      console.log('Got response from bulk processing endpoint')
+      const data = await response.json()
+      console.log('Response data:', data)
       
+      const { opportunities: identified } = data
+      console.log(`Found ${identified?.length || 0} opportunities in transcript`)
+      
+      if (!identified || !Array.isArray(identified)) {
+        console.error('Invalid response format:', data)
+        throw new Error('Invalid response format from server')
+      }
+
       // Map the identified opportunities to include original data
-      const previews = identified.map((opp: any) => ({
-        ...opp,
-        ...opportunities.find(o => o.id === opp.id)
-      }))
+      const previews = identified.map((opp: any) => {
+        const originalOpp = opportunities.find(o => o.id === opp.id)
+        if (!originalOpp) {
+          console.warn(`Could not find original opportunity for id: ${opp.id}`)
+        }
+        return {
+          ...opp,
+          ...originalOpp
+        }
+      })
+      console.log('Mapped opportunities with original data:', previews)
 
       setIdentifiedOpportunities(previews)
 
       // Process each opportunity immediately
+      console.log('Starting individual opportunity processing...')
       for (const opportunity of previews) {
+        console.log(`Processing opportunity ${opportunity.id}...`)
+        console.log('Opportunity data:', opportunity)
         const result = await handleProcessOpportunity(opportunity)
         if (result) {
+          console.log(`Got processing result for ${opportunity.id}:`, result)
           setProposedChanges(prev => ({
             ...prev,
             [opportunity.id]: {
@@ -94,26 +122,37 @@ export function BulkTranscriptWizard({ opportunities, onProcessComplete }: BulkT
             }
           }))
           setProcessedOpportunities(prev => new Set([...prev, opportunity.id]))
+        } else {
+          console.error(`Failed to process opportunity ${opportunity.id}`)
         }
       }
+      console.log('Finished processing all opportunities')
 
       setStep('preview')
 
       if (previews.length === 0) {
+        console.log('No opportunities found in transcript')
         toast({
           title: 'No opportunities found',
           description: 'No opportunities were identified in the transcript.',
           variant: 'default'
         })
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error in handleUpload:', error)
+      console.error('Full error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      })
       toast({
         title: 'Error',
-        description: 'Failed to process transcript. Please try again.',
+        description: error.message || 'Failed to process transcript. Please try again.',
         variant: 'destructive'
       })
       setStep('upload')
     } finally {
+      console.log('Transcript analysis complete')
       setIsProcessing(false)
     }
   }
@@ -225,6 +264,11 @@ export function BulkTranscriptWizard({ opportunities, onProcessComplete }: BulkT
   const handleSkip = () => {
     if (currentOpportunityIndex < identifiedOpportunities.length - 1) {
       setCurrentOpportunityIndex(currentOpportunityIndex + 1)
+    } else {
+      // If it's the last opportunity, close the wizard
+      handleReset()
+      setOpen(false)
+      onProcessComplete()
     }
   }
 

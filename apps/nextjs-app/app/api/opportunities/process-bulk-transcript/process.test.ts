@@ -37,7 +37,7 @@ describe('analyzeBulkTranscript', () => {
         Guest: I'm not sure about that one, seems too promotional.
         Host: Yes, let's pass on that.
         
-        We'll skip the IoT project for now.
+        That's all for today's review.
       `
     }
 
@@ -50,6 +50,10 @@ describe('analyzeBulkTranscript', () => {
     const aiOpp = result.identifiedOpportunities.find(o => o.id === 'opp1')
     expect(aiOpp?.confidence).toBeGreaterThan(0.7)
     expect(aiOpp?.relevantSection).toMatch(/AI collaboration[\s\S]*expertise looks solid/)
+
+    const blockchainOpp = result.identifiedOpportunities.find(o => o.id === 'opp2')
+    expect(blockchainOpp?.confidence).toBeGreaterThan(0.5)
+    expect(blockchainOpp?.relevantSection).toMatch(/blockchain discussion[\s\S]*seems too promotional/)
   }, 30000)
 
   it('should identify opportunities by sender handle', async () => {
