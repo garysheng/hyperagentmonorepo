@@ -8,9 +8,11 @@ import type { Opportunity as DM } from '@/types'
 import { DMActions } from './dm-actions'
 import { DMComments } from './dm-comments'
 import { DMTags } from './dm-tags'
+import { DMTranscriptUpload } from './dm-transcript-upload'
 import { formatDistanceToNow } from 'date-fns'
 import { useTeamMembers } from '@/hooks/use-team-members'
 import { useOpportunityActions } from '@/hooks/use-opportunity-actions'
+import { useQueryClient } from '@tanstack/react-query'
 
 interface DMDetailProps {
   dm: DM | null
@@ -32,6 +34,7 @@ function getStatusBadgeVariant(status: DM['status']): "default" | "secondary" | 
 export function DMDetail({ dm }: DMDetailProps) {
   const { data: teamMembers = [] } = useTeamMembers()
   const actions = useOpportunityActions(dm?.id ?? '')
+  const queryClient = useQueryClient()
 
   const isEmail = (handle: string) => handle.includes('@')
 
@@ -163,11 +166,17 @@ export function DMDetail({ dm }: DMDetailProps) {
             </div>
           )}
           {dm.needs_discussion && (
-            <div>
+            <div className="space-y-2">
               <h4 className="text-sm font-medium text-muted-foreground mb-2">
                 Team Discussion
               </h4>
               <p className="text-sm">This DM needs team discussion</p>
+              <DMTranscriptUpload 
+                opportunity={dm} 
+                onTranscriptProcessed={() => {
+                  queryClient.invalidateQueries({ queryKey: ['opportunities'] })
+                }}
+              />
             </div>
           )}
           <div>
