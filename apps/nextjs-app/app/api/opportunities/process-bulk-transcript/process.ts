@@ -43,7 +43,7 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
   })
 
   const model = new ChatOpenAI({
-    modelName: input.modelConfig?.modelName || "gpt-4o",
+    modelName: input.modelConfig?.modelName || "gpt-4",
     temperature: input.modelConfig?.temperature || 0,
     maxTokens: input.modelConfig?.maxTokens,
     callbacks: [
@@ -54,15 +54,27 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
             id: runId,
             name: "analyze_bulk_transcript",
             run_type: "llm",
-            inputs: { prompt: output.generations[0][0].text },
-            outputs: { completion: output.generations[0][0].text },
+            inputs: { 
+              transcript: input.transcript,
+              opportunities: input.opportunities,
+              modelConfig: input.modelConfig || {
+                modelName: "gpt-4o",
+                temperature: 0
+              }
+            },
+            outputs: { 
+              result: (output.generations[0][0] as any).message?.additional_kwargs?.function_call?.arguments || "{}",
+              totalTokens: output.llmOutput?.tokenUsage?.totalTokens || 0
+            },
             start_time: now - 1000,
             end_time: now,
             extra: {
-              tokens: output.llmOutput?.tokenUsage?.totalTokens || 0,
-              modelName: input.modelConfig?.modelName || "gpt-4",
+              modelName: input.modelConfig?.modelName || "gpt-4o",
               temperature: input.modelConfig?.temperature || 0,
-              maxTokens: input.modelConfig?.maxTokens
+              maxTokens: input.modelConfig?.maxTokens,
+              totalTokens: output.llmOutput?.tokenUsage?.totalTokens || 0,
+              promptTokens: output.llmOutput?.tokenUsage?.promptTokens || 0,
+              completionTokens: output.llmOutput?.tokenUsage?.completionTokens || 0
             }
           })
         }
