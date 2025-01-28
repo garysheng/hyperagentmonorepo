@@ -21,7 +21,7 @@ export async function processTranscript(input: TranscriptProcessingInput): Promi
   })
 
   const model = new ChatOpenAI({
-    modelName: "gpt-4",
+    modelName: "gpt-4o",
     temperature: 0,
     callbacks: [
       {

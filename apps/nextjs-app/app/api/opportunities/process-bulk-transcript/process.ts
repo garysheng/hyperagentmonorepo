@@ -18,7 +18,7 @@ interface ExtendedBaseMessage extends BaseMessage {
 
 // Default model configuration
 const DEFAULT_MODEL_CONFIG = {
-  modelName: "gpt-4",
+  modelName: "gpt-4o",
   temperature: 0
 } as const
 
