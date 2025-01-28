@@ -31,6 +31,7 @@ function getStatusBadgeVariant(status: DM['status']): "default" | "secondary" | 
 }
 
 function formatRelevanceScore(score: number): string {
+  if (score === -1) return 'Unclassified Opportunity';
   // Convert score to a scale of 0-5
   return `${score}/5`;
 }
@@ -38,6 +39,7 @@ function formatRelevanceScore(score: number): string {
 const isEmail = (handle: string) => handle.includes('@')
 
 function getRelevanceClass(score: number): string {
+  if (score === -1) return "border-l-4 border-gray-500 dark:border-gray-400"
   if (score >= 4.5) return "border-l-4 border-green-500 dark:border-green-400"
   if (score >= 4) return "border-l-4 border-emerald-500 dark:border-emerald-400"
   if (score >= 3) return "border-l-4 border-yellow-500 dark:border-yellow-400"
@@ -114,8 +116,8 @@ export function DMList({ dms, selectedDM, onSelectDM, isLoading }: DMListProps) 
                       <span>{getAssignedUserName(dm.assigned_to)}</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Star className="h-3 w-3" />
-                      <span>Relevance: {formatRelevanceScore(dm.relevance_score)}</span>
+                      {dm.relevance_score !== -1 && <Star className="h-3 w-3" />}
+                      <span>{dm.relevance_score === -1 ? formatRelevanceScore(dm.relevance_score) : `Relevance: ${formatRelevanceScore(dm.relevance_score)}`}</span>
                     </div>
                   </div>
                 </div>

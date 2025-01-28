@@ -13,7 +13,8 @@ const PROTECTED_API_ROUTES = [
   '/api/opportunities',
   '/api/goals',
   '/api/dev/twitter/dms',
-  '/api/dev/manualdm'
+  '/api/dev/manualdm',
+  '/api/celebrities'
 ]
 
 export async function middleware(request: NextRequest) {
@@ -50,7 +51,13 @@ export async function middleware(request: NextRequest) {
     style-src 'self' 'unsafe-inline' https://widget.hyperagent.so;
     img-src 'self' data: https:;
     font-src 'self';
-    connect-src 'self' https://widget.hyperagent.so https://hyperagent.so https://*.hyperagent.so https://*.supabase.co;
+    connect-src 'self' 
+      https://widget.hyperagent.so 
+      https://hyperagent.so 
+      https://*.hyperagent.so 
+      https://*.supabase.co 
+      https://*.supabase.in 
+      https://avbjfurvihtlhwfozrez.supabase.co;
     frame-src 'self';
     frame-ancestors 'self';
   `.replace(/\s+/g, ' ').trim()

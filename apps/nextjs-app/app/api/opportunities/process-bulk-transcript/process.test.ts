@@ -79,7 +79,7 @@ describe('analyzeBulkTranscript', () => {
             const result = await analyzeBulkTranscript(input)
 
             expect(result.identifiedOpportunities).toHaveLength(3)
-            
+
             // Check email reference
             const emailOpp = result.identifiedOpportunities.find(o => o.id === 'opp3')
             expect(emailOpp).toBeDefined()
