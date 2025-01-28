@@ -3,7 +3,7 @@ const nextConfig = {
   images: {
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
-    contentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://widget.hyperagent.so; style-src 'self' 'unsafe-inline' https://widget.hyperagent.so; connect-src 'self' https://widget.hyperagent.so",
+    contentSecurityPolicy: "default-src * 'unsafe-inline' 'unsafe-eval'; script-src * 'unsafe-inline' 'unsafe-eval'; connect-src * 'unsafe-inline'; img-src * data: blob: 'unsafe-inline'; frame-src *; style-src * 'unsafe-inline';",
     remotePatterns: [
       {
         protocol: 'https',
@@ -22,7 +22,7 @@ const nextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://widget.hyperagent.so; style-src 'self' 'unsafe-inline' https://widget.hyperagent.so; connect-src 'self' https://widget.hyperagent.so"
+            value: "default-src * 'unsafe-inline' 'unsafe-eval'; script-src * 'unsafe-inline' 'unsafe-eval'; connect-src * 'unsafe-inline'; img-src * data: blob: 'unsafe-inline'; frame-src *; style-src * 'unsafe-inline';"
           }
         ]
       }

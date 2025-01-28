@@ -14,7 +14,7 @@ const DEV_SECRET = 'dev_secret_for_testing';
 export default function ClassifyPage() {
   const [isClassifying, setIsClassifying] = useState(false)
   const { data: dms, refetch } = useQuery<DM[]>({
-    queryKey: ['dms'],
+    ,
     queryFn: getDMs
   })
 

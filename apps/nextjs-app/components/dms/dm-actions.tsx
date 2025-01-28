@@ -58,7 +58,7 @@ export function DMActions({ dm }: DMActionsProps) {
     const handleUpgradeRelevance = async () => {
         try {
             await actions.upgradeRelevance(relevanceScore, explanation)
-            queryClient.invalidateQueries({ queryKey: ['dms'] })
+            queryClient.invalidateQueries({ queryKey: ['opportunities'] })
             toast({
                 title: "Relevance score updated",
                 description: `DM relevance score has been upgraded to ${relevanceScore}`,
@@ -77,7 +77,8 @@ export function DMActions({ dm }: DMActionsProps) {
     const handleDowngradeRelevance = async () => {
         try {
             await actions.downgradeRelevance(explanation)
-            queryClient.invalidateQueries({ queryKey: ['dms'] })
+            queryClient.invalidateQueries({  })
+            queryClient.invalidateQueries({ queryKey: ['opportunities'] })
             toast({
                 title: "DM marked as irrelevant",
                 description: "The DM has been marked as irrelevant",
@@ -98,7 +99,8 @@ export function DMActions({ dm }: DMActionsProps) {
             try {
                 const selectedGoal = goals.find((g: Goal) => g.id === selectedGoalId)
                 await actions.assignGoal(selectedGoalId)
-                queryClient.invalidateQueries({ queryKey: ['dms'] })
+                queryClient.invalidateQueries({  })
+                queryClient.invalidateQueries({ queryKey: ['opportunities'] })
                 toast({
                     title: "Goal assigned",
                     description: `DM has been assigned to goal: ${selectedGoal?.name}`,
@@ -120,7 +122,8 @@ export function DMActions({ dm }: DMActionsProps) {
             try {
                 const selectedMember = teamMembers.find((m: TeamMember) => m.id === selectedUserId)
                 await actions.assignUser(selectedUserId)
-                queryClient.invalidateQueries({ queryKey: ['dms'] })
+                queryClient.invalidateQueries({  })
+                queryClient.invalidateQueries({ queryKey: ['opportunities'] })
                 toast({
                     title: "Team member assigned",
                     description: `DM has been assigned to ${selectedMember?.full_name}`,
@@ -140,7 +143,8 @@ export function DMActions({ dm }: DMActionsProps) {
     const handleFlagDiscussion = async () => {
         try {
             await actions.flagDiscussion(!dm.needs_discussion)
-            queryClient.invalidateQueries({ queryKey: ['dms'] })
+            queryClient.invalidateQueries({  })
+            queryClient.invalidateQueries({ queryKey: ['opportunities'] })
             toast({
                 title: dm.needs_discussion ? "Discussion flag removed" : "Flagged for discussion",
                 description: dm.needs_discussion
@@ -159,7 +163,8 @@ export function DMActions({ dm }: DMActionsProps) {
     const handleUpdateStatus = async (status: 'approved' | 'rejected' | 'on_hold') => {
         try {
             await actions.updateStatus(status)
-            queryClient.invalidateQueries({ queryKey: ['dms'] })
+            queryClient.invalidateQueries({  })
+            queryClient.invalidateQueries({ queryKey: ['opportunities'] })
             toast({
                 title: "Status updated",
                 description: `DM status has been updated to ${status}`,
@@ -176,7 +181,8 @@ export function DMActions({ dm }: DMActionsProps) {
     const handleStartConversation = async () => {
         try {
             await actions.updateStatus('conversation_started')
-            queryClient.invalidateQueries({ queryKey: ['dms'] })
+            queryClient.invalidateQueries({  })
+            queryClient.invalidateQueries({ queryKey: ['opportunities'] })
             toast({
                 title: "Conversation started",
                 description: "DM has been moved to outbound conversations",

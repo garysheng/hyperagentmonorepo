@@ -58,7 +58,7 @@ export function DMDetail({ dm }: DMDetailProps) {
   const handleTagsChange = async (newTags: string[]) => {
     if (!dm) return
     console.log('handleTagsChange - Sending tags:', newTags)
-    await actions.updateTags(newTags)
+    actions.updateTags(newTags)
   }
 
   const tagsToPass = Array.isArray(dm.tags) ? dm.tags : []

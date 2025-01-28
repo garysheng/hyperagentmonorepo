@@ -31,7 +31,7 @@ export function useOpportunityActions(id: string) {
   const mutation = useMutation({
     mutationFn: (action: OpportunityAction) => performAction(id, action),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dms'] })
+      queryClient.invalidateQueries({  })
     },
   })
 
@@ -79,7 +79,7 @@ export function useOpportunityActions(id: string) {
 
       if (error) throw error
 
-      await queryClient.invalidateQueries({ queryKey: ['dms'] })
+      await queryClient.invalidateQueries({  })
     } finally {
       setIsLoading(false)
     }
