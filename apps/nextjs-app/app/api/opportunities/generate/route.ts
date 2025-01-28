@@ -20,20 +20,19 @@ async function generateOpportunityWithLLM(celebrityName: string, goals: Goal[], 
       apiKey: process.env.OPENAI_API_KEY
     })
 
-    const goalsContext = goals
-      .sort((a, b) => b.priority - a.priority)
-      .map((goal, index) => `${index + 1}. ${goal.name}: ${goal.description} (Priority: ${goal.priority})`)
-      .join('\n')
+    // Randomly select one goal if we're generating a relevant opportunity
+    const selectedGoal = shouldBeRelevant ? goals[Math.floor(Math.random() * goals.length)] : null
+    const goalContext = selectedGoal ? `${selectedGoal.name}: ${selectedGoal.description} (Priority: ${selectedGoal.priority})` : ''
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-4-turbo-preview',
+      model: 'gpt-4o',
       messages: [{
         role: 'system',
         content: `You are an AI that generates realistic inbound business opportunities for celebrities.
           Generate a ${source === 'WIDGET' ? 'website contact form' : 'Twitter DM'} message for ${celebrityName}.
           
-          ${shouldBeRelevant ? `The celebrity's current goals are:
-          ${goalsContext}` : ''}
+          ${shouldBeRelevant ? `The celebrity's current goal is:
+          ${goalContext}` : ''}
 
           The message should be:
           - 1-3 sentences long
@@ -41,12 +40,12 @@ async function generateOpportunityWithLLM(celebrityName: string, goals: Goal[], 
           - Include specific details about a business opportunity
           - Be professional but conversational
           - ${source === 'TWITTER_DM' ? 'More casual and suited for Twitter' : 'More formal and suited for a contact form'}
-          ${shouldBeRelevant ? '- Align with one or more of the celebrity\'s goals' : '- Be a generic or random business opportunity'}
+          ${shouldBeRelevant ? '- Align specifically with the provided goal' : '- Be a generic or random business opportunity'}
           
           Return only the message text, nothing else.`
       }, {
         role: 'user',
-        content: `Generate a realistic ${source === 'WIDGET' ? 'contact form' : 'Twitter DM'} business opportunity message for ${celebrityName}${shouldBeRelevant ? ' that aligns with their goals' : ''}.`
+        content: `Generate a realistic ${source === 'WIDGET' ? 'contact form' : 'Twitter DM'} business opportunity message for ${celebrityName}${shouldBeRelevant ? ' that aligns with their goal' : ''}.`
       }],
       temperature: shouldBeRelevant ? 0.7 : 0.9,
       max_tokens: 150
