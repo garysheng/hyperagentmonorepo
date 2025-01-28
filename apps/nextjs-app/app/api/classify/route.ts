@@ -65,6 +65,9 @@ export async function GET() {
                         twitterUsername: opp.source === 'TWITTER_DM' ? opp.sender_handle : undefined
                     });
 
+                    // Find the matched goal to get its default assignee
+                    const matchedGoal = classification.goalId ? celebrityGoals.find((g: Goal) => g.id === classification.goalId) : null;
+                    
                     // Update the opportunity with the classification results
                     const { error: updateError } = await supabase
                         .from('opportunities')
@@ -76,7 +79,8 @@ export async function GET() {
                             goal_id: classification.goalId,
                             sender_bio: classification.senderBio,
                             classification_explanation: classification.explanation,
-                            classified_at: new Date().toISOString()
+                            classified_at: new Date().toISOString(),
+                            assigned_to: matchedGoal?.default_user_id || null
                         })
                         .eq('id', opp.id);
 

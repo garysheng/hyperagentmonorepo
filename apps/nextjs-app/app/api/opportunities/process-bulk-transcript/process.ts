@@ -62,7 +62,7 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
     ...DEFAULT_MODEL_CONFIG,
     ...input.modelConfig
   }
-  
+
   const client = new Client({
     apiUrl: process.env.LANGCHAIN_ENDPOINT,
     apiKey: process.env.LANGCHAIN_API_KEY
@@ -85,17 +85,17 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
             promptTokens: output.llmOutput?.tokenUsage?.prompt_tokens || 0,
             completionTokens: output.llmOutput?.tokenUsage?.completion_tokens || 0
           }
-          
+
           await client.createRun({
             id: runId,
             name: "analyze_bulk_transcript",
             run_type: "llm",
-            inputs: { 
+            inputs: {
               transcript: input.transcript,
               opportunities: input.opportunities,
               modelConfig
             },
-            outputs: { 
+            outputs: {
               result: (output.generations[0][0] as any).message?.additional_kwargs?.function_call?.arguments || "{}",
               totalTokens: tokenUsage.totalTokens
             },
@@ -111,8 +111,8 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
             }
           })
 
-          // Store token usage for the result metadata
-          ;(output as any).tokenUsage = tokenUsage
+            // Store token usage for the result metadata
+            ; (output as any).tokenUsage = tokenUsage
         }
       }
     ]
@@ -156,42 +156,45 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
     ["system", `You are an AI assistant helping to analyze meeting transcripts about opportunities.
       Your task is to:
       1. Identify which opportunities from the provided list were discussed in the transcript
-      2. Extract the EXACT relevant section for each opportunity
+      2. Extract ONLY the EXACT meeting discussion parts (not the initial messages)
       3. Provide a confidence score for each match
 
       Here are the opportunities to look for:
       {opportunities}
       
-      Guidelines for confidence scores:
-      - Score > 0.8: Clear, direct discussion with specific details or decisions
-      - Score 0.6-0.8: Moderate discussion with some context but less detail
-      - Score 0.3-0.5: Brief mention or unclear reference
-      - Score < 0.3: Very uncertain or tangential reference
+      CRITICAL RULES FOR RELEVANT SECTION:
+      - The relevant section must contain ONLY word-for-word quotes from the transcript
+      - NO paraphrasing, summarizing, or creating new text
+      - If the transcript is "approve user@email.com", that's the EXACT text to use
+      - If the transcript is "Team Lead: let's approve X", that's the EXACT text to use
+      - Leave relevantSection EMPTY if you can't find an exact quote
+      
+      Examples:
+      Transcript: "approve Morris@email.com"
+      ✓ Relevant section: "approve Morris@email.com"
+      ✗ Relevant section: "Team discussed approving Morris"
 
-      Guidelines for relevant sections:
-      - Extract ONLY the specific sentences that directly discuss the opportunity
-      - Include ONLY the discussion about that specific opportunity, not surrounding context
-      - Do not include discussions about other opportunities
-      - Each relevant section should be self-contained and focused
-      - For decisions, include only the specific decision-making statements
-      - Maintain speaker attribution if present
+      Transcript: "Team Lead: Should we approve Morris? Manager: Yes"
+      ✓ Relevant section: "Team Lead: Should we approve Morris? Manager: Yes"
+      ✗ Relevant section: "The team agreed to approve Morris"
+      
+      Guidelines for confidence scores:
+      - Score > 0.8: Found exact quote with clear decision
+      - Score 0.6-0.8: Found exact quote but decision unclear
+      - Score 0.3-0.5: Found partial or ambiguous quote
+      - Score < 0.3: Quote might be about something else
 
       Remember:
-      - Look for mentions of sender handles, usernames, emails, or role titles
-      - Match opportunities by:
-        * Exact handle matches (e.g. "ai_researcher")
-        * Email addresses (e.g. "user@example.com")
-        * Role/title mentions (e.g. "product designer" matches "product_designer")
-        * Partial matches of handle components
-      - Consider both direct mentions and contextual references
-      - Include opportunities even if only briefly mentioned, with appropriate confidence scores
-      - For briefly mentioned opportunities, confidence MUST be <= 0.5
-      - When extracting relevant sections, be precise and avoid including unrelated context`],
+      - ONLY use word-for-word quotes from the transcript
+      - NO fabrication or inference
+      - NO summarizing or paraphrasing
+      - Empty relevantSection if no exact quote found
+      - When in doubt, leave relevantSection empty`],
     ["human", "{transcript}"]
   ])
 
   const formattedPrompt = await prompt.formatMessages({
-    opportunities: input.opportunities.map(opp => 
+    opportunities: input.opportunities.map(opp =>
       `ID: ${opp.id}
       Initial Message: ${opp.initial_content}
       Current Status: ${opp.status}
@@ -199,17 +202,17 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
     ).join('\n\n'),
     transcript: input.transcript
   })
-  
+
   const response = await model.invoke(formattedPrompt) as ExtendedBaseMessage
   const result = response.additional_kwargs.function_call?.arguments
     ? JSON.parse(response.additional_kwargs.function_call.arguments)
     : { identifiedOpportunities: [] }
 
   // Get token usage directly from the response
-  const totalTokens = response.llmOutput?.tokenUsage?.total_tokens || 
-                     response.llmOutput?.tokenUsage?.totalTokens || 
-                     response.tokenUsage?.total_tokens || 
-                     response.tokenUsage?.totalTokens || 0
+  const totalTokens = response.llmOutput?.tokenUsage?.total_tokens ||
+    response.llmOutput?.tokenUsage?.totalTokens ||
+    response.tokenUsage?.total_tokens ||
+    response.tokenUsage?.totalTokens || 0
 
   return {
     ...result,

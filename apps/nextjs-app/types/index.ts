@@ -9,6 +9,7 @@ export interface Goal {
   description: string | null;
   priority: number;
   created_at: string;
+  default_user_id: string | null;
 }
 
 export interface Celebrity {

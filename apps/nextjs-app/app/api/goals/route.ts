@@ -46,6 +46,7 @@ export async function GET() {
         name,
         description,
         priority,
+        default_user_id,
         created_at
       `)
       .eq('celebrity_id', userData.celebrity_id)

@@ -14,27 +14,53 @@ import { Loader2, Plus } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import * as z from 'zod'
+import { useTeamMembers } from '@/hooks/use-team-members'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
+import { Slider } from '@/components/ui/slider'
+import { useAuth } from '@/components/providers'
+import { useCelebrity } from '@/hooks/use-celebrity'
+import { createClient } from '@/lib/supabase/client'
 
 const goalSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().nullable(),
   priority: z.number().min(1).max(5),
+  default_user_id: z.string().nullable(),
 })
 
 type GoalFormValues = z.infer<typeof goalSchema>
+
+interface FormValues {
+  name: string
+  description: string
+  priority: number
+  default_user_id: string | null
+}
 
 export default function GoalsPage() {
   const { goals, loading, fetchGoals, createGoal, updateGoal, deleteGoal } = useGoals()
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null)
   const [isOpen, setIsOpen] = useState(false)
+  const { user } = useAuth()
   const { toast } = useToast()
+  const { data: teamMembers = [] } = useTeamMembers()
+  const { data: celebrity } = useCelebrity()
+  const supabase = createClient()
+  const [form, setForm] = useState<FormValues>({
+    name: '',
+    description: '',
+    priority: 3,
+    default_user_id: null
+  })
 
-  const form = useForm<GoalFormValues>({
+  const formRef = useForm<GoalFormValues>({
     resolver: zodResolver(goalSchema),
     defaultValues: {
       name: '',
       description: '',
-      priority: 1,
+      priority: 3,
+      default_user_id: null as string | null
     },
   })
 
@@ -44,19 +70,21 @@ export default function GoalsPage() {
 
   useEffect(() => {
     if (selectedGoal) {
-      form.reset({
+      formRef.reset({
         name: selectedGoal.name,
         description: selectedGoal.description || '',
         priority: selectedGoal.priority,
+        default_user_id: selectedGoal.default_user_id,
       })
     } else {
-      form.reset({
+      formRef.reset({
         name: '',
         description: '',
-        priority: 1,
+        priority: 3,
+        default_user_id: null as string | null
       })
     }
-  }, [selectedGoal, form])
+  }, [selectedGoal, formRef])
 
   const onSubmit = async (data: GoalFormValues) => {
     try {
@@ -97,7 +125,47 @@ export default function GoalsPage() {
     }
   }
 
-  if (loading) {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!celebrity) return
+
+    try {
+      const { error } = await supabase
+        .from('goals')
+        .insert({
+          celebrity_id: celebrity.id,
+          name: form.name,
+          description: form.description,
+          priority: form.priority,
+          default_user_id: form.default_user_id
+        })
+
+      if (error) throw error
+
+      toast({
+        title: 'Success',
+        description: 'Goal created successfully'
+      })
+
+      setIsOpen(false)
+      setForm({
+        name: '',
+        description: '',
+        priority: 3,
+        default_user_id: null
+      })
+    } catch (error) {
+      console.error('Error creating goal:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to create goal. Please try again.',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  if (loading || !user) {
     return (
       <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -128,10 +196,10 @@ export default function GoalsPage() {
                   : 'Add a new goal to track your priorities'}
               </DialogDescription>
             </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <Form {...formRef}>
+              <form onSubmit={formRef.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
-                  control={form.control}
+                  control={formRef.control}
                   name="name"
                   render={({ field }) => (
                     <FormItem>
@@ -144,7 +212,7 @@ export default function GoalsPage() {
                   )}
                 />
                 <FormField
-                  control={form.control}
+                  control={formRef.control}
                   name="description"
                   render={({ field }) => (
                     <FormItem>
@@ -161,21 +229,53 @@ export default function GoalsPage() {
                   )}
                 />
                 <FormField
-                  control={form.control}
+                  control={formRef.control}
                   name="priority"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Priority (1-5)</FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
+                        <Slider
+                          id="priority"
                           min={1}
                           max={5}
-                          {...field}
-                          onChange={e => field.onChange(parseInt(e.target.value))}
+                          step={1}
+                          value={[field.value || 3]}
+                          onValueChange={([value]) => field.onChange(value)}
                         />
                       </FormControl>
                       <FormDescription>1 is highest priority, 5 is lowest</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={formRef.control}
+                  name="default_user_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Default Team Member</FormLabel>
+                      <FormControl>
+                        <Select
+                          value={field.value || 'none'}
+                          onValueChange={(value) => field.onChange(value === 'none' ? null : value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a team member" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            {teamMembers.map((member) => (
+                              <SelectItem key={member.id} value={member.id}>
+                                {member.full_name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormDescription>
+                        This team member will be automatically assigned to opportunities that match this goal
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -196,7 +296,12 @@ export default function GoalsPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <CardTitle>{goal.name}</CardTitle>
-                  <CardDescription>Priority: {goal.priority}</CardDescription>
+                  <CardDescription>
+                    Priority: {goal.priority}
+                    {goal.default_user_id && teamMembers.find(m => m.id === goal.default_user_id) && (
+                      <> • Assigned to: {teamMembers.find(m => m.id === goal.default_user_id)?.full_name}</>
+                    )}
+                  </CardDescription>
                 </div>
                 <div className="flex space-x-2">
                   <Button

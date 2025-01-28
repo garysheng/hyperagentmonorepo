@@ -24,6 +24,7 @@ interface OpportunityPreview {
   confidence: number
   initial_content: string
   status: string
+  sender_handle?: string
 }
 
 interface BulkTranscriptWizardProps {
@@ -31,6 +32,7 @@ interface BulkTranscriptWizardProps {
     id: string
     initial_content: string
     status: string
+    sender_handle?: string
   }>
   onProcessComplete: () => void
 }
@@ -352,7 +354,14 @@ export function BulkTranscriptWizard({ opportunities, onProcessComplete }: BulkT
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
-                    Opportunity {currentOpportunityIndex + 1} of {identifiedOpportunities.length}
+                    <div className="flex items-center gap-2">
+                      <span>Opportunity {currentOpportunityIndex + 1} of {identifiedOpportunities.length}</span>
+                      <span className="text-sm text-muted-foreground">
+                        from {currentOpportunity.sender_handle?.includes('@') 
+                          ? currentOpportunity.sender_handle 
+                          : `@${currentOpportunity.sender_handle}`}
+                      </span>
+                    </div>
                     <Badge variant={currentOpportunity.confidence > 0.7 ? 'default' : 'secondary'}>
                       {Math.round(currentOpportunity.confidence * 100)}% Match
                     </Badge>
