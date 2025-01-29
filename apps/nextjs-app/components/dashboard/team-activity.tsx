@@ -6,6 +6,11 @@ import { formatDistanceToNow } from 'date-fns'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Users, Activity, Clock } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { useCelebrity } from '@/hooks/use-celebrity'
 
 interface TeamMember {
   id: string
@@ -19,14 +24,16 @@ interface TeamMember {
 
 export function TeamActivity() {
   const supabase = createClient()
+  const { data: celebrity } = useCelebrity()
 
   const { data: teamMembers, isLoading, error } = useQuery({
-    queryKey: ['team-activity'],
+    queryKey: ['team-activity', celebrity?.id],
     queryFn: async () => {
       try {
         const { data: { user }, error: authError } = await supabase.auth.getUser()
         if (authError) throw new Error(`Auth error: ${authError.message}`)
         if (!user) throw new Error('Not authenticated')
+        if (!celebrity?.id) throw new Error('No celebrity profile found')
 
         // Get team members with their action counts and last action
         const { data: members, error: membersError } = await supabase
@@ -37,6 +44,7 @@ export function TeamActivity() {
             role,
             created_at
           `)
+          .eq('celebrity_id', celebrity.id)
           .order('full_name')
 
         if (membersError) throw new Error(`Members query error: ${membersError.message}`)
@@ -52,11 +60,13 @@ export function TeamActivity() {
                 supabase
                   .from('opportunity_actions')
                   .select('*', { count: 'exact', head: true })
-                  .eq('user_id', member.id),
+                  .eq('user_id', member.id)
+                  .eq('celebrity_id', celebrity.id),
                 supabase
                   .from('opportunity_actions')
                   .select('created_at')
                   .eq('user_id', member.id)
+                  .eq('celebrity_id', celebrity.id)
                   .order('created_at', { ascending: false })
                   .limit(1)
                   .single(),
@@ -64,6 +74,7 @@ export function TeamActivity() {
                   .from('opportunity_actions')
                   .select('type')
                   .eq('user_id', member.id)
+                  .eq('celebrity_id', celebrity.id)
                   .order('created_at', { ascending: false })
               ])
 
@@ -98,6 +109,7 @@ export function TeamActivity() {
         throw error
       }
     },
+    enabled: !!celebrity?.id,
     retry: 1
   })
 
@@ -112,62 +124,100 @@ export function TeamActivity() {
   }
 
   return (
-    <div className="space-y-8">
-      {isLoading ? (
-        <>
-          <div className="flex items-center space-x-4">
-            <Skeleton className="h-12 w-12 rounded-full" />
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-[200px]" />
-              <Skeleton className="h-4 w-[150px]" />
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Skeleton className="h-12 w-12 rounded-full" />
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-[200px]" />
-              <Skeleton className="h-4 w-[150px]" />
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Skeleton className="h-12 w-12 rounded-full" />
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-[200px]" />
-              <Skeleton className="h-4 w-[150px]" />
-            </div>
-          </div>
-        </>
-      ) : teamMembers && teamMembers.length > 0 ? (
-        teamMembers.map((member) => (
-          <div key={member.id} className="flex items-start space-x-4">
-            <Avatar className="h-12 w-12">
-              <AvatarFallback>
-                {member.full_name.split(' ').map(n => n[0]).join('')}
-              </AvatarFallback>
-            </Avatar>
-            <div className="space-y-1">
-              <div className="flex items-center space-x-2">
-                <p className="text-sm font-medium leading-none">{member.full_name}</p>
-                <p className="text-sm text-muted-foreground">·</p>
-                <p className="text-sm text-muted-foreground">{member.role}</p>
+    <Card className="border-t-4 border-t-gradient-to-r from-blue-500 to-purple-500">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-lg font-semibold flex items-center gap-2">
+          <Users className="h-5 w-5 text-blue-500" />
+          Team Activity
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-6">
+          {isLoading ? (
+            <>
+              <div className="flex items-center space-x-4">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-4 w-[200px]" />
+                  <Skeleton className="h-4 w-[150px]" />
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground">
-                {member.actionCount} actions
-                {member.lastAction && ` · Last active ${formatDistanceToNow(new Date(member.lastAction), { addSuffix: true })}`}
-              </p>
-              {member.actionTypes.length > 0 && (
-                <p className="text-sm text-muted-foreground">
-                  Most common: {member.actionTypes.slice(0, 3).map(type => type.replace('_', ' ')).join(', ')}
-                </p>
-              )}
+              <div className="flex items-center space-x-4">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-4 w-[200px]" />
+                  <Skeleton className="h-4 w-[150px]" />
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-4 w-[200px]" />
+                  <Skeleton className="h-4 w-[150px]" />
+                </div>
+              </div>
+            </>
+          ) : teamMembers && teamMembers.length > 0 ? (
+            teamMembers.map((member) => (
+              <div 
+                key={member.id} 
+                className="group flex items-start space-x-4 rounded-lg p-3 transition-colors hover:bg-muted/50 hover:shadow-md"
+              >
+                <Avatar className="h-12 w-12 border-2 border-background shadow-sm ring-2 ring-blue-500/20">
+                  <AvatarFallback className="bg-gradient-to-br from-blue-500/20 to-purple-500/20">
+                    {member.full_name.split(' ').map(n => n[0]).join('')}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium leading-none">{member.full_name}</p>
+                    <Badge variant="outline" className="text-xs border-blue-500/50">
+                      {member.role}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Activity className="h-3 w-3" />
+                      <span>{member.actionCount} actions</span>
+                    </div>
+                    {member.lastAction && (
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        <span>
+                          Last active {formatDistanceToNow(new Date(member.lastAction), { addSuffix: true })}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  {member.actionTypes.length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {member.actionTypes.slice(0, 3).map((type, index) => (
+                        <Badge 
+                          key={type} 
+                          variant="secondary"
+                          className={cn(
+                            "text-xs",
+                            index === 0 && "bg-blue-500/10 text-blue-500",
+                            index === 1 && "bg-purple-500/10 text-purple-500",
+                            index === 2 && "bg-pink-500/10 text-pink-500"
+                          )}
+                        >
+                          {type.replace('_', ' ')}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p>No team members found</p>
             </div>
-          </div>
-        ))
-      ) : (
-        <div className="text-center py-8 text-muted-foreground">
-          No team members found
+          )}
         </div>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   )
 } 

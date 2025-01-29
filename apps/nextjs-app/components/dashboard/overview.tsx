@@ -5,6 +5,30 @@ import { useQuery } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { MessagesSquare, Goal, AlertCircle, BarChart3 } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
+import { cn } from '@/lib/utils'
+
+const statCardStyles = {
+  totalDMs: {
+    gradient: "from-blue-500 to-blue-700",
+    iconColor: "text-blue-500",
+    bgGlow: "after:bg-blue-500/10",
+  },
+  averageRelevance: {
+    gradient: "from-green-500 to-emerald-700",
+    iconColor: "text-green-500",
+    bgGlow: "after:bg-green-500/10",
+  },
+  needDiscussion: {
+    gradient: "from-yellow-500 to-orange-700",
+    iconColor: "text-yellow-500",
+    bgGlow: "after:bg-yellow-500/10",
+  },
+  statusBreakdown: {
+    gradient: "from-purple-500 to-pink-700",
+    iconColor: "text-purple-500",
+    bgGlow: "after:bg-purple-500/10",
+  },
+}
 
 export function Overview() {
   const supabase = createClient()
@@ -77,19 +101,28 @@ export function Overview() {
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <Card>
+      <Card className={cn(
+        "relative overflow-hidden transition-shadow hover:shadow-xl",
+        "after:absolute after:inset-0 after:opacity-20 after:transition-opacity hover:after:opacity-30",
+        statCardStyles.totalDMs.bgGlow
+      )}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">
             Total DMs
           </CardTitle>
-          <MessagesSquare className="h-4 w-4 text-muted-foreground" />
+          <MessagesSquare className={cn("h-4 w-4", statCardStyles.totalDMs.iconColor)} />
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <Skeleton className="h-8 w-20" />
           ) : (
             <>
-              <div className="text-2xl font-bold">{stats?.totalDMs}</div>
+              <div className={cn(
+                "text-2xl font-bold bg-gradient-to-br bg-clip-text text-transparent",
+                statCardStyles.totalDMs.gradient
+              )}>
+                {stats?.totalDMs}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Across all statuses
               </p>
@@ -97,19 +130,29 @@ export function Overview() {
           )}
         </CardContent>
       </Card>
-      <Card>
+
+      <Card className={cn(
+        "relative overflow-hidden transition-shadow hover:shadow-xl",
+        "after:absolute after:inset-0 after:opacity-20 after:transition-opacity hover:after:opacity-30",
+        statCardStyles.averageRelevance.bgGlow
+      )}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">
             Average Relevance
           </CardTitle>
-          <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          <BarChart3 className={cn("h-4 w-4", statCardStyles.averageRelevance.iconColor)} />
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <Skeleton className="h-8 w-20" />
           ) : (
             <>
-              <div className="text-2xl font-bold">{stats?.averageRelevance}</div>
+              <div className={cn(
+                "text-2xl font-bold bg-gradient-to-br bg-clip-text text-transparent",
+                statCardStyles.averageRelevance.gradient
+              )}>
+                {stats?.averageRelevance}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Out of 5.0
               </p>
@@ -117,19 +160,29 @@ export function Overview() {
           )}
         </CardContent>
       </Card>
-      <Card>
+
+      <Card className={cn(
+        "relative overflow-hidden transition-shadow hover:shadow-xl",
+        "after:absolute after:inset-0 after:opacity-20 after:transition-opacity hover:after:opacity-30",
+        statCardStyles.needDiscussion.bgGlow
+      )}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">
             Need Discussion
           </CardTitle>
-          <AlertCircle className="h-4 w-4 text-muted-foreground" />
+          <AlertCircle className={cn("h-4 w-4", statCardStyles.needDiscussion.iconColor)} />
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <Skeleton className="h-8 w-20" />
           ) : (
             <>
-              <div className="text-2xl font-bold">{stats?.needsDiscussion}</div>
+              <div className={cn(
+                "text-2xl font-bold bg-gradient-to-br bg-clip-text text-transparent",
+                statCardStyles.needDiscussion.gradient
+              )}>
+                {stats?.needsDiscussion}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Flagged for team review
               </p>
@@ -137,12 +190,17 @@ export function Overview() {
           )}
         </CardContent>
       </Card>
-      <Card>
+
+      <Card className={cn(
+        "relative overflow-hidden transition-shadow hover:shadow-xl",
+        "after:absolute after:inset-0 after:opacity-20 after:transition-opacity hover:after:opacity-30",
+        statCardStyles.statusBreakdown.bgGlow
+      )}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">
             Status Breakdown
           </CardTitle>
-          <Goal className="h-4 w-4 text-muted-foreground" />
+          <Goal className={cn("h-4 w-4", statCardStyles.statusBreakdown.iconColor)} />
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -155,8 +213,11 @@ export function Overview() {
             <div className="space-y-2">
               {Object.entries(stats?.dmsByStatus || {}).map(([status, count]) => (
                 <div key={status} className="flex items-center justify-between">
-                  <span className="capitalize">{status.replace('_', ' ')}</span>
-                  <span>{count}</span>
+                  <span className="capitalize text-sm">{status.replace('_', ' ')}</span>
+                  <span className={cn(
+                    "font-medium bg-gradient-to-br bg-clip-text text-transparent",
+                    statCardStyles.statusBreakdown.gradient
+                  )}>{count}</span>
                 </div>
               ))}
             </div>

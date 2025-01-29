@@ -18,12 +18,12 @@ interface ActionWithRelations {
 }
 
 interface DMWithRelations {
-  id: string
-  sender_handle: string
+    id: string
+    sender_handle: string
   status: string
   created_at: string
   content: string
-}
+  }
 
 interface ActionResponse {
   id: string
@@ -52,7 +52,13 @@ function getStatusBadgeVariant(status: string): "default" | "secondary" | "destr
 
 function getStatusBadgeClass(status: string): string {
   if (status === 'conversation_started') {
-    return "animate-pulse bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-[0_0_10px_rgba(147,51,234,0.5)] dark:shadow-[0_0_10px_rgba(168,85,247,0.5)]"
+    return "bg-purple-500/20 text-purple-500 border-purple-500/50 hover:bg-purple-500/30"
+  }
+  if (status === 'approved') {
+    return "bg-green-500/20 text-green-500 border-green-500/50 hover:bg-green-500/30"
+  }
+  if (status === 'rejected') {
+    return "bg-red-500/20 text-red-500 border-red-500/50 hover:bg-red-500/30"
   }
   return ""
 }
@@ -72,7 +78,7 @@ export function RecentActivity() {
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser()
       console.log('Recent Actions - Auth user:', user)
-      if (!user) throw new Error('Not authenticated')
+        if (!user) throw new Error('Not authenticated')
 
       // Get the user's profile to get the celebrity_id
       const { data: userProfile } = await supabase
@@ -85,20 +91,20 @@ export function RecentActivity() {
       if (!userProfile?.celebrity_id) throw new Error('No celebrity profile found')
 
       const { data } = await supabase
-        .from('opportunity_actions')
-        .select(`
-          id,
+          .from('opportunity_actions')
+          .select(`
+            id,
           action_type,
-          created_at,
+            created_at,
           user:users!opportunity_actions_user_id_fkey (
             full_name
           ),
           opportunities!opportunity_actions_opportunity_id_fkey (
             celebrity_id
           )
-        `)
+          `)
         .eq('opportunities.celebrity_id', userProfile.celebrity_id)
-        .order('created_at', { ascending: false })
+          .order('created_at', { ascending: false })
         .limit(5) as { data: ActionResponse[] | null, error: Error }
       console.log('Recent Actions - Raw data:', data)
 
@@ -108,7 +114,7 @@ export function RecentActivity() {
         created_at: item.created_at,
         user: {
           full_name: item.user?.full_name || 'Unknown User'
-        }
+      }
       }))
       console.log('Recent Actions - Mapped data:', mappedData)
 
@@ -148,14 +154,16 @@ export function RecentActivity() {
       console.log('Recent DMs - Mapped data:', mappedData)
 
       return mappedData as DMWithRelations[]
-    }
+  }
   })
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      <Card>
+      <Card className="border-t-4 border-t-gradient-to-r from-green-500 to-emerald-500">
         <CardHeader>
-          <CardTitle>Recent DMs</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            Recent DMs
+          </CardTitle>
           <CardDescription>Latest direct messages received</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -164,11 +172,11 @@ export function RecentActivity() {
               <div className="space-y-2">
                 <Skeleton className="h-4 w-3/4" />
                 <Skeleton className="h-4 w-1/2" />
-              </div>
+                  </div>
               <div className="space-y-2">
                 <Skeleton className="h-4 w-3/4" />
                 <Skeleton className="h-4 w-1/2" />
-              </div>
+                </div>
               <div className="space-y-2">
                 <Skeleton className="h-4 w-3/4" />
                 <Skeleton className="h-4 w-1/2" />
@@ -177,18 +185,19 @@ export function RecentActivity() {
           ) : (
             recentDMs?.map((dm) => (
               <div key={dm.id} className="flex flex-col space-y-1">
-                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2">
                   <span className="font-medium">@{dm.sender_handle}</span>
-                  <Badge 
+                    <Badge 
                     variant={getStatusBadgeVariant(dm.status)} 
                     className={cn(
                       "capitalize",
                       getStatusBadgeClass(dm.status)
                     )}
-                  >
+                    >
                     {dm.status.replace('_', ' ')}
-                  </Badge>
-                </div>
+                    </Badge>
+
+                  </div>
                 <p className="text-sm text-muted-foreground line-clamp-1">{dm.content}</p>
                 <span className="text-xs text-muted-foreground">
                   {formatDistanceToNow(new Date(dm.created_at), { addSuffix: true })}
@@ -198,9 +207,11 @@ export function RecentActivity() {
           )}
         </CardContent>
       </Card>
-      <Card>
+      <Card className="border-t-4 border-t-gradient-to-r from-purple-500 to-pink-500">
         <CardHeader>
-          <CardTitle>Recent Actions</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            Recent Actions
+          </CardTitle>
           <CardDescription>Latest team member activities</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -229,16 +240,16 @@ export function RecentActivity() {
                     <Badge variant={getActionBadgeVariant(action.type)} className="capitalize">
                       {action.type.split('_').join(' ')}
                     </Badge>
-                  </div>
+            </div>
                   <span className="text-xs text-muted-foreground">
                     {formatDistanceToNow(new Date(action.created_at), { addSuffix: true })}
                   </span>
-                </div>
+        </div>
               )
             })
           )}
-        </CardContent>
-      </Card>
+      </CardContent>
+    </Card>
     </div>
   )
 } 
