@@ -85,7 +85,7 @@ export function ConnectTwitterButton({ isConnected, screenName, onSuccess, onErr
         variant="outline"
         onClick={handleDisconnect}
         disabled={isLoading}
-        className="w-full sm:w-auto text-destructive hover:text-destructive"
+        className="w-full sm:w-auto bg-red-500/10 text-red-500 hover:bg-red-500/20 hover:text-red-600 border-red-500/20"
       >
         {isLoading ? (
           <span className="flex items-center gap-2">
