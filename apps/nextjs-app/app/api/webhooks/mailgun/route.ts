@@ -25,6 +25,12 @@ function generateMessageHash(sender: string, content: string): string {
     .digest('hex');
 }
 
+// Extract celebrity ID from email address
+function getCelebrityIdFromEmail(email: string): string | null {
+  const match = email.match(/postmaster\+team\+([^@]+)@/);
+  return match ? match[1] : null;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
@@ -53,6 +59,13 @@ export async function POST(req: NextRequest) {
     const content = (formData.get('stripped-text') || formData.get('body-plain'))?.toString() || '';
     const mailgunMessageId = formData.get('Message-Id')?.toString() || '';
 
+    // Extract celebrity ID from recipient email
+    const celebrityId = getCelebrityIdFromEmail(toAddresses[0]);
+    if (!celebrityId) {
+      console.error('Invalid recipient email format:', toAddresses[0]);
+      return NextResponse.json({ error: 'Invalid recipient email' }, { status: 400 });
+    }
+
     // Generate message hash
     const messageHash = generateMessageHash(fromAddress, content);
 
@@ -75,49 +88,66 @@ export async function POST(req: NextRequest) {
       .from(TableName.OPPORTUNITIES)
       .select('id, status')
       .eq('sender_handle', fromAddress)
-      .eq('source', 'WIDGET')
+      .eq('celebrity_id', celebrityId)
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
-    if (!existingOpportunity) {
-      console.error('No existing opportunity found for sender:', fromAddress);
-      return NextResponse.json({ error: 'Opportunity not found' }, { status: 404 });
-    }
+    let opportunityId: string;
 
-    // Find or create email thread for this opportunity
-    const { data: emailThread } = await supabase
-      .from(TableName.EMAIL_THREADS)
-      .select('id')
-      .eq('opportunity_id', existingOpportunity.id)
-      .single();
-
-    let threadId: string;
-    if (emailThread) {
-      threadId = emailThread.id;
+    if (existingOpportunity) {
+      opportunityId = existingOpportunity.id;
+      
+      // Update opportunity status if needed
+      if (existingOpportunity.status === 'new' || existingOpportunity.status === 'approved') {
+        await supabase
+          .from(TableName.OPPORTUNITIES)
+          .update({ status: 'conversation_started' })
+          .eq('id', existingOpportunity.id);
+      }
     } else {
-      // Create new thread if none exists
-      const { data: newThread, error: threadError } = await supabase
-        .from(TableName.EMAIL_THREADS)
+      // Create new opportunity
+      const { data: newOpportunity, error: opportunityError } = await supabase
+        .from(TableName.OPPORTUNITIES)
         .insert({
-          opportunity_id: existingOpportunity.id,
-          subject,
+          celebrity_id: celebrityId,
+          sender_handle: fromAddress,
+          source: 'EMAIL',
+          status: 'new',
+          content: content,
+          subject: subject
         })
         .select()
         .single();
 
-      if (threadError || !newThread) {
-        console.error('Failed to create email thread:', threadError);
-        return NextResponse.json({ error: 'Failed to create thread' }, { status: 500 });
+      if (opportunityError || !newOpportunity) {
+        console.error('Failed to create opportunity:', opportunityError);
+        return NextResponse.json({ error: 'Failed to create opportunity' }, { status: 500 });
       }
-      threadId = newThread.id;
+
+      opportunityId = newOpportunity.id;
+    }
+
+    // Create new email thread
+    const { data: newThread, error: threadError } = await supabase
+      .from(TableName.EMAIL_THREADS)
+      .insert({
+        opportunity_id: opportunityId,
+        subject,
+      })
+      .select()
+      .single();
+
+    if (threadError || !newThread) {
+      console.error('Failed to create email thread:', threadError);
+      return NextResponse.json({ error: 'Failed to create thread' }, { status: 500 });
     }
 
     // Add the new message to the thread
     const { error: messageError } = await supabase
       .from(TableName.EMAIL_MESSAGES)
       .insert({
-        thread_id: threadId,
+        thread_id: newThread.id,
         from_address: fromAddress,
         to_addresses: toAddresses,
         subject,
@@ -130,18 +160,6 @@ export async function POST(req: NextRequest) {
     if (messageError) {
       console.error('Failed to create message:', messageError);
       return NextResponse.json({ error: 'Failed to create message' }, { status: 500 });
-    }
-
-    // Update opportunity status if needed
-    if (existingOpportunity.status === 'new' || existingOpportunity.status === 'approved') {
-      const { error: statusError } = await supabase
-        .from(TableName.OPPORTUNITIES)
-        .update({ status: 'conversation_started' })
-        .eq('id', existingOpportunity.id);
-
-      if (statusError) {
-        console.error('Failed to update opportunity status:', statusError);
-      }
     }
 
     return NextResponse.json({ success: true });

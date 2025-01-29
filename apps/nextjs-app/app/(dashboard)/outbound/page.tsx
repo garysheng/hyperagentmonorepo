@@ -7,15 +7,20 @@ import { toast } from '@/hooks/use-toast'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
 import { OpportunityList } from '@/components/opportunities/opportunity-list'
+import { ReadyForOutreachList } from '@/components/opportunities/ready-for-outreach-list'
 import { useAuth } from '@/components/providers'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
+import type { Opportunity } from '@/types'
 
 export default function OutboundPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
   const { data: celebrity, isLoading: celebrityLoading } = useCelebrity()
   const queryClient = useQueryClient()
+  const [showOnlyMine, setShowOnlyMine] = useState(false)
 
   // Handle auth redirect using useEffect
   useEffect(() => {
@@ -97,26 +102,45 @@ export default function OutboundPage() {
     )
   }
 
-  const readyForOutreach = opportunities?.filter(opp => opp.status === 'approved') || []
-  const inConversation = opportunities?.filter(opp => opp.status === 'conversation_started') || []
+  const filterOpportunities = (opportunities: Opportunity[] | undefined = []): Opportunity[] => {
+    if (!opportunities) return []
+    if (showOnlyMine) {
+      return opportunities.filter(opp => opp.assigned_to === user.id)
+    }
+    return opportunities
+  }
+
+  const readyForOutreach = filterOpportunities(opportunities?.filter(opp => opp.status === 'approved'))
+  const inConversation = filterOpportunities(opportunities?.filter(opp => opp.status === 'conversation_started'))
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-4">
-      <div>
-        <h2 className="text-lg font-semibold mb-4">1. Ready for Outreach ({readyForOutreach.length})</h2>
-        <OpportunityList
-          opportunities={readyForOutreach}
-          isLoading={isLoading}
-          onSendMessage={handleSendMessage}
+    <div className="space-y-8 p-4">
+      <div className="flex items-center space-x-2 justify-end">
+        <Switch
+          id="filter-mine"
+          checked={showOnlyMine}
+          onCheckedChange={setShowOnlyMine}
         />
+        <Label htmlFor="filter-mine">Show only my assignments</Label>
       </div>
-      <div>
-        <h2 className="text-lg font-semibold mb-4">2. In Conversation ({inConversation.length})</h2>
-        <OpportunityList
-          opportunities={inConversation}
-          isLoading={isLoading}
-          onSendMessage={handleSendMessage}
-        />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div>
+          <h2 className="text-lg font-semibold mb-4">1. Ready for Outreach ({readyForOutreach.length})</h2>
+          <ReadyForOutreachList
+            opportunities={readyForOutreach}
+            isLoading={isLoading}
+            onSendMessage={handleSendMessage}
+          />
+        </div>
+        <div>
+          <h2 className="text-lg font-semibold mb-4">2. In Conversation ({inConversation.length})</h2>
+          <OpportunityList
+            opportunities={inConversation}
+            isLoading={isLoading}
+            onSendMessage={handleSendMessage}
+          />
+        </div>
       </div>
     </div>
   )

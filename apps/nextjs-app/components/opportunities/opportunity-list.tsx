@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { useState, useEffect } from 'react'
-import { Twitter, Mail, AlertCircle, Send, X } from 'lucide-react'
+import { Twitter, Mail, AlertCircle, Send, X, User, MessageSquare } from 'lucide-react'
 import { ResponseGenerator } from '@/components/ui/response-generator'
 import { useCelebrity } from '@/hooks/use-celebrity'
 import { EmailThreadDialog } from '@/components/email/email-thread-dialog'
@@ -12,6 +12,7 @@ import { createClient } from '@/lib/supabase/client'
 import { TableName } from '@/types'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { useTeamMembers } from '@/hooks/use-team-members'
 
 interface OpportunityListProps {
   opportunities: Opportunity[]
@@ -30,6 +31,7 @@ export function OpportunityList({ opportunities, isLoading, onSendMessage }: Opp
     created_at: string;
   }>>([])
   const { data: celebrity } = useCelebrity()
+  const { data: teamMembers = [] } = useTeamMembers()
   const [isThreadDialogOpen, setIsThreadDialogOpen] = useState(false)
   const [lastMessageDirections, setLastMessageDirections] = useState<Record<string, 'inbound' | 'outbound'>>({})
   const [lastMessages, setLastMessages] = useState<Record<string, { content: string; created_at: string }>>({})
@@ -203,11 +205,29 @@ export function OpportunityList({ opportunities, isLoading, onSendMessage }: Opp
   }
 
   const getMessageIcon = (source: Opportunity['source']) => {
-    return source === 'TWITTER_DM' ? <Twitter className="h-4 w-4" /> : <Mail className="h-4 w-4" />
+    switch (source) {
+      case 'TWITTER_DM':
+        return <Twitter className="h-4 w-4" />
+      case 'EMAIL':
+        return <Mail className="h-4 w-4" />
+      case 'WIDGET':
+        return <MessageSquare className="h-4 w-4" />
+      default:
+        return <Mail className="h-4 w-4" />
+    }
   }
 
   const getMessageMethod = (source: Opportunity['source']) => {
-    return source === 'TWITTER_DM' ? 'Twitter DM' : 'Email'
+    switch (source) {
+      case 'TWITTER_DM':
+        return 'Twitter DM'
+      case 'EMAIL':
+        return 'Email'
+      case 'WIDGET':
+        return 'Contact Form'
+      default:
+        return 'Message'
+    }
   }
 
   if (isLoading) {
@@ -236,6 +256,7 @@ export function OpportunityList({ opportunities, isLoading, onSendMessage }: Opp
           const lastMessageDirection = lastMessageDirections[opportunity.id]
           const lastMessage = lastMessages[opportunity.id]
           const needsResponse = lastMessageDirection === 'inbound'
+          const assignedMember = teamMembers.find(m => m.id === opportunity.assigned_to)
           
           return (
             <div
@@ -249,7 +270,18 @@ export function OpportunityList({ opportunities, isLoading, onSendMessage }: Opp
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="font-medium">From: {opportunity.sender_handle}</p>
+                    <div className="flex items-center gap-2">
+                      {getMessageIcon(opportunity.source)}
+                      <span className="text-sm text-muted-foreground">
+                        via {getMessageMethod(opportunity.source)}
+                      </span>
+                    </div>
+                    {assignedMember && (
+                      <Badge variant="outline" className="gap-1">
+                        <User className="h-3 w-3" />
+                        {assignedMember.full_name}
+                      </Badge>
+                    )}
                     {needsResponse && (
                       <Badge variant="destructive" className="animate-pulse">
                         <AlertCircle className="w-3 h-3 mr-1" />
@@ -257,6 +289,7 @@ export function OpportunityList({ opportunities, isLoading, onSendMessage }: Opp
                       </Badge>
                     )}
                   </div>
+                  <p className="font-medium mt-2">From: {opportunity.sender_handle}</p>
                   <p className="text-sm text-muted-foreground mt-1">
                     {opportunity.status === 'conversation_started' && lastMessage ? (
                       <>

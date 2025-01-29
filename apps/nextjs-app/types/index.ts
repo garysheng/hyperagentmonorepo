@@ -1,6 +1,6 @@
 export type OpportunityStatus = "pending" | "approved" | "rejected" | "on_hold" | "conversation_started";
 
-export type OpportunitySource = "TWITTER_DM" | "WIDGET";
+export type OpportunitySource = "TWITTER_DM" | "WIDGET" | "EMAIL";
 
 export interface Goal {
   id: string;

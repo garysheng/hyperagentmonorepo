@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Mail, Twitter, User, Calendar, Tag, Star } from 'lucide-react';
+import { Send, Mail, Twitter, User, Calendar, Tag, Star, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { Opportunity } from '@/types';
 import { Badge } from '@/components/ui/badge';
@@ -42,6 +42,32 @@ export function EmailThreadDialog({
     onSendMessage(newMessage);
     setNewMessage('');
   };
+
+  const getSourceIcon = (source: Opportunity['source']) => {
+    switch (source) {
+      case 'TWITTER_DM':
+        return <Twitter className="h-4 w-4" />
+      case 'EMAIL':
+        return <Mail className="h-4 w-4" />
+      case 'WIDGET':
+        return <MessageSquare className="h-4 w-4" />
+      default:
+        return <Mail className="h-4 w-4" />
+    }
+  }
+
+  const getSourceLabel = (source: Opportunity['source']) => {
+    switch (source) {
+      case 'TWITTER_DM':
+        return 'Twitter DM'
+      case 'EMAIL':
+        return 'Email'
+      case 'WIDGET':
+        return 'Widget'
+      default:
+        return 'Message'
+    }
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -133,14 +159,10 @@ export function EmailThreadDialog({
               {/* Source */}
               <div>
                 <div className="flex items-center gap-2 text-blue-400 mb-2">
-                  {opportunity.source === 'TWITTER_DM' ? (
-                    <Twitter className="h-4 w-4" />
-                  ) : (
-                    <Mail className="h-4 w-4" />
-                  )}
+                  {getSourceIcon(opportunity.source)}
                   <span>Source</span>
                 </div>
-                <div>{opportunity.source === 'TWITTER_DM' ? 'Twitter DM' : 'Email'}</div>
+                <div>{getSourceLabel(opportunity.source)}</div>
               </div>
 
               <Separator className="bg-blue-500/20" />

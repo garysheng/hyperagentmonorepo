@@ -3,15 +3,19 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ConnectTwitterButton } from '@/components/twitter/connect-button'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Info, Twitter, CheckCircle2, ExternalLink } from 'lucide-react'
+import { Info, Twitter, CheckCircle2, ExternalLink, Mail, Copy, Check } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { useState } from 'react'
+import { useToast } from '@/hooks/use-toast'
 
 export default function ChannelsPage() {
   const supabase = createClient()
+  const { toast } = useToast()
+  const [copied, setCopied] = useState(false)
 
   const { data: twitterAuth } = useQuery({
     queryKey: ['twitter-auth'],
@@ -45,6 +49,18 @@ export default function ChannelsPage() {
     }
   })
 
+  const handleCopyEmail = async () => {
+    if (!celebrityId) return
+    const email = `postmaster+team+${celebrityId}@hyperagent.so`
+    await navigator.clipboard.writeText(email)
+    setCopied(true)
+    toast({
+      title: 'Email copied',
+      description: 'The email address has been copied to your clipboard.'
+    })
+    setTimeout(() => setCopied(false), 2000)
+  }
+
   return (
     <div className="container space-y-8 py-8 pl-6">
       <div className="flex flex-col gap-2">
@@ -55,6 +71,50 @@ export default function ChannelsPage() {
       </div>
 
       <div className="grid gap-8">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Email</CardTitle>
+                <CardDescription>
+                  Receive and respond to email inquiries through your dedicated email address
+                </CardDescription>
+              </div>
+              <Badge variant="outline" className="gap-2">
+                <Mail className="h-3 w-3" />
+                <span>Always On</span>
+                <CheckCircle2 className="h-3 w-3 text-green-500" />
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Alert>
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+              <AlertTitle>Email Channel Active</AlertTitle>
+              <AlertDescription className="space-y-4">
+                <p>Your dedicated email address is ready to receive inquiries.</p>
+                <div className="flex items-center gap-2">
+                  <code className="relative rounded bg-muted px-[0.5rem] py-[0.3rem] font-mono text-sm">
+                    {celebrityId ? `postmaster+team+${celebrityId}@hyperagent.so` : 'Loading...'}
+                  </code>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleCopyEmail}
+                    disabled={!celebrityId}
+                  >
+                    {copied ? (
+                      <Check className="h-4 w-4" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">

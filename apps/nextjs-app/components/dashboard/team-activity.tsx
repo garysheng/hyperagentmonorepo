@@ -1,10 +1,11 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/lib/supabase/client'
 import { formatDistanceToNow } from 'date-fns'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface TeamMember {
   id: string
@@ -17,61 +18,98 @@ interface TeamMember {
 }
 
 export function TeamActivity() {
-  const supabase = createClientComponentClient()
+  const supabase = createClient()
 
-  const { data: teamMembers, isLoading } = useQuery({
+  const { data: teamMembers, isLoading, error } = useQuery({
     queryKey: ['team-activity'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        if (authError) throw new Error(`Auth error: ${authError.message}`)
+        if (!user) throw new Error('Not authenticated')
 
-      // Get team members with their action counts and last action
-      const { data: members } = await supabase
-        .from('users')
-        .select(`
-          id,
-          full_name,
-          role,
-          created_at
-        `)
-        .order('full_name')
+        // Get team members with their action counts and last action
+        const { data: members, error: membersError } = await supabase
+          .from('users')
+          .select(`
+            id,
+            full_name,
+            role,
+            created_at
+          `)
+          .order('full_name')
 
-      if (!members) return []
+        if (membersError) throw new Error(`Members query error: ${membersError.message}`)
+        if (!members) return []
 
-      // For each member, get their action stats
-      const membersWithStats = await Promise.all(
-        members.map(async (member) => {
-          const { count: actionCount } = await supabase
-            .from('actions')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', member.id)
+        console.log('Found team members:', members.length)
 
-          const { data: lastActionData } = await supabase
-            .from('actions')
-            .select('created_at')
-            .eq('user_id', member.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single()
+        // For each member, get their action stats
+        const membersWithStats = await Promise.all(
+          members.map(async (member) => {
+            try {
+              const [actionCountResult, lastActionResult, actionTypesResult] = await Promise.all([
+                supabase
+                  .from('opportunity_actions')
+                  .select('*', { count: 'exact', head: true })
+                  .eq('user_id', member.id),
+                supabase
+                  .from('opportunity_actions')
+                  .select('created_at')
+                  .eq('user_id', member.id)
+                  .order('created_at', { ascending: false })
+                  .limit(1)
+                  .single(),
+                supabase
+                  .from('opportunity_actions')
+                  .select('type')
+                  .eq('user_id', member.id)
+                  .order('created_at', { ascending: false })
+              ])
 
-          const { data: actionTypes } = await supabase
-            .from('actions')
-            .select('type')
-            .eq('user_id', member.id)
-            .order('created_at', { ascending: false })
+              if (actionCountResult.error) console.error(`Action count error for ${member.id}:`, actionCountResult.error)
+              if (lastActionResult.error && lastActionResult.error.code !== 'PGRST116') {
+                console.error(`Last action error for ${member.id}:`, lastActionResult.error)
+              }
+              if (actionTypesResult.error) console.error(`Action types error for ${member.id}:`, actionTypesResult.error)
 
-          return {
-            ...member,
-            actionCount: actionCount || 0,
-            lastAction: lastActionData?.created_at || null,
-            actionTypes: [...new Set(actionTypes?.map(a => a.type) || [])]
-          }
-        })
-      )
+              return {
+                ...member,
+                actionCount: actionCountResult.count || 0,
+                lastAction: lastActionResult.data?.created_at || null,
+                actionTypes: [...new Set(actionTypesResult.data?.map(a => a.type) || [])]
+              }
+            } catch (error) {
+              console.error(`Error processing member ${member.id}:`, error)
+              return {
+                ...member,
+                actionCount: 0,
+                lastAction: null,
+                actionTypes: []
+              }
+            }
+          })
+        )
 
-      return membersWithStats as TeamMember[]
-    }
+        console.log('Processed team members with stats:', membersWithStats.length)
+        return membersWithStats as TeamMember[]
+      } catch (error) {
+        console.error('Team activity query error:', error)
+        throw error
+      }
+    },
+    retry: 1
   })
+
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <AlertDescription>
+          Error loading team activity: {error instanceof Error ? error.message : 'Unknown error'}
+        </AlertDescription>
+      </Alert>
+    )
+  }
 
   return (
     <div className="space-y-8">
@@ -99,8 +137,8 @@ export function TeamActivity() {
             </div>
           </div>
         </>
-      ) : (
-        teamMembers?.map((member) => (
+      ) : teamMembers && teamMembers.length > 0 ? (
+        teamMembers.map((member) => (
           <div key={member.id} className="flex items-start space-x-4">
             <Avatar className="h-12 w-12">
               <AvatarFallback>
@@ -125,6 +163,10 @@ export function TeamActivity() {
             </div>
           </div>
         ))
+      ) : (
+        <div className="text-center py-8 text-muted-foreground">
+          No team members found
+        </div>
       )}
     </div>
   )

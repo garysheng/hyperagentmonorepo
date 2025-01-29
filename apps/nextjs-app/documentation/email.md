@@ -28,23 +28,18 @@ Benefits of this format:
 - Consistent format across all celebrities
 - Easy to parse in webhook handlers
 
-## Proposed Channel Integration
+## Channel Integration
 
 ### 1. Email Channel Display
 On the Channels page, add an email section that shows:
 - The dedicated email address in format: `postmaster+team+{celebrity_id}@hyperagent.so`
 - Copy to clipboard functionality
-- Status indicator (active/inactive)
 - Recent email statistics
-- Toggle to enable/disable email channel
 
-### 2. Email Address Generation
-- No generation needed - use existing celebrity_id
-- Format is deterministic: `postmaster+team+{celebrity_id}@hyperagent.so`
-- Store enabled/disabled state in `celebrity_channels` table
+Note: Email channel is always enabled by default for all celebrities and cannot be disabled.
 
-### 3. Email Processing Flow
-1. Fan sends email to celebrity's postmaster address
+### 2. Email Processing Flow
+1. Fan sends email to celebrity\'s postmaster address
 2. Mailgun webhook receives email
 3. System extracts celebrity_id from email address
 4. System creates:
@@ -54,29 +49,19 @@ On the Channels page, add an email section that shows:
 5. Normal opportunity classification process runs
 6. Team can respond through existing email interface
 
-### 4. Database Schema Updates
-```sql
--- Add email configuration to celebrity_channels
-ALTER TABLE celebrity_channels
-ADD COLUMN email_enabled boolean DEFAULT false,
-ADD COLUMN email_settings jsonb;
-```
-Note: We don't need to store the email address since it's derived from celebrity_id
-
-### 5. Security & Spam Prevention
+### 3. Security & Spam Prevention
 - Rate limiting per sender
 - Spam filtering through Mailgun
 - Email verification requirements
 - Size limits on attachments
 - Content filtering options
 
-### 6. User Interface Elements
-1. Channel Configuration:
-   - Enable/disable email channel
+### 4. User Interface Elements
+1. Channel Display:
    - Display formatted email address
    - Copy button for email address
-   - Set auto-responder message
-   - Configure spam settings
+   - Set auto-responder message (future)
+   - Configure spam settings (future)
 
 2. Statistics Display:
    - Total emails received
@@ -84,17 +69,10 @@ Note: We don't need to store the email address since it's derived from celebrity
    - Average response time
    - Conversion metrics
 
-### 7. Auto-Responder Options
-- Configurable welcome message
-- Business hours notification
-- Expected response time
-- Links to other channels/resources
-
 ## Implementation Phases
 
 ### Phase 1: Basic Integration
 - Add email channel UI to channels page
-- Enable/disable functionality
 - Display formatted email address with copy button
 - Connect to existing email processing
 
@@ -134,10 +112,8 @@ Note: We don't need to store the email address since it's derived from celebrity
 1. Auto-responder requirements?
 2. Attachment policy?
 3. Spam handling preferences?
-4. Should we show the full email address or mask the UUID in the UI?
 
 ## Next Steps
 1. Review updated design document
-2. Plan database schema updates
-3. Design UI mockups
-4. Implement Phase 1 
+2. Design UI mockups
+3. Implement Phase 1 
