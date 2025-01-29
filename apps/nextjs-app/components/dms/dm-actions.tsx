@@ -34,6 +34,8 @@ import { useOpportunityActions } from '@/hooks/use-opportunity-actions'
 import { useGoals } from '@/hooks/use-goals'
 import { useTeamMembers } from '@/hooks/use-team-members'
 import type { Opportunity as DM, Goal, TeamMember } from '@/types'
+import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/components/providers'
 
 interface DMActionsProps {
     dm: DM
@@ -42,6 +44,8 @@ interface DMActionsProps {
 export function DMActions({ dm }: DMActionsProps) {
     const { toast } = useToast()
     const queryClient = useQueryClient()
+    const { user } = useAuth()
+    const supabase = createClient()
     const [showRelevanceDialog, setShowRelevanceDialog] = useState(false)
     const [showDowngradeDialog, setShowDowngradeDialog] = useState(false)
     const [showGoalDialog, setShowGoalDialog] = useState(false)
@@ -58,7 +62,16 @@ export function DMActions({ dm }: DMActionsProps) {
     const handleUpgradeRelevance = async () => {
         try {
             await actions.upgradeRelevance(relevanceScore, explanation)
+            queryClient.invalidateQueries({ queryKey: ['dms'] })
             queryClient.invalidateQueries({ queryKey: ['opportunities'] })
+            // Track action
+            await supabase.from('opportunity_actions').insert({
+                opportunity_id: dm.id,
+                user_id: user?.id,
+                action_type: 'upgrade_relevance',
+                old_value: { score: dm.relevance_score },
+                new_value: { score: relevanceScore, explanation }
+            })
             toast({
                 title: "Relevance score updated",
                 description: `DM relevance score has been upgraded to ${relevanceScore}`,
@@ -77,8 +90,16 @@ export function DMActions({ dm }: DMActionsProps) {
     const handleDowngradeRelevance = async () => {
         try {
             await actions.downgradeRelevance(explanation)
-            queryClient.invalidateQueries({  })
+            queryClient.invalidateQueries({ queryKey: ['dms'] })
             queryClient.invalidateQueries({ queryKey: ['opportunities'] })
+            // Track action
+            await supabase.from('opportunity_actions').insert({
+                opportunity_id: dm.id,
+                user_id: user?.id,
+                action_type: 'downgrade_relevance',
+                old_value: { score: dm.relevance_score },
+                new_value: { score: -1, explanation }
+            })
             toast({
                 title: "DM marked as irrelevant",
                 description: "The DM has been marked as irrelevant",
@@ -99,8 +120,16 @@ export function DMActions({ dm }: DMActionsProps) {
             try {
                 const selectedGoal = goals.find((g: Goal) => g.id === selectedGoalId)
                 await actions.assignGoal(selectedGoalId)
-                queryClient.invalidateQueries({  })
+                queryClient.invalidateQueries({ queryKey: ['dms'] })
                 queryClient.invalidateQueries({ queryKey: ['opportunities'] })
+                // Track action
+                await supabase.from('opportunity_actions').insert({
+                    opportunity_id: dm.id,
+                    user_id: user?.id,
+                    action_type: 'assign_goal',
+                    old_value: { goal_id: dm.goal_id },
+                    new_value: { goal_id: selectedGoalId }
+                })
                 toast({
                     title: "Goal assigned",
                     description: `DM has been assigned to goal: ${selectedGoal?.name}`,
@@ -122,8 +151,16 @@ export function DMActions({ dm }: DMActionsProps) {
             try {
                 const selectedMember = teamMembers.find((m: TeamMember) => m.id === selectedUserId)
                 await actions.assignUser(selectedUserId)
-                queryClient.invalidateQueries({  })
+                queryClient.invalidateQueries({ queryKey: ['dms'] })
                 queryClient.invalidateQueries({ queryKey: ['opportunities'] })
+                // Track action
+                await supabase.from('opportunity_actions').insert({
+                    opportunity_id: dm.id,
+                    user_id: user?.id,
+                    action_type: 'assign_user',
+                    old_value: { assigned_to: dm.assigned_to },
+                    new_value: { assigned_to: selectedUserId }
+                })
                 toast({
                     title: "Team member assigned",
                     description: `DM has been assigned to ${selectedMember?.full_name}`,
@@ -143,8 +180,16 @@ export function DMActions({ dm }: DMActionsProps) {
     const handleFlagDiscussion = async () => {
         try {
             await actions.flagDiscussion(!dm.needs_discussion)
-            queryClient.invalidateQueries({  })
+            queryClient.invalidateQueries({ queryKey: ['dms'] })
             queryClient.invalidateQueries({ queryKey: ['opportunities'] })
+            // Track action
+            await supabase.from('opportunity_actions').insert({
+                opportunity_id: dm.id,
+                user_id: user?.id,
+                action_type: 'flag_discussion',
+                old_value: { needs_discussion: dm.needs_discussion },
+                new_value: { needs_discussion: !dm.needs_discussion }
+            })
             toast({
                 title: dm.needs_discussion ? "Discussion flag removed" : "Flagged for discussion",
                 description: dm.needs_discussion
@@ -163,8 +208,16 @@ export function DMActions({ dm }: DMActionsProps) {
     const handleUpdateStatus = async (status: 'approved' | 'rejected' | 'on_hold') => {
         try {
             await actions.updateStatus(status)
-            queryClient.invalidateQueries({  })
+            queryClient.invalidateQueries({ queryKey: ['dms'] })
             queryClient.invalidateQueries({ queryKey: ['opportunities'] })
+            // Track action
+            await supabase.from('opportunity_actions').insert({
+                opportunity_id: dm.id,
+                user_id: user?.id,
+                action_type: 'update_status',
+                old_value: { status: dm.status },
+                new_value: { status }
+            })
             toast({
                 title: "Status updated",
                 description: `DM status has been updated to ${status}`,
@@ -181,8 +234,16 @@ export function DMActions({ dm }: DMActionsProps) {
     const handleStartConversation = async () => {
         try {
             await actions.updateStatus('conversation_started')
-            queryClient.invalidateQueries({  })
+            queryClient.invalidateQueries({ queryKey: ['dms'] })
             queryClient.invalidateQueries({ queryKey: ['opportunities'] })
+            // Track action
+            await supabase.from('opportunity_actions').insert({
+                opportunity_id: dm.id,
+                user_id: user?.id,
+                action_type: 'start_conversation',
+                old_value: { status: dm.status },
+                new_value: { status: 'conversation_started' }
+            })
             toast({
                 title: "Conversation started",
                 description: "DM has been moved to outbound conversations",
