@@ -58,7 +58,7 @@ export default function WritingStyleSettings() {
     <div className="container max-w-7xl py-6 pl-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Writing Style Settings</h1>
+          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">Writing Style Settings</h1>
           <p className="text-muted-foreground">
             Customize how your AI assistant communicates across all channels.
           </p>
@@ -66,6 +66,7 @@ export default function WritingStyleSettings() {
         <Button
           onClick={() => updateStyleMutation.mutate(writingStyle!)}
           disabled={updateStyleMutation.isPending || isLoading}
+          className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
         >
           {updateStyleMutation.isPending ? (
             <>
@@ -78,13 +79,33 @@ export default function WritingStyleSettings() {
         </Button>
       </div>
 
-      <Card className="mt-8">
+      <Card className="mt-8 relative overflow-hidden after:absolute after:inset-0 after:bg-gradient-to-br after:from-purple-500/5 after:to-pink-500/5 after:opacity-50 after:-z-10">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="p-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="voice-characteristics">Voice Characteristics</TabsTrigger>
-            <TabsTrigger value="voice-examples">Voice Examples</TabsTrigger>
-            <TabsTrigger value="custom-rules">Custom Rules</TabsTrigger>
-            <TabsTrigger value="preview-testing">Preview & Testing</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20">
+            <TabsTrigger 
+              value="voice-characteristics"
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500/20 data-[state=active]:to-pink-500/20 data-[state=active]:text-purple-500"
+            >
+              Voice Characteristics
+            </TabsTrigger>
+            <TabsTrigger 
+              value="voice-examples"
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500/20 data-[state=active]:to-pink-500/20 data-[state=active]:text-purple-500"
+            >
+              Voice Examples
+            </TabsTrigger>
+            <TabsTrigger 
+              value="custom-rules"
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500/20 data-[state=active]:to-pink-500/20 data-[state=active]:text-purple-500"
+            >
+              Custom Rules
+            </TabsTrigger>
+            <TabsTrigger 
+              value="preview-testing"
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500/20 data-[state=active]:to-pink-500/20 data-[state=active]:text-purple-500"
+            >
+              Preview & Testing
+            </TabsTrigger>
           </TabsList>
 
           <div className="mt-6">

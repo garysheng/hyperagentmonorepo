@@ -21,6 +21,7 @@ import { Slider } from '@/components/ui/slider'
 import { useAuth } from '@/components/providers'
 import { useCelebrity } from '@/hooks/use-celebrity'
 import { createClient } from '@/lib/supabase/client'
+import { Badge } from '@/components/ui/badge'
 
 const goalSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -177,19 +178,24 @@ export default function GoalsPage() {
     <div className="container py-8 px-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Goals</h1>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">Goals</h1>
           <p className="text-muted-foreground">Manage your goals and priorities</p>
         </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => setSelectedGoal(null)}>
+            <Button 
+              onClick={() => setSelectedGoal(null)}
+              className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-600 hover:to-cyan-600"
+            >
               <Plus className="mr-2 h-4 w-4" />
               Add Goal
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="relative overflow-hidden after:absolute after:inset-0 after:bg-gradient-to-br after:from-blue-500/5 after:to-cyan-500/5 after:opacity-50 after:-z-10">
             <DialogHeader>
-              <DialogTitle>{selectedGoal ? 'Edit Goal' : 'Add Goal'}</DialogTitle>
+              <DialogTitle className="bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">
+                {selectedGoal ? 'Edit Goal' : 'Add Goal'}
+              </DialogTitle>
               <DialogDescription>
                 {selectedGoal
                   ? 'Edit your goal details below'
@@ -280,52 +286,61 @@ export default function GoalsPage() {
                     </FormItem>
                   )}
                 />
-                <DialogFooter>
-                  <Button type="submit">{selectedGoal ? 'Update' : 'Create'}</Button>
-                </DialogFooter>
               </form>
             </Form>
+            <DialogFooter>
+              <Button 
+                type="submit" 
+                onClick={formRef.handleSubmit(onSubmit)}
+                className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-600 hover:to-cyan-600"
+              >
+                {selectedGoal ? 'Update Goal' : 'Create Goal'}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {goals.map(goal => (
-          <Card key={goal.id}>
+      <div className="grid gap-4">
+        {goals.map((goal) => (
+          <Card 
+            key={goal.id}
+            className="relative overflow-hidden transition-all hover:shadow-lg after:absolute after:inset-0 after:bg-gradient-to-br after:from-blue-500/5 after:to-cyan-500/5 after:opacity-50 after:-z-10 hover:after:opacity-70"
+          >
             <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle>{goal.name}</CardTitle>
-                  <CardDescription>
-                    Priority: {goal.priority}
-                    {goal.default_user_id && teamMembers.find(m => m.id === goal.default_user_id) && (
-                      <> • Assigned to: {teamMembers.find(m => m.id === goal.default_user_id)?.full_name}</>
-                    )}
-                  </CardDescription>
-                </div>
-                <div className="flex space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedGoal(goal)
-                      setIsOpen(true)
-                    }}
+              <CardTitle className="flex items-center justify-between">
+                <span className="bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">
+                  {goal.name}
+                </span>
+                <div className="flex items-center gap-2">
+                  <Badge 
+                    variant="outline" 
+                    className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-blue-500/20"
                   >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDelete(goal)}
-                  >
-                    Delete
-                  </Button>
+                    Priority {goal.priority}
+                  </Badge>
                 </div>
-              </div>
+              </CardTitle>
+              <CardDescription>{goal.description}</CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">{goal.description || 'No description'}</p>
+            <CardContent className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSelectedGoal(goal)
+                  setIsOpen(true)
+                }}
+                className="hover:bg-blue-500/10 hover:text-blue-500 border-blue-500/20"
+              >
+                Edit
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleDelete(goal)}
+                className="hover:bg-red-500/10 hover:text-red-500 border-red-500/20"
+              >
+                Delete
+              </Button>
             </CardContent>
           </Card>
         ))}
