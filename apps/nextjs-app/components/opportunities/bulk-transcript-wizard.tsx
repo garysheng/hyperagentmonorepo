@@ -44,6 +44,8 @@ export function BulkTranscriptWizard({ opportunities, onProcessComplete }: BulkT
   const [identifiedOpportunities, setIdentifiedOpportunities] = useState<OpportunityPreview[]>([])
   const [currentOpportunityIndex, setCurrentOpportunityIndex] = useState(0)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [processingStage, setProcessingStage] = useState<'initial' | 'analyzing' | 'processing-opportunities'>('initial')
+  const [processedCount, setProcessedCount] = useState(0)
   const [proposedChanges, setProposedChanges] = useState<Record<string, { proposedStatus: string, summary: string, actionRecap: string }>>({})
   const [processedOpportunities, setProcessedOpportunities] = useState<Set<string>>(new Set())
   const { toast } = useToast()
@@ -60,10 +62,15 @@ export function BulkTranscriptWizard({ opportunities, onProcessComplete }: BulkT
 
     setIsProcessing(true)
     setStep('processing')
+    setProcessingStage('initial')
     console.log('Starting transcript analysis...')
     console.log('Transcript content:', transcript.substring(0, 100) + '...')
     
     try {
+      // Add delay to show initial stage
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      
+      setProcessingStage('analyzing')
       console.log('Sending transcript to bulk processing endpoint...')
       const response = await fetch('/api/opportunities/process-bulk-transcript', {
         method: 'POST',
@@ -108,8 +115,10 @@ export function BulkTranscriptWizard({ opportunities, onProcessComplete }: BulkT
       setIdentifiedOpportunities(previews)
 
       // Process each opportunity immediately
+      setProcessingStage('processing-opportunities')
+      setProcessedCount(0)
       console.log('Starting individual opportunity processing...')
-      for (const opportunity of previews) {
+      for (const [index, opportunity] of previews.entries()) {
         console.log(`Processing opportunity ${opportunity.id}...`)
         console.log('Opportunity data:', opportunity)
         const result = await handleProcessOpportunity(opportunity)
@@ -124,6 +133,7 @@ export function BulkTranscriptWizard({ opportunities, onProcessComplete }: BulkT
             }
           }))
           setProcessedOpportunities(prev => new Set([...prev, opportunity.id]))
+          setProcessedCount(index + 1)
         } else {
           console.error(`Failed to process opportunity ${opportunity.id}`)
         }
@@ -156,6 +166,8 @@ export function BulkTranscriptWizard({ opportunities, onProcessComplete }: BulkT
     } finally {
       console.log('Transcript analysis complete')
       setIsProcessing(false)
+      setProcessingStage('initial')
+      setProcessedCount(0)
     }
   }
 
@@ -385,8 +397,56 @@ export function BulkTranscriptWizard({ opportunities, onProcessComplete }: BulkT
 
         {step === 'processing' && (
           <div className="py-8 flex flex-col items-center justify-center space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Analyzing transcript...</p>
+            <div className="relative">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-background px-2 rounded-full">
+                <span className="text-xs font-medium text-muted-foreground">
+                  {processingStage === 'initial' && 'Step 1/3'}
+                  {processingStage === 'analyzing' && 'Step 2/3'}
+                  {processingStage === 'processing-opportunities' && 'Step 3/3'}
+                </span>
+              </div>
+            </div>
+
+            <div className="text-center space-y-2">
+              {processingStage === 'initial' && (
+                <>
+                  <p className="text-sm font-medium">Preparing Analysis</p>
+                  <p className="text-xs text-muted-foreground">Setting up transcript processing...</p>
+                </>
+              )}
+              
+              {processingStage === 'analyzing' && (
+                <>
+                  <p className="text-sm font-medium">Analyzing Transcript</p>
+                  <p className="text-xs text-muted-foreground">Identifying opportunities and relevant discussions...</p>
+                </>
+              )}
+              
+              {processingStage === 'processing-opportunities' && (
+                <>
+                  <p className="text-sm font-medium">Processing Opportunities</p>
+                  <p className="text-xs text-muted-foreground">
+                    Analyzing individual opportunities
+                  </p>
+                  {identifiedOpportunities.length > 0 && (
+                    <div className="mt-4 space-y-2">
+                      <div className="w-full bg-secondary h-1.5 rounded-full">
+                        <div 
+                          className="h-full bg-primary rounded-full transition-all duration-300"
+                          style={{ 
+                            width: `${(processedCount / identifiedOpportunities.length) * 100}%` 
+                          }}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {processedCount} of {identifiedOpportunities.length} opportunities processed
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         )}
 
