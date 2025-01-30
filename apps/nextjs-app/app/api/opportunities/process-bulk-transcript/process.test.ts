@@ -4,7 +4,7 @@ import OpenAI from 'openai'
 
 // Change this to test different models
 const MODEL_TO_TEST = {
-    modelName: "gpt-4o-mini",
+    modelName: "gpt-4o",
     temperature: 0
 } as const
 
