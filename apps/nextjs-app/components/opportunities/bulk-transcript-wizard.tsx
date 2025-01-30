@@ -198,28 +198,73 @@ export function BulkTranscriptWizard({ opportunities, onProcessComplete }: BulkT
       setIsProcessing(true)
       const opportunity = identifiedOpportunities.find(opp => opp.id === opportunityId)
       if (!opportunity) {
+        console.error('Opportunity not found:', opportunityId)
         throw new Error('Opportunity not found')
       }
+
+      // Get the proposed changes for this opportunity
+      const proposedChange = proposedChanges[opportunityId]
+      if (!proposedChange) {
+        console.error('No proposed changes found for opportunity:', opportunityId)
+        throw new Error('No proposed changes found')
+      }
+
+      const requestBody = {
+        opportunityId,
+        transcript: opportunity.relevantSection,
+        proposedStatus: proposedChange.proposedStatus,
+        summary: proposedChange.summary,
+        actionRecap: proposedChange.actionRecap
+      }
+
+      console.log('Applying changes for opportunity:', opportunityId)
+      console.log('Request body:', requestBody)
 
       const response = await fetch('/api/opportunities/apply-transcript', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          opportunityId,
-          transcript: opportunity.relevantSection,
-          ...changes
-        }),
+        body: JSON.stringify(requestBody),
       })
 
+      const responseText = await response.text()
+      console.log('Raw response:', responseText)
+
       if (!response.ok) {
-        throw new Error('Failed to apply changes')
+        console.error('Error response:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: responseText
+        })
+        throw new Error(`Failed to apply changes: ${responseText}`)
       }
+
+      let result
+      try {
+        result = JSON.parse(responseText)
+      } catch (e) {
+        console.error('Failed to parse response:', e)
+        throw new Error('Invalid response from server')
+      }
+
+      console.log('Successfully applied changes:', result)
+
+      // Show success toast
+      toast({
+        title: 'Success',
+        description: 'Changes applied successfully',
+        variant: 'default'
+      })
 
       return true
     } catch (error) {
       console.error('Error applying changes:', error)
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to apply changes',
+        variant: 'destructive'
+      })
       return false
     } finally {
       setIsProcessing(false)

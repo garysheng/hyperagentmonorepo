@@ -106,235 +106,707 @@ Evaluate if the results meet ALL of these criteria and respond in the following 
 }
 
 describe('analyzeBulkTranscript', () => {
-    const opportunities = [
-        {
-            id: 'cold1',
-            initial_content: 'Senior ML Engineer with 8 years experience interested in AI team',
-            status: 'pending',
-            sender_handle: 'ml.sarah.chen@gmail.com'
-        },
-        {
-            id: 'cold2',
-            initial_content: 'Startup founder looking to discuss potential acquisition',
-            status: 'pending',
-            sender_handle: '@startup_ceo'
-        },
-        {
-            id: 'cold3',
-            initial_content: 'Enterprise sales partnership opportunity from Microsoft',
-            status: 'pending',
-            sender_handle: 'john.smith@microsoft.com'
-        },
-        {
-            id: 'cold4',
-            initial_content: 'Senior React Native dev interested in mobile team lead role',
-            status: 'pending',
-            sender_handle: 'mobile_ninja#1234'
-        },
-        {
-            id: 'cold5',
-            initial_content: 'VC interested in leading Series B round',
-            status: 'pending',
-            sender_handle: '@vc_partner'
-        },
-        {
-            id: 'cold6',
-            initial_content: 'DevOps architect looking to join infrastructure team',
-            status: 'pending',
-            sender_handle: 'james.wilson@devops.io'
-        },
-        {
-            id: 'cold7',
-            initial_content: 'Potential customer interested in enterprise plan',
-            status: 'pending',
-            sender_handle: 'director_of_eng'
-        },
-        {
-            id: 'cold8',
-            initial_content: 'Tech blogger interested in covering our AI features',
-            status: 'pending',
-            sender_handle: '@tech_influencer'
-        },
-        {
-            id: 'cold9',
-            initial_content: 'Security researcher found potential vulnerability',
-            status: 'pending',
-            sender_handle: 'security_white_hat'
-        }
-    ]
+    describe('Startup Company Scenarios', () => {
+        const opportunities = [
+            {
+                id: 'cold1',
+                initial_content: 'Senior ML Engineer with 8 years experience interested in AI team',
+                status: 'pending',
+                sender_handle: 'ml.sarah.chen@gmail.com'
+            },
+            {
+                id: 'cold2',
+                initial_content: 'Startup founder looking to discuss potential acquisition',
+                status: 'pending',
+                sender_handle: '@startup_ceo'
+            },
+            {
+                id: 'cold3',
+                initial_content: 'Enterprise sales partnership opportunity from Microsoft',
+                status: 'pending',
+                sender_handle: 'john.smith@microsoft.com'
+            },
+            {
+                id: 'cold4',
+                initial_content: 'Senior React Native dev interested in mobile team lead role',
+                status: 'pending',
+                sender_handle: 'mobile_ninja#1234'
+            },
+            {
+                id: 'cold5',
+                initial_content: 'VC interested in leading Series B round',
+                status: 'pending',
+                sender_handle: '@vc_partner'
+            },
+            {
+                id: 'cold6',
+                initial_content: 'DevOps architect looking to join infrastructure team',
+                status: 'pending',
+                sender_handle: 'james.wilson@devops.io'
+            },
+            {
+                id: 'cold7',
+                initial_content: 'Potential customer interested in enterprise plan',
+                status: 'pending',
+                sender_handle: 'director_of_eng'
+            },
+            {
+                id: 'cold8',
+                initial_content: 'Tech blogger interested in covering our AI features',
+                status: 'pending',
+                sender_handle: '@tech_influencer'
+            },
+            {
+                id: 'cold9',
+                initial_content: 'Security researcher found potential vulnerability',
+                status: 'pending',
+                sender_handle: 'security_white_hat'
+            }
+        ]
 
-    it('should identify high-priority cold outreach', async () => {
-        const input = {
-            opportunities,
-            transcript: `
-                CEO: Let's review today's inbound opportunities.
-                
-                First, we got a message from Microsoft about enterprise sales.
-                Sales: Yes, john.smith@microsoft.com reached out. They're interested in a major partnership.
-                CEO: This could be significant. Let's prioritize this.
-                
-                Also, @startup_ceo messaged about acquisition discussions.
-                CFO: Their metrics look interesting, revenue growing 300% YoY.
-                CEO: Good potential, let's schedule a call.
-            `,
-            modelConfig: MODEL_TO_TEST
-        }
+        it('should identify high-priority cold outreach', async () => {
+            const input = {
+                opportunities,
+                transcript: `
+                    CEO: Let's review today's inbound opportunities.
+                    
+                    First, we got a message from Microsoft about enterprise sales.
+                    Sales: Yes, john.smith@microsoft.com reached out. They're interested in a major partnership.
+                    CEO: This could be significant. Let's prioritize this.
+                    
+                    Also, @startup_ceo messaged about acquisition discussions.
+                    CFO: Their metrics look interesting, revenue growing 300% YoY.
+                    CEO: Good potential, let's schedule a call.
+                `,
+                modelConfig: MODEL_TO_TEST
+            }
 
-        const result = await analyzeBulkTranscript(input)
-        const evaluation = await evaluateResults(input.transcript, result, {
-            expectedOpportunityCount: 2,
-            expectedOpportunityIds: ['cold3', 'cold2'],
-            relevantSectionRequirements: [
-                "Must contain Microsoft partnership discussion",
-                "Must contain acquisition discussion",
-                "Must include context about priority and next steps"
-            ]
-        })
+            const result = await analyzeBulkTranscript(input)
+            const evaluation = await evaluateResults(input.transcript, result, {
+                expectedOpportunityCount: 2,
+                expectedOpportunityIds: ['cold3', 'cold2'],
+                relevantSectionRequirements: [
+                    "Must contain Microsoft partnership discussion",
+                    "Must contain acquisition discussion",
+                    "Must include context about priority and next steps"
+                ]
+            })
 
-        expect(evaluation.passed).toBe(true)
-        expect(evaluation.relevantSectionsValid).toBe(true)
-        expect(evaluation.opportunityCountValid).toBe(true)
-        expect(evaluation.opportunityIdsValid).toBe(true)
-    }, 30000)
+            expect(evaluation.passed).toBe(true)
+            expect(evaluation.relevantSectionsValid).toBe(true)
+            expect(evaluation.opportunityCountValid).toBe(true)
+            expect(evaluation.opportunityIdsValid).toBe(true)
+        }, 30000)
 
-    it('should handle technical talent outreach', async () => {
-        const input = {
-            opportunities,
-            transcript: `
-                CTO: Let's review the senior candidate inbounds.
-                
-                Sarah Chen (ml.sarah.chen@gmail.com) looks very strong.
-                ML Lead: Yes, her background in transformer models is exactly what we need.
-                Tech Lead: And she's led teams at Google and Meta.
-                CTO: Let's fast-track this one.
-                
-                Also got a mobile lead candidate.
-                iOS Lead: Yes, mobile_ninja has great React Native experience.
-                Android Lead: Their open source contributions are impressive too.
-                CTO: Good fit for our mobile team expansion.
-            `,
-            modelConfig: MODEL_TO_TEST
-        }
+        it('should handle technical talent outreach', async () => {
+            const input = {
+                opportunities,
+                transcript: `
+                    CTO: Let's review the senior candidate inbounds.
+                    
+                    Sarah Chen (ml.sarah.chen@gmail.com) looks very strong.
+                    ML Lead: Yes, her background in transformer models is exactly what we need.
+                    Tech Lead: And she's led teams at Google and Meta.
+                    CTO: Let's fast-track this one.
+                    
+                    Also got a mobile lead candidate.
+                    iOS Lead: Yes, mobile_ninja has great React Native experience.
+                    Android Lead: Their open source contributions are impressive too.
+                    CTO: Good fit for our mobile team expansion.
+                `,
+                modelConfig: MODEL_TO_TEST
+            }
 
-        const result = await analyzeBulkTranscript(input)
-        const evaluation = await evaluateResults(input.transcript, result, {
-            expectedOpportunityCount: 2,
-            expectedOpportunityIds: ['cold1', 'cold4'],
-            relevantSectionRequirements: [
-                "Must include full discussion of ML candidate's background",
-                "Must include mobile lead candidate evaluation",
-                "Must capture technical assessment details"
-            ]
-        })
+            const result = await analyzeBulkTranscript(input)
+            const evaluation = await evaluateResults(input.transcript, result, {
+                expectedOpportunityCount: 2,
+                expectedOpportunityIds: ['cold1', 'cold4'],
+                relevantSectionRequirements: [
+                    "Must include full discussion of ML candidate's background",
+                    "Must include mobile lead candidate evaluation",
+                    "Must capture technical assessment details"
+                ]
+            })
 
-        expect(evaluation.passed).toBe(true)
-        expect(evaluation.relevantSectionsValid).toBe(true)
-        expect(evaluation.opportunityCountValid).toBe(true)
-        expect(evaluation.opportunityIdsValid).toBe(true)
-    }, 30000)
+            expect(evaluation.passed).toBe(true)
+            expect(evaluation.relevantSectionsValid).toBe(true)
+            expect(evaluation.opportunityCountValid).toBe(true)
+            expect(evaluation.opportunityIdsValid).toBe(true)
+        }, 30000)
 
-    it('should handle investor and media outreach', async () => {
-        const input = {
-            opportunities,
-            transcript: `
-                CEO: Two interesting inbounds to discuss.
-                
-                @vc_partner from Sequoia is interested in leading our B round.
-                CFO: Their term sheet looks competitive, 20% better than others.
-                CEO: And they have great enterprise SaaS experience.
-                
-                Also, @tech_influencer wants to cover our AI features.
-                Marketing: They have 500K tech followers, could be good exposure.
-                Product: Perfect timing with our GPT-4 integration launch.
-            `,
-            modelConfig: MODEL_TO_TEST
-        }
+        it('should handle investor and media outreach', async () => {
+            const input = {
+                opportunities,
+                transcript: `
+                    CEO: Two interesting inbounds to discuss.
+                    
+                    @vc_partner from Sequoia is interested in leading our B round.
+                    CFO: Their term sheet looks competitive, 20% better than others.
+                    CEO: And they have great enterprise SaaS experience.
+                    
+                    Also, @tech_influencer wants to cover our AI features.
+                    Marketing: They have 500K tech followers, could be good exposure.
+                    Product: Perfect timing with our GPT-4 integration launch.
+                `,
+                modelConfig: MODEL_TO_TEST
+            }
 
-        const result = await analyzeBulkTranscript(input)
-        const evaluation = await evaluateResults(input.transcript, result, {
-            expectedOpportunityCount: 2,
-            expectedOpportunityIds: ['cold5', 'cold8'],
-            relevantSectionRequirements: [
-                "Must include VC discussion and term sheet details",
-                "Must include tech blogger coverage opportunity",
-                "Must capture strategic value of both opportunities"
-            ]
-        })
+            const result = await analyzeBulkTranscript(input)
+            const evaluation = await evaluateResults(input.transcript, result, {
+                expectedOpportunityCount: 2,
+                expectedOpportunityIds: ['cold5', 'cold8'],
+                relevantSectionRequirements: [
+                    "Must include VC discussion and term sheet details",
+                    "Must include tech blogger coverage opportunity",
+                    "Must capture strategic value of both opportunities"
+                ]
+            })
 
-        expect(evaluation.passed).toBe(true)
-        expect(evaluation.relevantSectionsValid).toBe(true)
-        expect(evaluation.opportunityCountValid).toBe(true)
-        expect(evaluation.opportunityIdsValid).toBe(true)
-    }, 30000)
+            expect(evaluation.passed).toBe(true)
+            expect(evaluation.relevantSectionsValid).toBe(true)
+            expect(evaluation.opportunityCountValid).toBe(true)
+            expect(evaluation.opportunityIdsValid).toBe(true)
+        }, 30000)
 
-    it('should handle urgent security and enterprise inbounds', async () => {
-        const input = {
-            opportunities,
-            transcript: `
-                CTO: We have an urgent security report from security_white_hat.
-                Security: They identified a potential SQL injection vulnerability.
-                DevOps: Initial review confirms it's valid but not yet exploited.
-                CTO: Let's prioritize this and prep a fix.
+        it('should handle urgent security and enterprise inbounds', async () => {
+            const input = {
+                opportunities,
+                transcript: `
+                    CTO: We have an urgent security report from security_white_hat.
+                    Security: They identified a potential SQL injection vulnerability.
+                    DevOps: Initial review confirms it's valid but not yet exploited.
+                    CTO: Let's prioritize this and prep a fix.
 
-                Sales: Also, director_of_eng from Netflix reached out.
-                Enterprise: They're interested in our enterprise plan, 2000+ seats.
-                Sales: Current usage at their POC is very promising.
-            `,
-            modelConfig: MODEL_TO_TEST
-        }
+                    Sales: Also, director_of_eng from Netflix reached out.
+                    Enterprise: They're interested in our enterprise plan, 2000+ seats.
+                    Sales: Current usage at their POC is very promising.
+                `,
+                modelConfig: MODEL_TO_TEST
+            }
 
-        const result = await analyzeBulkTranscript(input)
-        const evaluation = await evaluateResults(input.transcript, result, {
-            expectedOpportunityCount: 2,
-            expectedOpportunityIds: ['cold9', 'cold7'],
-            relevantSectionRequirements: [
-                "Must include security vulnerability report details",
-                "Must include enterprise customer opportunity",
-                "Must capture urgency and priority context"
-            ]
-        })
+            const result = await analyzeBulkTranscript(input)
+            const evaluation = await evaluateResults(input.transcript, result, {
+                expectedOpportunityCount: 2,
+                expectedOpportunityIds: ['cold9', 'cold7'],
+                relevantSectionRequirements: [
+                    "Must include security vulnerability report details",
+                    "Must include enterprise customer opportunity",
+                    "Must capture urgency and priority context"
+                ]
+            })
 
-        expect(evaluation.passed).toBe(true)
-        expect(evaluation.relevantSectionsValid).toBe(true)
-        expect(evaluation.opportunityCountValid).toBe(true)
-        expect(evaluation.opportunityIdsValid).toBe(true)
-    }, 30000)
+            expect(evaluation.passed).toBe(true)
+            expect(evaluation.relevantSectionsValid).toBe(true)
+            expect(evaluation.opportunityCountValid).toBe(true)
+            expect(evaluation.opportunityIdsValid).toBe(true)
+        }, 30000)
 
-    it('should handle unqualified or irrelevant outreach', async () => {
-        const input = {
-            opportunities,
-            transcript: `
-                Sales: Quick review of some other inbounds.
-                
-                Got a few cold emails about link exchange opportunities.
-                Marketing: These look like automated spam outreach.
-                
-                Someone asking about internships for next summer.
-                HR: We're not running an internship program currently.
-                
-                And some random cryptocurrency partnership spam.
-                CEO: Yeah, let's skip all of these.
-            `,
-            modelConfig: MODEL_TO_TEST
-        }
+        it('should handle unqualified or irrelevant outreach', async () => {
+            const input = {
+                opportunities,
+                transcript: `
+                    Sales: Quick review of some other inbounds.
+                    
+                    Got a few cold emails about link exchange opportunities.
+                    Marketing: These look like automated spam outreach.
+                    
+                    Someone asking about internships for next summer.
+                    HR: We're not running an internship program currently.
+                    
+                    And some random cryptocurrency partnership spam.
+                    CEO: Yeah, let's skip all of these.
+                `,
+                modelConfig: MODEL_TO_TEST
+            }
 
-        const result = await analyzeBulkTranscript(input)
-        const evaluation = await evaluateResults(input.transcript, result, {
-            expectedOpportunityCount: 0,
-            relevantSectionRequirements: [
-                "Must not contain any matching opportunities",
-                "Must be focused on unqualified or irrelevant outreach"
-            ]
-        })
+            const result = await analyzeBulkTranscript(input)
+            const evaluation = await evaluateResults(input.transcript, result, {
+                expectedOpportunityCount: 0,
+                relevantSectionRequirements: [
+                    "Must not contain any matching opportunities",
+                    "Must be focused on unqualified or irrelevant outreach"
+                ]
+            })
 
-        expect(evaluation.passed).toBe(true)
-        expect(evaluation.opportunityCountValid).toBe(true)
-    }, 30000)
+            expect(evaluation.passed).toBe(true)
+            expect(evaluation.opportunityCountValid).toBe(true)
+        }, 30000)
+    })
 
-    // Keep the default model config test
+    describe('Mr. Beast Scenarios', () => {
+        const opportunities = [
+            {
+                id: 'beast1',
+                initial_content: 'Major food chain wants to do $1M restaurant takeover challenge',
+                status: 'pending',
+                sender_handle: '@mcdonalds'
+            },
+            {
+                id: 'beast2',
+                initial_content: 'Gaming peripheral company proposing $500K tournament sponsorship',
+                status: 'pending',
+                sender_handle: 'partnerships@razer.com'
+            },
+            {
+                id: 'beast3',
+                initial_content: 'Charity organization seeking collaboration for ocean cleanup',
+                status: 'pending',
+                sender_handle: 'teamtrees@foundation.org'
+            },
+            {
+                id: 'beast4',
+                initial_content: 'Streaming platform offering exclusive contract',
+                status: 'pending',
+                sender_handle: 'creator_partnerships@rumble.com'
+            },
+            {
+                id: 'beast5',
+                initial_content: 'Tech startup wants to sponsor $2M last-to-leave challenge',
+                status: 'pending',
+                sender_handle: 'ceo@techstartup.com'
+            },
+            {
+                id: 'beast6',
+                initial_content: 'Shopping mall proposing 24-hour spending spree video',
+                status: 'pending',
+                sender_handle: '@mallofamerica'
+            }
+        ]
+
+        it('should identify high-value challenge sponsorships', async () => {
+            const input = {
+                opportunities,
+                transcript: `
+                    Manager: Let's review today's partnership opportunities.
+                    
+                    First, McDonald's wants to do a massive restaurant challenge.
+                    Team: @mcdonalds is offering $1M for a store takeover video.
+                    Creative: We could give away everything to customers for free.
+                    Manager: Perfect fit for our format.
+                    
+                    Also, that tech startup reached out about a challenge.
+                    Production: Yes, ceo@techstartup.com proposed $2M for last-to-leave.
+                    Team: Could work well with their new smart home products.
+                `,
+                modelConfig: MODEL_TO_TEST
+            }
+
+            const result = await analyzeBulkTranscript(input)
+            const evaluation = await evaluateResults(input.transcript, result, {
+                expectedOpportunityCount: 2,
+                expectedOpportunityIds: ['beast1', 'beast5'],
+                relevantSectionRequirements: [
+                    "Must include McDonald's challenge discussion",
+                    "Must include tech startup challenge details",
+                    "Must capture budget and concept details"
+                ]
+            })
+
+            expect(evaluation.passed).toBe(true)
+            expect(evaluation.relevantSectionsValid).toBe(true)
+            expect(evaluation.opportunityCountValid).toBe(true)
+            expect(evaluation.opportunityIdsValid).toBe(true)
+        }, 30000)
+
+        it('should handle charity and impact opportunities', async () => {
+            const input = {
+                opportunities,
+                transcript: `
+                    Manager: Let's discuss the TeamTrees collaboration.
+                    Impact Lead: teamtrees@foundation.org wants to do ocean cleanup.
+                    Creative: Could make great content while helping the environment.
+                    Team: Like TeamTrees but for oceans.
+                    Manager: Definitely aligns with our mission.
+                `,
+                modelConfig: MODEL_TO_TEST
+            }
+
+            const result = await analyzeBulkTranscript(input)
+            const evaluation = await evaluateResults(input.transcript, result, {
+                expectedOpportunityCount: 1,
+                expectedOpportunityIds: ['beast3'],
+                relevantSectionRequirements: [
+                    "Must include charity collaboration discussion",
+                    "Must capture environmental impact angle",
+                    "Must include mission alignment context"
+                ]
+            })
+
+            expect(evaluation.passed).toBe(true)
+            expect(evaluation.relevantSectionsValid).toBe(true)
+            expect(evaluation.opportunityCountValid).toBe(true)
+            expect(evaluation.opportunityIdsValid).toBe(true)
+        }, 30000)
+    })
+
+    describe('Kanye Scenarios', () => {
+        const opportunities = [
+            {
+                id: 'ye1',
+                initial_content: 'Luxury fashion house seeking creative director collaboration',
+                status: 'pending',
+                sender_handle: 'creative@balenciaga.com'
+            },
+            {
+                id: 'ye2',
+                initial_content: 'Major sneaker brand offering new line deal',
+                status: 'pending',
+                sender_handle: '@adidasoriginals'
+            },
+            {
+                id: 'ye3',
+                initial_content: 'Music streaming platform offering exclusive album rights',
+                status: 'pending',
+                sender_handle: 'deals@tidal.com'
+            },
+            {
+                id: 'ye4',
+                initial_content: 'Tech company interested in smart speaker collaboration',
+                status: 'pending',
+                sender_handle: 'partnerships@apple.com'
+            },
+            {
+                id: 'ye5',
+                initial_content: 'Fashion week seeking headline show slot',
+                status: 'pending',
+                sender_handle: '@parisfashionweek'
+            },
+            {
+                id: 'ye6',
+                initial_content: 'Social platform offering exclusive content partnership',
+                status: 'pending',
+                sender_handle: '@instagram'
+            }
+        ]
+
+        it('should handle fashion and luxury collaborations', async () => {
+            const input = {
+                opportunities,
+                transcript: `
+                    Manager: Two major fashion opportunities to review.
+                    
+                    Balenciaga reached out about creative director role.
+                    Fashion Lead: creative@balenciaga.com sent the full proposal.
+                    Team: Would give complete creative control over next collection.
+                    
+                    Also, @parisfashionweek offered headline slot.
+                    PR: They want YEEZY as main event.
+                    Team: Could debut the new collection there.
+                `,
+                modelConfig: MODEL_TO_TEST
+            }
+
+            const result = await analyzeBulkTranscript(input)
+            const evaluation = await evaluateResults(input.transcript, result, {
+                expectedOpportunityCount: 2,
+                expectedOpportunityIds: ['ye1', 'ye5'],
+                relevantSectionRequirements: [
+                    "Must include Balenciaga creative role discussion",
+                    "Must include fashion week headline opportunity",
+                    "Must capture creative control and showcase aspects"
+                ]
+            })
+
+            expect(evaluation.passed).toBe(true)
+            expect(evaluation.relevantSectionsValid).toBe(true)
+            expect(evaluation.opportunityCountValid).toBe(true)
+            expect(evaluation.opportunityIdsValid).toBe(true)
+        }, 30000)
+
+        it('should evaluate platform and streaming deals', async () => {
+            const input = {
+                opportunities,
+                transcript: `
+                    Manager: Let's review the platform deals.
+                    
+                    Tidal is offering exclusive rights for the new album.
+                    Legal: deals@tidal.com sent over the contract.
+                    Team: They're offering higher streaming percentages.
+                    
+                    @instagram also reached out about exclusive content.
+                    Digital: They want YEEZY collection drops to be Instagram-first.
+                    PR: Could be huge for direct-to-consumer strategy.
+                `,
+                modelConfig: MODEL_TO_TEST
+            }
+
+            const result = await analyzeBulkTranscript(input)
+            const evaluation = await evaluateResults(input.transcript, result, {
+                expectedOpportunityCount: 2,
+                expectedOpportunityIds: ['ye3', 'ye6'],
+                relevantSectionRequirements: [
+                    "Must include Tidal streaming rights discussion",
+                    "Must include Instagram exclusivity details",
+                    "Must capture strategic benefits of both platforms"
+                ]
+            })
+
+            expect(evaluation.passed).toBe(true)
+            expect(evaluation.relevantSectionsValid).toBe(true)
+            expect(evaluation.opportunityCountValid).toBe(true)
+            expect(evaluation.opportunityIdsValid).toBe(true)
+        }, 30000)
+    })
+
+    describe('Email Matching Edge Cases', () => {
+        const opportunities = [
+            {
+                id: 'email1',
+                initial_content: 'First email sender proposal about AI chatbot integration',
+                status: 'pending',
+                sender_handle: 'john.smith@email.com'
+            },
+            {
+                id: 'email2',
+                initial_content: 'Second email sender proposal about mobile app redesign',
+                status: 'pending',
+                sender_handle: 'john.doe@email.com'
+            },
+            {
+                id: 'email3',
+                initial_content: 'Similar but different email about cloud migration',
+                status: 'pending',
+                sender_handle: 'john.smith.different@email.com'
+            },
+            {
+                id: 'email4',
+                initial_content: 'Proposal for new security framework implementation',
+                status: 'pending',
+                sender_handle: 'different.person@email.com'
+            }
+        ]
+
+        it('should only match exact email addresses', async () => {
+            const input = {
+                opportunities,
+                transcript: `
+                    Team: Let's review the proposal from john.smith@email.com
+                    Manager: Yes, their proposal looks good.
+                    Team: Approved.
+
+                    Also got something from john.smith.different@email.com
+                    Manager: Different person, different proposal.
+                `,
+                modelConfig: MODEL_TO_TEST
+            }
+
+            const result = await analyzeBulkTranscript(input)
+            const evaluation = await evaluateResults(input.transcript, result, {
+                expectedOpportunityCount: 2,
+                expectedOpportunityIds: ['email1', 'email3'],
+                relevantSectionRequirements: [
+                    "Must match exact email addresses only",
+                    "Must not match partial email matches",
+                    "Must include full discussion context for each match"
+                ]
+            })
+
+            expect(evaluation.passed).toBe(true)
+            expect(evaluation.relevantSectionsValid).toBe(true)
+            expect(evaluation.opportunityCountValid).toBe(true)
+            expect(evaluation.opportunityIdsValid).toBe(true)
+        }, 30000)
+
+        it('should not match similar but different email addresses', async () => {
+            const input = {
+                opportunities,
+                transcript: `
+                    Team: Got a message from john.smith.different@email.com
+                    Manager: Let's review it.
+                    Team: Looks good.
+
+                    Also heard from john.smith@email.com
+                    Manager: Different person, different case.
+                `,
+                modelConfig: MODEL_TO_TEST
+            }
+
+            const result = await analyzeBulkTranscript(input)
+            const evaluation = await evaluateResults(input.transcript, result, {
+                expectedOpportunityCount: 2,
+                expectedOpportunityIds: ['email3', 'email1'],
+                relevantSectionRequirements: [
+                    "Must distinguish between similar email addresses",
+                    "Must not cross-match similar email addresses",
+                    "Must include full context for each match"
+                ]
+            })
+
+            expect(evaluation.passed).toBe(true)
+            expect(evaluation.relevantSectionsValid).toBe(true)
+            expect(evaluation.opportunityCountValid).toBe(true)
+            expect(evaluation.opportunityIdsValid).toBe(true)
+        }, 30000)
+
+        it('should handle email address case sensitivity correctly', async () => {
+            const input = {
+                opportunities,
+                transcript: `
+                    Team: Reviewing JOHN.SMITH@EMAIL.COM's proposal
+                    Manager: Same as john.smith@email.com, just different case
+                    Team: Yes, approve it.
+
+                    Also got one from DIFFERENT.PERSON@EMAIL.COM
+                    Manager: That's different.person@email.com in lowercase
+                `,
+                modelConfig: MODEL_TO_TEST
+            }
+
+            const result = await analyzeBulkTranscript(input)
+            const evaluation = await evaluateResults(input.transcript, result, {
+                expectedOpportunityCount: 2,
+                expectedOpportunityIds: ['email1', 'email4'],
+                relevantSectionRequirements: [
+                    "Must handle case-insensitive email matching",
+                    "Must treat uppercase and lowercase emails as the same",
+                    "Must include full discussion context"
+                ]
+            })
+
+            expect(evaluation.passed).toBe(true)
+            expect(evaluation.relevantSectionsValid).toBe(true)
+            expect(evaluation.opportunityCountValid).toBe(true)
+            expect(evaluation.opportunityIdsValid).toBe(true)
+        }, 30000)
+
+        it('should not match partial email addresses', async () => {
+            const input = {
+                opportunities,
+                transcript: `
+                    Team: Message from john.smith
+                    Manager: Just the name, not the full email
+                    Team: Noted.
+
+                    Also from @email.com
+                    Manager: Just the domain, not helpful.
+                `,
+                modelConfig: MODEL_TO_TEST
+            }
+
+            const result = await analyzeBulkTranscript(input)
+            const evaluation = await evaluateResults(input.transcript, result, {
+                expectedOpportunityCount: 0,
+                relevantSectionRequirements: [
+                    "Must not match partial email addresses",
+                    "Must require complete email address for matching"
+                ]
+            })
+
+            expect(evaluation.passed).toBe(true)
+            expect(evaluation.opportunityCountValid).toBe(true)
+        }, 30000)
+
+        it('should match opportunities by content without requiring email mention', async () => {
+            const input = {
+                opportunities,
+                transcript: `
+                    Team: Let's discuss the AI chatbot integration proposal.
+                    Tech: The integration approach looks solid.
+                    Manager: Yes, this aligns with our roadmap.
+                    Team: Approved.
+
+                    Also reviewing the security framework proposal.
+                    Security: Their implementation plan is comprehensive.
+                    Manager: Good, let's move forward with both.
+                `,
+                modelConfig: MODEL_TO_TEST
+            }
+
+            const result = await analyzeBulkTranscript(input)
+            const evaluation = await evaluateResults(input.transcript, result, {
+                expectedOpportunityCount: 2,
+                expectedOpportunityIds: ['email1', 'email4'],
+                relevantSectionRequirements: [
+                    "Must match opportunities based on content discussion",
+                    "Must not require email address mention",
+                    "Must include full context of technical discussion"
+                ]
+            })
+
+            expect(evaluation.passed).toBe(true)
+            expect(evaluation.relevantSectionsValid).toBe(true)
+            expect(evaluation.opportunityCountValid).toBe(true)
+            expect(evaluation.opportunityIdsValid).toBe(true)
+        }, 30000)
+
+        it('should match by both email and content in mixed discussions', async () => {
+            const input = {
+                opportunities,
+                transcript: `
+                    Team: The cloud migration proposal needs review.
+                    Tech: Yes, the approach from john.smith.different@email.com is solid.
+                    Manager: Approved.
+
+                    Also got a mobile app redesign proposal.
+                    Design: The new UX flows look great.
+                    PM: And it fits our Q2 objectives.
+                    Manager: Who sent this one?
+                    Team: That's from john.doe@email.com.
+                `,
+                modelConfig: MODEL_TO_TEST
+            }
+
+            const result = await analyzeBulkTranscript(input)
+            const evaluation = await evaluateResults(input.transcript, result, {
+                expectedOpportunityCount: 2,
+                expectedOpportunityIds: ['email3', 'email2'],
+                relevantSectionRequirements: [
+                    "Must match opportunities by both email and content",
+                    "Must handle mixed reference types in same discussion",
+                    "Must include full context regardless of match type"
+                ]
+            })
+
+            expect(evaluation.passed).toBe(true)
+            expect(evaluation.relevantSectionsValid).toBe(true)
+            expect(evaluation.opportunityCountValid).toBe(true)
+            expect(evaluation.opportunityIdsValid).toBe(true)
+        }, 30000)
+
+        it('should prioritize content matches when email is ambiguous', async () => {
+            const input = {
+                opportunities,
+                transcript: `
+                    Team: We have a proposal about AI integration.
+                    Tech: The chatbot design is innovative.
+                    Manager: And it's from someone at email.com
+                    Team: Yes, but let's focus on the technical merit.
+                    Manager: Agreed, the AI approach is solid. Approve it.
+                `,
+                modelConfig: MODEL_TO_TEST
+            }
+
+            const result = await analyzeBulkTranscript(input)
+            const evaluation = await evaluateResults(input.transcript, result, {
+                expectedOpportunityCount: 1,
+                expectedOpportunityIds: ['email1'],
+                relevantSectionRequirements: [
+                    "Must match based on content when email is ambiguous",
+                    "Must focus on technical discussion relevance",
+                    "Must include full context of proposal evaluation"
+                ]
+            })
+
+            expect(evaluation.passed).toBe(true)
+            expect(evaluation.relevantSectionsValid).toBe(true)
+            expect(evaluation.opportunityCountValid).toBe(true)
+            expect(evaluation.opportunityIdsValid).toBe(true)
+        }, 30000)
+    })
+
+    // Keep the default model config test outside all describes
     it('should use default model config when not provided', async () => {
+        const defaultOpportunities = [
+            {
+                id: 'cold3',
+                initial_content: 'Enterprise sales partnership opportunity from Microsoft',
+                status: 'pending',
+                sender_handle: 'john.smith@microsoft.com'
+            }
+        ]
+
         const input = {
-            opportunities,
+            opportunities: defaultOpportunities,
             transcript: `
                 Sales: Quick review of Microsoft partnership opportunity.
                 Team: Looks promising, good enterprise fit.

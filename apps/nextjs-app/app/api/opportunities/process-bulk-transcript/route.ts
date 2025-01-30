@@ -34,13 +34,8 @@ export async function POST(request: Request) {
       opportunities
     })
 
-    // Filter out low confidence matches
-    const validOpportunities = result.identifiedOpportunities.filter(
-      opp => opp.confidence >= 0.7
-    )
-
     return NextResponse.json({
-      opportunities: validOpportunities
+      opportunities: result.identifiedOpportunities
     })
   } catch (error) {
     console.error('Error processing bulk transcript:', error)

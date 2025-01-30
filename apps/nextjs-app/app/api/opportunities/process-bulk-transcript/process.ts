@@ -152,17 +152,59 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
       - Leave relevantSection EMPTY if you can't find an exact quote
       
       CRITICAL RULES FOR EMAIL MATCHING:
-      - If a sender_handle is an email (contains @), match on:
-        * The full email address
-        * The part before @ in the email
-        * First name if it appears in the email
-        * Common variations of the name (e.g., "Bob" for "Robert")
-      - Example: for sender_handle "robertsmith123@gmail.com":
-        * Match "robertsmith123@gmail.com" (exact)
-        * Match "robertsmith123" (pre-@ part)
-        * Match "Robert" or "Bob" (name variations)
-        * Match "Smith" (last name)
-      - Include the full context when matching by email or name parts
+      - EXACT STRING MATCH REQUIRED: Email addresses must match character-for-character
+        * "john.smith@email.com" ONLY matches "john.smith@email.com"
+        * "john.smith.work@email.com" is NOT a match for "john.smith@email.com"
+        * "john.smith@email.com" is NOT a match for "john.smith.different@email.com"
+      
+      - STRICT VALIDATION BEFORE MATCHING:
+        1. Extract the exact email from the transcript
+        2. Compare it character-by-character with sender_handle
+        3. Only match if they are identical (ignoring case)
+        4. Reject any partial or similar matches
+      
+      - SIMILAR EMAIL HANDLING:
+        * Each opportunity has its own unique email address
+        * Similar emails are different opportunities
+        * Never match an email to a similar but different email
+        * Example: If transcript mentions "john.smith.different@email.com":
+          - ONLY match opportunity with exact "john.smith.different@email.com"
+          - Do NOT match opportunity with "john.smith@email.com"
+          - These are separate opportunities with separate discussions
+      
+      - EXAMPLES OF INVALID MATCHES:
+        * "john.smith@email.com" ≠ "john.smith.work@email.com"
+        * "john.smith@email.com" ≠ "john.smith.different@email.com"
+        * "john.smith@email.com" ≠ "john.smith"
+        * "john.smith@email.com" ≠ "@email.com"
+        * "john.smith@email.com" ≠ "smith@email.com"
+      
+      - CASE INSENSITIVE MATCHING:
+        * "John.Smith@Email.com" = "john.smith@email.com"
+        * "JOHN.SMITH@EMAIL.COM" = "john.smith@email.com"
+      
+      - CONTENT MATCHING RULES:
+        * If no exact email match, rely on content discussion
+        * Technical details and project specifics take precedence
+        * Match based on unique project characteristics
+        * Consider full context of discussion
+
+      - CRITICAL: CONTENT MATCHING PRIORITY
+        * When email is ambiguous or generic (e.g., "someone at email.com"):
+          1. IGNORE the ambiguous email completely
+          2. Focus ONLY on the technical/project content
+          3. Match based on specific details in the discussion
+          4. Use unique keywords and project characteristics
+        * Example:
+          Transcript: "We have an AI proposal. It's from someone at email.com"
+          - IGNORE "someone at email.com"
+          - Focus on "AI proposal" and related technical details
+          - Match with opportunity that best fits the technical discussion
+        * Example:
+          Transcript: "Got a cloud migration proposal from a gmail address"
+          - IGNORE the email reference
+          - Focus on "cloud migration" specifics
+          - Match based on project type and technical details
 
       CRITICAL RULES FOR SOCIAL MEDIA HANDLE MATCHING:
       - If a sender_handle starts with @ or contains common social patterns:
@@ -218,7 +260,7 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
       - Include contextual clues that confirm the connection
       - For infrastructure/technical discussions, match based on technology stack
       - Higher confidence if multiple team members reference the same topic
-      - For email-based opportunities, match on name parts from the email
+      - For email-based opportunities, match on exact email only
       - For social handles, match on username variations and real names
 
       Remember:
@@ -226,7 +268,7 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
       - Match opportunities by ID, content keywords, or sender handle
       - When in doubt, include more context in the relevant section
       - Return empty array if no opportunities are discussed
-      - For email handles, match on email parts and name variations
+      - For email handles, require exact matches (case-insensitive)
       - For social handles, match both with and without @ symbol`],
     ["human", "{transcript}"]
   ])
