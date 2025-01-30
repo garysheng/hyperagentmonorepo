@@ -42,7 +42,6 @@ export interface BulkTranscriptAnalysisInput {
 export interface OpportunityReference {
   id: string
   relevantSection: string
-  confidence: number
 }
 
 export interface BulkTranscriptAnalysisResult {
@@ -52,7 +51,6 @@ export interface BulkTranscriptAnalysisResult {
     temperature: number
     maxTokens?: number
     processingTimeMs: number
-    totalTokens: number
   }
 }
 
@@ -80,12 +78,6 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
       {
         handleLLMEnd: async (output, runId) => {
           const now = Date.now()
-          const tokenUsage = output.llmOutput?.tokenUsage || {
-            totalTokens: output.llmOutput?.tokenUsage?.total_tokens || 0,
-            promptTokens: output.llmOutput?.tokenUsage?.prompt_tokens || 0,
-            completionTokens: output.llmOutput?.tokenUsage?.completion_tokens || 0
-          }
-
           await client.createRun({
             id: runId,
             name: "analyze_bulk_transcript",
@@ -96,23 +88,16 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
               modelConfig
             },
             outputs: {
-              result: (output.generations[0][0] as any).message?.additional_kwargs?.function_call?.arguments || "{}",
-              totalTokens: tokenUsage.totalTokens
+              result: (output.generations[0][0] as any).message?.additional_kwargs?.function_call?.arguments || "{}"
             },
             start_time: now - 1000,
             end_time: now,
             extra: {
               modelName: modelConfig.modelName,
               temperature: modelConfig.temperature,
-              maxTokens: modelConfig.maxTokens,
-              totalTokens: tokenUsage.totalTokens,
-              promptTokens: tokenUsage.promptTokens,
-              completionTokens: tokenUsage.completionTokens
+              maxTokens: modelConfig.maxTokens
             }
           })
-
-            // Store token usage for the result metadata
-            ; (output as any).tokenUsage = tokenUsage
         }
       }
     ]
@@ -135,13 +120,9 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
                 relevantSection: {
                   type: "string",
                   description: "The section of the transcript relevant to this opportunity"
-                },
-                confidence: {
-                  type: "number",
-                  description: "Confidence score (0-1) that this opportunity was actually discussed"
                 }
               },
-              required: ["id", "relevantSection", "confidence"]
+              required: ["id", "relevantSection"]
             },
             description: "List of opportunities identified in the transcript"
           }
@@ -157,7 +138,6 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
       Your task is to:
       1. Identify which opportunities from the provided list were discussed in the transcript
       2. Extract ONLY the EXACT meeting discussion parts (not the initial messages)
-      3. Provide a confidence score for each match
 
       Here are the opportunities to look for:
       {opportunities}
@@ -165,31 +145,52 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
       CRITICAL RULES FOR RELEVANT SECTION:
       - The relevant section must contain ONLY word-for-word quotes from the transcript
       - NO paraphrasing, summarizing, or creating new text
-      - If the transcript is "approve user@email.com", that's the EXACT text to use
-      - If the transcript is "Team Lead: let's approve X", that's the EXACT text to use
+      - Include the ENTIRE relevant discussion about an opportunity, not just a single line
+      - Match opportunities by their ID, initial content, or sender handle
+      - For enthusiastic discussions, include ALL related comments showing the enthusiasm
+      - For indirect references, include the full context around the reference
       - Leave relevantSection EMPTY if you can't find an exact quote
       
       Examples:
-      Transcript: "approve Morris@email.com"
-      ✓ Relevant section: "approve Morris@email.com"
-      ✗ Relevant section: "Team discussed approving Morris"
+      Transcript: "First, about the AI collaboration proposal. Yes, I think we should move forward with that one."
+      ✓ Relevant section: "First, about the AI collaboration proposal. Yes, I think we should move forward with that one."
+      ✗ Relevant section: "Team discussed AI collaboration"
 
-      Transcript: "Team Lead: Should we approve Morris? Manager: Yes"
-      ✓ Relevant section: "Team Lead: Should we approve Morris? Manager: Yes"
-      ✗ Relevant section: "The team agreed to approve Morris"
-      
-      Guidelines for confidence scores:
-      - Score > 0.8: Found exact quote with clear decision
-      - Score 0.6-0.8: Found exact quote but decision unclear
-      - Score 0.3-0.5: Found partial or ambiguous quote
-      - Score < 0.3: Quote might be about something else
+      Transcript: "Let's review the ai_researcher proposal. Strong technical background. Approved for next steps."
+      ✓ Relevant section: "Let's review the ai_researcher proposal. Strong technical background. Approved for next steps."
+      ✗ Relevant section: "Team approved ai_researcher's proposal"
+
+      Transcript: "The cloud migration looks perfect! Team loves it. This will transform everything!"
+      ✓ Relevant section: "The cloud migration looks perfect! Team loves it. This will transform everything!"
+      ✗ Relevant section: "Team approved cloud migration"
+
+      Transcript: "Infrastructure modernization was mentioned... cloud-native approach seems promising."
+      ✓ Relevant section: "Infrastructure modernization was mentioned... cloud-native approach seems promising."
+      ✗ Relevant section: "Discussed cloud migration"
+
+      Transcript: "Today we're discussing marketing strategies and team updates."
+      ✓ Return empty array - no opportunities discussed
+      ✗ Try to force matches for unrelated discussions
+
+      CRITICAL RULES FOR NO MATCHES:
+      - If the transcript discusses completely unrelated topics, return an empty array
+      - Do not try to force matches when there are none
+      - Only include opportunities that are actually discussed
+      - Better to return no matches than to include weak/uncertain matches
+      - A mere mention of a related word is not enough - there must be actual discussion
+
+      CRITICAL RULES FOR INDIRECT REFERENCES:
+      - Look for technical terms that clearly relate to the opportunity
+      - Consider project names or initiative descriptions that match
+      - Include contextual clues that confirm the connection
+      - For infrastructure/technical discussions, match based on technology stack
+      - Higher confidence if multiple team members reference the same topic
 
       Remember:
-      - ONLY use word-for-word quotes from the transcript
-      - NO fabrication or inference
-      - NO summarizing or paraphrasing
-      - Empty relevantSection if no exact quote found
-      - When in doubt, leave relevantSection empty`],
+      - Include the COMPLETE relevant discussion, not just fragments
+      - Match opportunities by ID, content keywords, or sender handle
+      - When in doubt, include more context in the relevant section
+      - Return empty array if no opportunities are discussed`],
     ["human", "{transcript}"]
   ])
 
@@ -208,20 +209,13 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
     ? JSON.parse(response.additional_kwargs.function_call.arguments)
     : { identifiedOpportunities: [] }
 
-  // Get token usage directly from the response
-  const totalTokens = response.llmOutput?.tokenUsage?.total_tokens ||
-    response.llmOutput?.tokenUsage?.totalTokens ||
-    response.tokenUsage?.total_tokens ||
-    response.tokenUsage?.totalTokens || 0
-
   return {
     ...result,
     metadata: {
       modelName: modelConfig.modelName,
       temperature: modelConfig.temperature,
       maxTokens: modelConfig.maxTokens,
-      processingTimeMs: Date.now() - startTime,
-      totalTokens
+      processingTimeMs: Date.now() - startTime
     }
   } as BulkTranscriptAnalysisResult
 } 
