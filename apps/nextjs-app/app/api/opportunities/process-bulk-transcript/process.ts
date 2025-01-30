@@ -151,6 +151,39 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
       - For indirect references, include the full context around the reference
       - Leave relevantSection EMPTY if you can't find an exact quote
       
+      CRITICAL RULES FOR EMAIL MATCHING:
+      - If a sender_handle is an email (contains @), match on:
+        * The full email address
+        * The part before @ in the email
+        * First name if it appears in the email
+        * Common variations of the name (e.g., "Bob" for "Robert")
+      - Example: for sender_handle "robertsmith123@gmail.com":
+        * Match "robertsmith123@gmail.com" (exact)
+        * Match "robertsmith123" (pre-@ part)
+        * Match "Robert" or "Bob" (name variations)
+        * Match "Smith" (last name)
+      - Include the full context when matching by email or name parts
+
+      CRITICAL RULES FOR SOCIAL MEDIA HANDLE MATCHING:
+      - If a sender_handle starts with @ or contains common social patterns:
+        * Match the exact handle (e.g., "@techdev")
+        * Match without @ symbol (e.g., "techdev")
+        * Match name parts if handle contains real name
+        * Match common username variations
+      - Examples:
+        * For "@john_doe_dev":
+          - Match "@john_doe_dev" (exact)
+          - Match "john_doe_dev" (without @)
+          - Match "John" or "John Doe" (name parts)
+        * For "@techwhiz2023":
+          - Match "@techwhiz2023" or "techwhiz2023"
+          - Match "techwhiz" (base username)
+      - Consider platform-specific formats:
+        * Twitter/X: @handle
+        * GitHub: username or @username
+        * Discord: username#1234 or just username
+      - Include full context when matching social handles
+      
       Examples:
       Transcript: "First, about the AI collaboration proposal. Yes, I think we should move forward with that one."
       ✓ Relevant section: "First, about the AI collaboration proposal. Yes, I think we should move forward with that one."
@@ -185,12 +218,16 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
       - Include contextual clues that confirm the connection
       - For infrastructure/technical discussions, match based on technology stack
       - Higher confidence if multiple team members reference the same topic
+      - For email-based opportunities, match on name parts from the email
+      - For social handles, match on username variations and real names
 
       Remember:
       - Include the COMPLETE relevant discussion, not just fragments
       - Match opportunities by ID, content keywords, or sender handle
       - When in doubt, include more context in the relevant section
-      - Return empty array if no opportunities are discussed`],
+      - Return empty array if no opportunities are discussed
+      - For email handles, match on email parts and name variations
+      - For social handles, match both with and without @ symbol`],
     ["human", "{transcript}"]
   ])
 

@@ -252,7 +252,7 @@ describe('analyzeBulkTranscript', () => {
 })
 
 // Add this after the existing describe blocks but before the end of the file
-describe('Transcript Scenarios', () => {
+describe.only('Transcript Scenarios', () => {
     const opportunities = [
         {
             id: 'tech1',
@@ -271,6 +271,42 @@ describe('Transcript Scenarios', () => {
             initial_content: 'Security audit partnership',
             status: 'pending',
             sender_handle: 'security_lead'
+        },
+        {
+            id: 'tech4',
+            initial_content: 'Frontend performance optimization proposal',
+            status: 'pending',
+            sender_handle: 'sarahjohnson123@gmail.com'
+        },
+        {
+            id: 'tech5',
+            initial_content: 'Database clustering solution',
+            status: 'pending',
+            sender_handle: 'michael.smith.db@company.com'
+        },
+        {
+            id: 'tech6',
+            initial_content: 'DevOps automation framework',
+            status: 'pending',
+            sender_handle: 'robert.wilson1990@devteam.org'
+        },
+        {
+            id: 'tech7',
+            initial_content: 'Design proposal from @design_ninja',
+            status: 'pending',
+            sender_handle: '@design_ninja'
+        },
+        {
+            id: 'tech8',
+            initial_content: 'API architecture from John Doe',
+            status: 'pending',
+            sender_handle: 'john_doe_dev'
+        },
+        {
+            id: 'tech9',
+            initial_content: 'QA testing framework from qa_master',
+            status: 'pending',
+            sender_handle: 'qa_master'
         }
     ]
 
@@ -421,5 +457,164 @@ describe('Transcript Scenarios', () => {
 
         expect(evaluation.passed).toBe(true)
         expect(evaluation.opportunityCountValid).toBe(true)
+    }, 30000)
+
+    it('should match opportunities by email handle variations', async () => {
+        const input = {
+            opportunities,
+            transcript: `
+                PM: Sarah's frontend optimization looks promising.
+                Team: Yes, her performance metrics are impressive.
+                Dev: I reviewed the proposal from sarahjohnson123@gmail.com.
+                Lead: The bundle size reduction approach is solid.
+                
+                Also, Mike from DB team suggested a clustering solution.
+                Architect: Yes, Michael's approach to sharding is well-thought-out.
+                DBA: The scalability tests look good.
+            `
+        }
+
+        const result = await analyzeBulkTranscript(input)
+        const evaluation = await evaluateResults(input.transcript, result, {
+            expectedOpportunityCount: 2,
+            expectedOpportunityIds: ['tech4', 'tech5'],
+            relevantSectionRequirements: [
+                "Must include discussion about Sarah's frontend optimization",
+                "Must include discussion about Michael's database solution",
+                "Must capture full context for both opportunities"
+            ]
+        })
+
+        expect(evaluation.passed).toBe(true)
+        expect(evaluation.relevantSectionsValid).toBe(true)
+        expect(evaluation.opportunityCountValid).toBe(true)
+        expect(evaluation.opportunityIdsValid).toBe(true)
+    }, 30000)
+
+    it('should handle email handle first names and variations', async () => {
+        const input = {
+            opportunities,
+            transcript: `
+                Lead: Bob's automation framework is interesting.
+                DevOps: Yes, Robert really knows his stuff.
+                Team: The CI/CD pipeline design is comprehensive.
+                Architect: And it integrates well with our existing tools.
+                PM: Let's schedule a deep dive with robert.wilson1990@devteam.org.
+            `
+        }
+
+        const result = await analyzeBulkTranscript(input)
+        const evaluation = await evaluateResults(input.transcript, result, {
+            expectedOpportunityCount: 1,
+            expectedOpportunityIds: ['tech6'],
+            relevantSectionRequirements: [
+                "Must include discussion about Bob/Robert's automation framework",
+                "Must capture the entire technical discussion",
+                "Must include the email reference"
+            ]
+        })
+
+        expect(evaluation.passed).toBe(true)
+        expect(evaluation.relevantSectionsValid).toBe(true)
+        expect(evaluation.opportunityCountValid).toBe(true)
+        expect(evaluation.opportunityIdsValid).toBe(true)
+    }, 30000)
+
+    it('should match opportunities by social media handles with @ symbol', async () => {
+        const input = {
+            opportunities,
+            transcript: `
+                PM: The design proposal from @design_ninja looks amazing.
+                Team: Yes, their portfolio shows great UX sensibility.
+                Designer: The wireframes are very innovative.
+                Lead: And it aligns with our brand guidelines.
+                
+                Also, John Doe's API architecture looks solid.
+                Backend: Yes, @john_doe_dev really understands our scaling needs.
+                Team: The documentation is comprehensive too.
+            `
+        }
+
+        const result = await analyzeBulkTranscript(input)
+        const evaluation = await evaluateResults(input.transcript, result, {
+            expectedOpportunityCount: 2,
+            expectedOpportunityIds: ['tech7', 'tech8'],
+            relevantSectionRequirements: [
+                "Must include discussion about @design_ninja's proposal",
+                "Must include discussion about John Doe's API architecture",
+                "Must capture full context for both opportunities"
+            ]
+        })
+
+        expect(evaluation.passed).toBe(true)
+        expect(evaluation.relevantSectionsValid).toBe(true)
+        expect(evaluation.opportunityCountValid).toBe(true)
+        expect(evaluation.opportunityIdsValid).toBe(true)
+    }, 30000)
+
+    it('should handle social media handles without @ symbol and platform-specific formats', async () => {
+        const input = {
+            opportunities,
+            transcript: `
+                Lead: design_ninja's mockups are exactly what we need.
+                UX: The user flow is well thought out.
+                PM: Their previous work on similar projects is impressive.
+                
+                QA: The testing framework from qa_master looks promising.
+                Dev: Yes, their approach to E2E testing is comprehensive.
+                Lead: And it integrates well with our CI pipeline.
+            `
+        }
+
+        const result = await analyzeBulkTranscript(input)
+        const evaluation = await evaluateResults(input.transcript, result, {
+            expectedOpportunityCount: 2,
+            expectedOpportunityIds: ['tech7', 'tech9'],
+            relevantSectionRequirements: [
+                "Must include discussion about design_ninja's mockups",
+                "Must include discussion about qa_master's testing framework",
+                "Must capture technical details and team feedback"
+            ]
+        })
+
+        expect(evaluation.passed).toBe(true)
+        expect(evaluation.relevantSectionsValid).toBe(true)
+        expect(evaluation.opportunityCountValid).toBe(true)
+        expect(evaluation.opportunityIdsValid).toBe(true)
+    }, 30000)
+
+    it('should handle mixed social, email, and regular handle references', async () => {
+        const input = {
+            opportunities,
+            transcript: `
+                PM: Let's review the proposals:
+                
+                First, design_ninja submitted great mockups.
+                Team: The UX improvements are significant.
+                
+                Sarah from frontend team (sarahjohnson123@gmail.com)
+                has some performance optimizations to discuss.
+                
+                And cloud_architect's migration strategy
+                looks well-planned.
+            `
+        }
+
+        const result = await analyzeBulkTranscript(input)
+        const evaluation = await evaluateResults(input.transcript, result, {
+            expectedOpportunityCount: 3,
+            expectedOpportunityIds: ['tech7', 'tech4', 'tech1'],
+            relevantSectionRequirements: [
+                "Must include discussion about design_ninja's mockups",
+                "Must include Sarah's frontend performance discussion",
+                "Must include cloud_architect's migration strategy",
+                "Must maintain context for each opportunity"
+            ]
+        })
+
+        expect(evaluation.passed).toBe(true)
+        expect(evaluation.relevantSectionsValid).toBe(true)
+        expect(evaluation.opportunityCountValid).toBe(true)
+        expect(evaluation.opportunityIdsValid).toBe(true)
     }, 30000)
 }) 
