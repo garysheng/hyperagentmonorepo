@@ -437,6 +437,71 @@ describe('analyzeBulkTranscript', () => {
             expect(evaluation.opportunityCountValid).toBe(true)
             expect(evaluation.opportunityIdsValid).toBe(true)
         }, 30000)
+
+        it('should handle gaming and tech sponsorships', async () => {
+            const input = {
+                opportunities,
+                transcript: `
+                    Manager: Two gaming deals to review.
+                    
+                    Razer reached out about a tournament.
+                    Team: partnerships@razer.com wants to sponsor a $500K gaming event.
+                    Production: Could do a massive multiplayer challenge.
+                    Manager: Great fit for the gaming audience.
+                    
+                    Also got a streaming platform deal.
+                    Legal: creator_partnerships@rumble.com is offering exclusivity.
+                    Team: They want first rights to all new content.
+                    Manager: Let's review the terms carefully.
+                `,
+                modelConfig: MODEL_TO_TEST
+            }
+
+            const result = await analyzeBulkTranscript(input)
+            const evaluation = await evaluateResults(input.transcript, result, {
+                expectedOpportunityCount: 2,
+                expectedOpportunityIds: ['beast2', 'beast4'],
+                relevantSectionRequirements: [
+                    "Must include gaming tournament sponsorship details",
+                    "Must include streaming platform exclusivity discussion",
+                    "Must capture value proposition of both deals"
+                ]
+            })
+
+            expect(evaluation.passed).toBe(true)
+            expect(evaluation.relevantSectionsValid).toBe(true)
+            expect(evaluation.opportunityCountValid).toBe(true)
+            expect(evaluation.opportunityIdsValid).toBe(true)
+        }, 30000)
+
+        it('should evaluate retail and mall collaborations', async () => {
+            const input = {
+                opportunities,
+                transcript: `
+                    Manager: Mall of America proposal came in.
+                    Team: @mallofamerica wants to do a 24-hour challenge.
+                    Creative: We could let fans spend unlimited money.
+                    Manager: Perfect for holiday season content.
+                `,
+                modelConfig: MODEL_TO_TEST
+            }
+
+            const result = await analyzeBulkTranscript(input)
+            const evaluation = await evaluateResults(input.transcript, result, {
+                expectedOpportunityCount: 1,
+                expectedOpportunityIds: ['beast6'],
+                relevantSectionRequirements: [
+                    "Must include mall collaboration details",
+                    "Must capture creative concept",
+                    "Must include timing and strategic fit"
+                ]
+            })
+
+            expect(evaluation.passed).toBe(true)
+            expect(evaluation.relevantSectionsValid).toBe(true)
+            expect(evaluation.opportunityCountValid).toBe(true)
+            expect(evaluation.opportunityIdsValid).toBe(true)
+        }, 30000)
     })
 
     describe('Kanye Scenarios', () => {
@@ -538,6 +603,64 @@ describe('analyzeBulkTranscript', () => {
                     "Must include Tidal streaming rights discussion",
                     "Must include Instagram exclusivity details",
                     "Must capture strategic benefits of both platforms"
+                ]
+            })
+
+            expect(evaluation.passed).toBe(true)
+            expect(evaluation.relevantSectionsValid).toBe(true)
+            expect(evaluation.opportunityCountValid).toBe(true)
+            expect(evaluation.opportunityIdsValid).toBe(true)
+        }, 30000)
+
+        it('should handle tech and hardware collaborations', async () => {
+            const input = {
+                opportunities,
+                transcript: `
+                    Manager: Apple's proposal is interesting.
+                    Tech: partnerships@apple.com wants to do a smart speaker collab.
+                    Design: Could integrate YEEZY aesthetics with HomePod.
+                    Manager: Unique blend of fashion and tech.
+                `,
+                modelConfig: MODEL_TO_TEST
+            }
+
+            const result = await analyzeBulkTranscript(input)
+            const evaluation = await evaluateResults(input.transcript, result, {
+                expectedOpportunityCount: 1,
+                expectedOpportunityIds: ['ye4'],
+                relevantSectionRequirements: [
+                    "Must include tech collaboration details",
+                    "Must capture design integration aspects",
+                    "Must include strategic positioning"
+                ]
+            })
+
+            expect(evaluation.passed).toBe(true)
+            expect(evaluation.relevantSectionsValid).toBe(true)
+            expect(evaluation.opportunityCountValid).toBe(true)
+            expect(evaluation.opportunityIdsValid).toBe(true)
+        }, 30000)
+
+        it('should evaluate sneaker and sportswear deals', async () => {
+            const input = {
+                opportunities,
+                transcript: `
+                    Manager: Adidas wants to renew the partnership.
+                    Design: @adidasoriginals proposed a new sneaker line.
+                    Team: Full creative control and higher royalties.
+                    Manager: Could be bigger than previous collections.
+                `,
+                modelConfig: MODEL_TO_TEST
+            }
+
+            const result = await analyzeBulkTranscript(input)
+            const evaluation = await evaluateResults(input.transcript, result, {
+                expectedOpportunityCount: 1,
+                expectedOpportunityIds: ['ye2'],
+                relevantSectionRequirements: [
+                    "Must include sneaker line details",
+                    "Must capture creative control aspects",
+                    "Must include business terms"
                 ]
             })
 
@@ -792,6 +915,40 @@ describe('analyzeBulkTranscript', () => {
             expect(evaluation.opportunityCountValid).toBe(true)
             expect(evaluation.opportunityIdsValid).toBe(true)
         }, 30000)
+
+        it('should handle simple email approval with VR fitness opportunity', async () => {
+            const vrOpportunities = [
+                ...opportunities,
+                {
+                    id: 'vr1',
+                    initial_content: 'Hello HyperAgentMan, My name is Lisa from TechConnect Innovators, and we are looking to collaborate with you on a cutting-edge virtual reality project that aims to revolutionize fitness training. We believe your unique influence and expertise in tech-driven initiatives would be a perfect fit for our campaign. Would you be interested in discussing this exciting opportunity further? Best regards, Lisa',
+                    status: 'pending',
+                    sender_handle: 'London.Mertz@hotmail.com'
+                }
+            ]
+
+            const input = {
+                opportunities: vrOpportunities,
+                transcript: `approve London.Mertz@hotmail.com please`,
+                modelConfig: MODEL_TO_TEST
+            }
+
+            const result = await analyzeBulkTranscript(input)
+            const evaluation = await evaluateResults(input.transcript, result, {
+                expectedOpportunityCount: 1,
+                expectedOpportunityIds: ['vr1'],
+                relevantSectionRequirements: [
+                    "Must match exact email address",
+                    "Must identify approval intent",
+                    "Must handle simple one-line approval command"
+                ]
+            })
+
+            expect(evaluation.passed).toBe(true)
+            expect(evaluation.relevantSectionsValid).toBe(true)
+            expect(evaluation.opportunityCountValid).toBe(true)
+            expect(evaluation.opportunityIdsValid).toBe(true)
+        }, 30000)
     })
 
     // Keep the default model config test outside all describes
@@ -821,4 +978,347 @@ describe('analyzeBulkTranscript', () => {
         expect(result.metadata.maxTokens).toBeUndefined()
         expect(result.metadata.processingTimeMs).toBeGreaterThanOrEqual(0)
     }, 30000)
+
+    describe('Taylor Swift Scenarios', () => {
+        const opportunities = [
+            {
+                id: 'taylor1',
+                initial_content: 'Major film studio proposing concert movie deal',
+                status: 'pending',
+                sender_handle: 'theatrical@universal.com'
+            },
+            {
+                id: 'taylor2',
+                initial_content: 'Luxury brand seeking tour wardrobe collaboration',
+                status: 'pending',
+                sender_handle: '@versace'
+            },
+            {
+                id: 'taylor3',
+                initial_content: 'Stadium proposing record-breaking residency',
+                status: 'pending',
+                sender_handle: 'events@sofi.com'
+            },
+            {
+                id: 'taylor4',
+                initial_content: 'Tech company offering custom AI voice model partnership',
+                status: 'pending',
+                sender_handle: 'partnerships@openai.com'
+            },
+            {
+                id: 'taylor5',
+                initial_content: 'Streaming platform proposing documentary series',
+                status: 'pending',
+                sender_handle: 'originals@netflix.com'
+            },
+            {
+                id: 'taylor6',
+                initial_content: 'Beauty brand seeking signature fragrance line',
+                status: 'pending',
+                sender_handle: '@sephora'
+            }
+        ]
+
+        it('should handle entertainment and media deals', async () => {
+            const input = {
+                opportunities,
+                transcript: `
+                    Manager: Universal wants to do a concert film.
+                    Team: theatrical@universal.com is offering global distribution.
+                    Creative: Could include behind-the-scenes from all tour dates.
+                    Manager: Perfect timing with tour success.
+
+                    Netflix also reached out.
+                    Content: originals@netflix.com wants a documentary series.
+                    Team: They're offering creative control and huge budget.
+                `,
+                modelConfig: MODEL_TO_TEST
+            }
+
+            const result = await analyzeBulkTranscript(input)
+            const evaluation = await evaluateResults(input.transcript, result, {
+                expectedOpportunityCount: 2,
+                expectedOpportunityIds: ['taylor1', 'taylor5'],
+                relevantSectionRequirements: [
+                    "Must include film distribution details",
+                    "Must include documentary series proposal",
+                    "Must capture creative aspects of both projects"
+                ]
+            })
+
+            expect(evaluation.passed).toBe(true)
+            expect(evaluation.relevantSectionsValid).toBe(true)
+            expect(evaluation.opportunityCountValid).toBe(true)
+            expect(evaluation.opportunityIdsValid).toBe(true)
+        }, 30000)
+
+        it('should evaluate fashion and beauty collaborations', async () => {
+            const input = {
+                opportunities,
+                transcript: `
+                    Manager: Two major brand collaborations to discuss.
+                    
+                    @versace wants to do tour wardrobe.
+                    Design: They'll create custom pieces for each act.
+                    Team: Could include retail collection too.
+                    
+                    Also, @sephora reached out about fragrance.
+                    Beauty: They want a signature scent line.
+                    Marketing: Could tie it to different album eras.
+                `,
+                modelConfig: MODEL_TO_TEST
+            }
+
+            const result = await analyzeBulkTranscript(input)
+            const evaluation = await evaluateResults(input.transcript, result, {
+                expectedOpportunityCount: 2,
+                expectedOpportunityIds: ['taylor2', 'taylor6'],
+                relevantSectionRequirements: [
+                    "Must include fashion collaboration details",
+                    "Must include beauty line proposal",
+                    "Must capture brand synergy aspects"
+                ]
+            })
+
+            expect(evaluation.passed).toBe(true)
+            expect(evaluation.relevantSectionsValid).toBe(true)
+            expect(evaluation.opportunityCountValid).toBe(true)
+            expect(evaluation.opportunityIdsValid).toBe(true)
+        }, 30000)
+
+        it('should handle tech and innovation partnerships', async () => {
+            const input = {
+                opportunities,
+                transcript: `
+                    Manager: Interesting AI proposal from OpenAI.
+                    Tech: partnerships@openai.com wants to create a voice model.
+                    Legal: Would be for approved uses only.
+                    Manager: Could revolutionize fan experiences.
+                `,
+                modelConfig: MODEL_TO_TEST
+            }
+
+            const result = await analyzeBulkTranscript(input)
+            const evaluation = await evaluateResults(input.transcript, result, {
+                expectedOpportunityCount: 1,
+                expectedOpportunityIds: ['taylor4'],
+                relevantSectionRequirements: [
+                    "Must include AI partnership details",
+                    "Must capture innovation aspects",
+                    "Must include legal considerations"
+                ]
+            })
+
+            expect(evaluation.passed).toBe(true)
+            expect(evaluation.relevantSectionsValid).toBe(true)
+            expect(evaluation.opportunityCountValid).toBe(true)
+            expect(evaluation.opportunityIdsValid).toBe(true)
+        }, 30000)
+
+        it('should evaluate venue and touring opportunities', async () => {
+            const input = {
+                opportunities,
+                transcript: `
+                    Manager: SoFi Stadium has an amazing proposal.
+                    Touring: events@sofi.com wants a record-breaking residency.
+                    Team: Could do multiple weekends over several months.
+                    Production: Would allow for permanent stage setup.
+                `,
+                modelConfig: MODEL_TO_TEST
+            }
+
+            const result = await analyzeBulkTranscript(input)
+            const evaluation = await evaluateResults(input.transcript, result, {
+                expectedOpportunityCount: 1,
+                expectedOpportunityIds: ['taylor3'],
+                relevantSectionRequirements: [
+                    "Must include residency proposal details",
+                    "Must capture logistics and production aspects",
+                    "Must include strategic benefits"
+                ]
+            })
+
+            expect(evaluation.passed).toBe(true)
+            expect(evaluation.relevantSectionsValid).toBe(true)
+            expect(evaluation.opportunityCountValid).toBe(true)
+            expect(evaluation.opportunityIdsValid).toBe(true)
+        }, 30000)
+    })
+
+    describe('Elon Musk Scenarios', () => {
+        const opportunities = [
+            {
+                id: 'elon1',
+                initial_content: 'Space tourism company seeking launch partnership',
+                status: 'pending',
+                sender_handle: 'partnerships@virgingalactic.com'
+            },
+            {
+                id: 'elon2',
+                initial_content: 'AI research lab proposing joint venture',
+                status: 'pending',
+                sender_handle: 'research@deepmind.com'
+            },
+            {
+                id: 'elon3',
+                initial_content: 'Battery manufacturer offering exclusive supply deal',
+                status: 'pending',
+                sender_handle: 'deals@panasonic.com'
+            },
+            {
+                id: 'elon4',
+                initial_content: 'Government space agency discussing Mars mission',
+                status: 'pending',
+                sender_handle: 'collaboration@nasa.gov'
+            },
+            {
+                id: 'elon5',
+                initial_content: 'Quantum computing startup seeking investment',
+                status: 'pending',
+                sender_handle: 'ceo@quantumtech.ai'
+            },
+            {
+                id: 'elon6',
+                initial_content: 'Solar technology company proposing merger',
+                status: 'pending',
+                sender_handle: 'bd@solartech.com'
+            }
+        ]
+
+        it('should handle space exploration partnerships', async () => {
+            const input = {
+                opportunities,
+                transcript: `
+                    Manager: Two major space collaboration proposals.
+                    
+                    Virgin Galactic reached out about tourism.
+                    Space: partnerships@virgingalactic.com wants launch partnership.
+                    Team: Could combine our technologies for civilian space travel.
+                    
+                    NASA also has an interesting proposal.
+                    Tech: collaboration@nasa.gov wants to discuss Mars mission.
+                    Research: Would involve multiple launches and shared research.
+                `,
+                modelConfig: MODEL_TO_TEST
+            }
+
+            const result = await analyzeBulkTranscript(input)
+            const evaluation = await evaluateResults(input.transcript, result, {
+                expectedOpportunityCount: 2,
+                expectedOpportunityIds: ['elon1', 'elon4'],
+                relevantSectionRequirements: [
+                    "Must include space tourism partnership details",
+                    "Must include Mars mission collaboration",
+                    "Must capture technical synergies"
+                ]
+            })
+
+            expect(evaluation.passed).toBe(true)
+            expect(evaluation.relevantSectionsValid).toBe(true)
+            expect(evaluation.opportunityCountValid).toBe(true)
+            expect(evaluation.opportunityIdsValid).toBe(true)
+        }, 30000)
+
+        it('should evaluate AI and quantum computing opportunities', async () => {
+            const input = {
+                opportunities,
+                transcript: `
+                    Manager: Two cutting-edge tech proposals.
+                    
+                    DeepMind wants to collaborate on AI.
+                    Research: research@deepmind.com proposed a joint venture.
+                    Tech: Would focus on advanced neural networks.
+                    
+                    Also got an interesting quantum proposal.
+                    Innovation: ceo@quantumtech.ai is seeking investment.
+                    Team: Their quantum algorithms could revolutionize our AI.
+                `,
+                modelConfig: MODEL_TO_TEST
+            }
+
+            const result = await analyzeBulkTranscript(input)
+            const evaluation = await evaluateResults(input.transcript, result, {
+                expectedOpportunityCount: 2,
+                expectedOpportunityIds: ['elon2', 'elon5'],
+                relevantSectionRequirements: [
+                    "Must include AI collaboration details",
+                    "Must include quantum computing investment",
+                    "Must capture technological synergies"
+                ]
+            })
+
+            expect(evaluation.passed).toBe(true)
+            expect(evaluation.relevantSectionsValid).toBe(true)
+            expect(evaluation.opportunityCountValid).toBe(true)
+            expect(evaluation.opportunityIdsValid).toBe(true)
+        }, 30000)
+
+        it('should handle energy and battery partnerships', async () => {
+            const input = {
+                opportunities,
+                transcript: `
+                    Manager: Let's review energy sector proposals.
+                    
+                    Panasonic has a new battery deal.
+                    Manufacturing: deals@panasonic.com offers exclusive supply.
+                    Tech: New chemistry could increase range by 50%.
+                    
+                    SolarTech also reached out.
+                    Strategy: bd@solartech.com is proposing a merger.
+                    Team: Their solar tech would complement our energy business.
+                `,
+                modelConfig: MODEL_TO_TEST
+            }
+
+            const result = await analyzeBulkTranscript(input)
+            const evaluation = await evaluateResults(input.transcript, result, {
+                expectedOpportunityCount: 2,
+                expectedOpportunityIds: ['elon3', 'elon6'],
+                relevantSectionRequirements: [
+                    "Must include battery supply deal details",
+                    "Must include solar technology merger",
+                    "Must capture energy sector strategy"
+                ]
+            })
+
+            expect(evaluation.passed).toBe(true)
+            expect(evaluation.relevantSectionsValid).toBe(true)
+            expect(evaluation.opportunityCountValid).toBe(true)
+            expect(evaluation.opportunityIdsValid).toBe(true)
+        }, 30000)
+
+        it('should evaluate cross-industry innovation opportunities', async () => {
+            const input = {
+                opportunities,
+                transcript: `
+                    Manager: Several interesting cross-industry proposals.
+                    
+                    The quantum computing startup has potential.
+                    Tech: ceo@quantumtech.ai's algorithms could optimize manufacturing.
+                    Research: Would give us an edge in AI and automation.
+                    
+                    Virgin Galactic synergy is interesting too.
+                    Space: partnerships@virgingalactic.com's tech could help Mars missions.
+                    Strategy: Tourism revenue could fund deeper space exploration.
+                `,
+                modelConfig: MODEL_TO_TEST
+            }
+
+            const result = await analyzeBulkTranscript(input)
+            const evaluation = await evaluateResults(input.transcript, result, {
+                expectedOpportunityCount: 2,
+                expectedOpportunityIds: ['elon5', 'elon1'],
+                relevantSectionRequirements: [
+                    "Must include quantum computing applications",
+                    "Must include space tourism synergies",
+                    "Must capture cross-industry benefits"
+                ]
+            })
+
+            expect(evaluation.passed).toBe(true)
+            expect(evaluation.relevantSectionsValid).toBe(true)
+            expect(evaluation.opportunityCountValid).toBe(true)
+            expect(evaluation.opportunityIdsValid).toBe(true)
+        }, 30000)
+    })
 }) 

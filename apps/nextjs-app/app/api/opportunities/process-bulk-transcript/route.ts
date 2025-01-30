@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     // Get all pending opportunities to check against
     const { data: opportunities } = await supabase
       .from('opportunities')
-      .select('id, initial_content, status')
+      .select('id, initial_content, status, sender_handle')
       .in('status', ['pending', 'approved'])
 
     if (!opportunities) {
@@ -34,8 +34,23 @@ export async function POST(request: Request) {
       opportunities
     })
 
+    // Merge the identified opportunities with original data and add confidence
+    const enrichedOpportunities = result.identifiedOpportunities.map(identified => {
+      const original = opportunities.find(o => o.id === identified.id)
+      if (!original) {
+        console.warn(`Could not find original opportunity for id: ${identified.id}`)
+        return null
+      }
+      return {
+        ...identified,
+        ...original,
+        confidence: 0.8 // Default high confidence since it's an exact match
+      }
+    }).filter(Boolean) // Remove any null values
+
     return NextResponse.json({
-      opportunities: result.identifiedOpportunities
+      opportunities: enrichedOpportunities,
+      metadata: result.metadata
     })
   } catch (error) {
     console.error('Error processing bulk transcript:', error)

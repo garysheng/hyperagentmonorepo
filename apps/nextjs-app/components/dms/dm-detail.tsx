@@ -37,10 +37,6 @@ export function DMDetail({ dm }: DMDetailProps) {
   const queryClient = useQueryClient()
 
   const isEmail = (handle: string) => handle.includes('@')
-
-  console.log('DMDetail - Raw tags:', dm?.tags)
-  console.log('DMDetail - Tags type:', dm?.tags ? typeof dm.tags : 'no dm')
-
   if (!dm) {
     return (
       <Card className="p-6 h-[calc(100vh-13rem)]">
@@ -62,7 +58,6 @@ export function DMDetail({ dm }: DMDetailProps) {
   }
 
   const tagsToPass = Array.isArray(dm.tags) ? dm.tags : []
-  console.log('DMDetail - Tags being passed to DMTags:', tagsToPass)
 
   return (
     <Card className="p-6 h-[calc(100vh-13rem)] flex flex-col">

@@ -161,6 +161,16 @@ export function BulkTranscriptWizard({ opportunities, onProcessComplete }: BulkT
 
   const handleProcessOpportunity = async (opportunity: OpportunityPreview) => {
     try {
+      // Validate relevant section
+      if (!opportunity.relevantSection || opportunity.relevantSection.trim() === '') {
+        console.warn(`Skipping opportunity ${opportunity.id} - no relevant section found`)
+        return {
+          proposedStatus: opportunity.status,
+          summary: 'No relevant discussion found in transcript',
+          actionRecap: 'No action needed'
+        }
+      }
+
       setIsProcessing(true)
       const response = await fetch('/api/opportunities/process-transcript', {
         method: 'POST',
@@ -169,22 +179,29 @@ export function BulkTranscriptWizard({ opportunities, onProcessComplete }: BulkT
         },
         body: JSON.stringify({
           opportunityId: opportunity.id,
-          transcript: opportunity.relevantSection
+          transcript: opportunity.relevantSection,
+          currentStatus: opportunity.status,
+          initialMessage: opportunity.initial_content
         }),
       })
 
       if (!response.ok) {
-        throw new Error('Failed to process opportunity')
+        const errorText = await response.text()
+        console.error('Process transcript error:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        })
+        throw new Error(`Failed to process opportunity: ${errorText}`)
       }
 
       const result = await response.json()
-      
       return result
     } catch (error) {
       console.error('Error processing opportunity:', error)
       toast({
         title: 'Error',
-        description: 'Failed to process opportunity. Please try again.',
+        description: error instanceof Error ? error.message : 'Failed to process opportunity. Please try again.',
         variant: 'destructive'
       })
       return null

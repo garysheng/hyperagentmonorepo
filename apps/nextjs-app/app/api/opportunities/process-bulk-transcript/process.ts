@@ -138,6 +138,13 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
       Your task is to:
       1. Identify which opportunities from the provided list were discussed in the transcript
       2. Extract ONLY the EXACT meeting discussion parts (not the initial messages)
+      3. For simple approval commands, match the exact email and include the entire command
+
+      CRITICAL: For simple approval commands like "approve email@example.com":
+      - Match the exact email address (case-insensitive)
+      - Include the ENTIRE command as the relevant section
+      - This is a valid discussion that should be matched
+      - Example: "approve user@email.com please" -> Match opportunity with "user@email.com"
 
       Here are the opportunities to look for:
       {opportunities}
@@ -230,6 +237,15 @@ export async function analyzeBulkTranscript(input: BulkTranscriptAnalysisInput):
       Transcript: "First, about the AI collaboration proposal. Yes, I think we should move forward with that one."
       ✓ Relevant section: "First, about the AI collaboration proposal. Yes, I think we should move forward with that one."
       ✗ Relevant section: "Team discussed AI collaboration"
+
+      Transcript: "approve user@example.com please"
+      ✓ Relevant section: "approve user@example.com please"
+      ✗ Relevant section: "Approved user@example.com"
+      ✗ Relevant section: "Team approved the proposal"
+
+      Transcript: "approve USER@EXAMPLE.COM"
+      ✓ Relevant section: "approve USER@EXAMPLE.COM"
+      ✗ Relevant section: "Approved the proposal"
 
       Transcript: "Let's review the ai_researcher proposal. Strong technical background. Approved for next steps."
       ✓ Relevant section: "Let's review the ai_researcher proposal. Strong technical background. Approved for next steps."
