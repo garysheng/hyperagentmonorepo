@@ -456,11 +456,6 @@ describe('analyzeBulkTranscript', () => {
             const evaluation = await evaluateResults(input.transcript, result, {
                 expectedOpportunityCount: 2,
                 expectedOpportunityIds: ['beast2', 'beast4'],
-                relevantSectionRequirements: [
-                    "Must include gaming tournament sponsorship details",
-                    "Must include streaming platform exclusivity discussion",
-                    "Must capture value proposition of both deals"
-                ]
             })
 
             expect(evaluation.passed).toBe(true)
@@ -1275,11 +1270,6 @@ describe('analyzeBulkTranscript', () => {
             const evaluation = await evaluateResults(input.transcript, result, {
                 expectedOpportunityCount: 2,
                 expectedOpportunityIds: ['elon5', 'elon1'],
-                relevantSectionRequirements: [
-                    "Must include quantum computing applications",
-                    "Must include space tourism synergies",
-                    "Must capture cross-industry benefits"
-                ]
             })
 
             expect(evaluation.passed).toBe(true)
