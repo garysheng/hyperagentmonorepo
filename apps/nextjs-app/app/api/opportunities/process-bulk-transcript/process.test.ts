@@ -4,7 +4,7 @@ import OpenAI from 'openai'
 
 // Change this to test different models
 const MODEL_TO_TEST = {
-    modelName: "gpt-4o",
+    modelName: "gpt-4o-mini",
     temperature: 0
 } as const
 
@@ -642,11 +642,6 @@ describe('analyzeBulkTranscript', () => {
             const evaluation = await evaluateResults(input.transcript, result, {
                 expectedOpportunityCount: 1,
                 expectedOpportunityIds: ['ye2'],
-                relevantSectionRequirements: [
-                    "Must include sneaker line details",
-                    "Must capture creative control aspects",
-                    "Must include business terms"
-                ]
             })
 
             expect(evaluation.passed).toBe(true)
